@@ -58,3 +58,24 @@
 ## Candidate README
 
 The challenge explicitly requires a README written by the candidate. The assistant has not written that README. These notes are supporting material for the candidate's own account of the work.
+# Public API iteration — September 26, 2026
+
+- User supplied a full architecture/verification brief, then explicitly prioritized: Ibis-inspired public API, unit/case coverage, more verification, and only afterward capabilities/errors/logging.
+- Inspected the merged lower layer, tests, generated Substrait bindings and Docker connectivity. Proposed the boundary before implementation; user accepted this order.
+- Added a small lazy Table/Expr facade directly over generated Substrait relations. Kept existing lowering, function semantics, and independent raw-data/BigInt oracles. Extracted shared function identities so the API does not import the SQL implementation.
+- Re-expressed all six query families through callback-scoped named columns; explicit join outputs handle duplicate names/self-joins and left-join nullability.
+- Added isolated API checks, direct cross-backend comparisons, and finite relational equivalence/empty-input cases. No randomized fuzzing or full conformance claim. No candidate README was written.
+- Limits: runtime schema/type validation rather than inferred TypeScript row types; no arbitrary new operators, decimal literals, or full Ibis support. Backend adapter expansion and the separate extension remain later work.
+
+## PR #5 self-review
+
+- Found a join-scope leak: a column captured in `on` could be reused in `select` with pre-join nullability, despite left-join null extension. This could give later expressions misleading metadata and cause compiler rejection.
+- Added a minimal regression test and confirmed it failed before the fix. Separated predicate and output scope identities; the stale reference now fails immediately.
+- Re-ran type checking, 16 unit tests and 11 integration tests successfully. All six challenge query families remain covered on both databases.
+- Remaining MVP gaps are the separately demonstrated extension, fresh-clone setup verification, candidate README/video, and reviewer access. Capabilities/errors/logging are useful future improvements, not prerequisites to demonstrating the current core.
+
+## Independent review comment on PR #5
+
+- Verified the reported coupling with a minimal function-free read/project/sort/fetch test: the public API emits declarations and compilePlan selects compileAnalytics on both dialects.
+- Verified the risk before changing behavior: deleting declarations from a function-free nested-limit plan causes the old visitor to reject it. The existing API integration suite relies on this supported composition.
+- Chose the review's explicitly permitted option 2: preserve behavior, document the dependency, defer metadata/dispatch cleanup to #7. Added a focused characterization test; no compiler refactor or schema-validation expansion.

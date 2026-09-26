@@ -5,6 +5,7 @@ import { connect } from '../src/backend.js';
 import { compilePlan } from '../src/compiler.js';
 import { encodePlan, decodePlan } from '../src/plan.js';
 import { analyticalExamples, challengeCatalog, customersInCity, countryPercentile } from '../src/challenge.js';
+import { queryExamples } from '../src/queries.js';
 
 type Row = Record<string, any>;
 const fixed = (value: unknown, places: number): bigint => {
@@ -63,6 +64,10 @@ for (const backend of ['postgres', 'mysql'] as const) {
         const result = (await db.executeQuery(compilePlan(db, plan, challengeCatalog))).rows;
         if (i === 2) assert.ok(Math.abs(Number((result[0] as Row).average_units) - oracle[i][0].average_units) < 1e-12);
         else assert.deepEqual(result, oracle[i], example.name);
+        const apiPlan = decodePlan(encodePlan(queryExamples[i + 1].query.toSubstrait()));
+        const apiResult = (await db.executeQuery(compilePlan(db, apiPlan, challengeCatalog))).rows;
+        if (i === 2) assert.ok(Math.abs(Number((apiResult[0] as Row).average_units) - oracle[i][0].average_units) < 1e-12);
+        else assert.deepEqual(apiResult, oracle[i], `Public API: ${example.name}`);
       }
       for (const city of ['LONDON', 'México D.F.', "london' OR 1=1 --"]) {
         const query = compilePlan(db, customersInCity(city), challengeCatalog);

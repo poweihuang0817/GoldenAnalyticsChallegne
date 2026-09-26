@@ -53,6 +53,8 @@ These are candidate capabilities, not verified compatibility with every challeng
 
 ## Accepted challenge architecture
 
+Application-facing refinement accepted September 26: a small Ibis-inspired immutable Table/Expression API produces the supported Substrait profile. Application code uses named, callback-scoped columns rather than raw protobuf structures. Substrait remains the interchange contract; Kysely remains internal SQL machinery. See [public API and current limits](PUBLIC-API.md). Backend capabilities/errors/logging follow API coverage and further verification in separate work.
+
 Use a TypeScript library accepting a strict subset of Substrait v0.63.0 Protobuf JSON. Validate supported relations and resolve positional fields against a logical catalog, then lower to Kysely's public query-builder API. Keep backend connection/execution adapters separate. The Substrait profile is the public query representation; Kysely is internal compiler machinery. This is a relational translation layer, not a semantic modeling layer or local execution engine.
 
 ```text
