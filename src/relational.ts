@@ -2,8 +2,8 @@ import { Kysely, MysqlAdapter, sql, type RawBuilder } from 'kysely';
 import type { Catalog, Database } from './compiler.js';
 import type { Expression, Rel, SupportedPlanJson } from './plan.js';
 
-export const FUNCTION_URI = 'https://github.com/poweihuang0817/GoldenAnalytics/blob/main/spec/golden-functions.yaml';
-export const FUNCTIONS = ['equal', 'lower', 'is_null', 'is_not_null', 'and', 'multiply', 'subtract', 'divide', 'coalesce', 'sum', 'avg', 'count', 'percentile_cont'] as const;
+import { FUNCTION_URI, FUNCTIONS } from './functions.js';
+export { FUNCTION_URI, FUNCTIONS } from './functions.js';
 type Kind = Catalog[string][number]['type'];
 type Value = { expr: RawBuilder<unknown>; kind: Kind; nullable: boolean };
 type Relation = { query: RawBuilder<unknown>; fields: Omit<Value, 'expr'>[]; order?: { index: number; direction: string }[] };

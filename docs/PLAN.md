@@ -16,6 +16,8 @@ These are checkpoints, not a commitment to spend a week implementing. The challe
 
 ## Implementation order
 
+September 26 update: PR #4 merged the lower-layer implementation of all six query families. The user-approved next order is (1) a small Ibis-inspired TypeScript API and driver, (2) component tests and query coverage, (3) further correctness verification, then (4) capabilities, normalized errors, and related backend concerns. The public API branch covers the first two and adds finite equivalence cases; broader verification remains a separate checkpoint. Do not expand backend architecture before reviewing that checkpoint.
+
 1. Accept an architecture decision in `ARCHITECTURE.md` before implementation.
 2. Establish Node/TypeScript tooling and reproducible database startup.
 3. Build a vertical slice: most recent N orders on both databases, with deterministic ordering and bound values.
