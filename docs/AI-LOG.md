@@ -35,8 +35,16 @@
 - Kept capability restrictions as validation rules; removed the manually declared relation type union and built the example with generated interfaces/enums.
 - Added binary round trips, separate reflection checks against the upstream schemas, unsupported-feature rejection, and malformed/unknown-field checks. Database integration now includes the binary round trip.
 
-## README authorship reminder
+## Architecture diagram
 
 - User requested a real architecture image in PR #2. Added a reproducible PNG diagram showing generated types/JSON/binary inputs, capability validation, Kysely compilation, and remote execution. Visually checked the rendered image before delivery.
+## Agent workflow guidance
+
+- User requested worktree and agent best practices in a skill or agent instruction file, in a separate PR.
+- Selected repository-level `AGENTS.md` so future agents receive project-specific guidance without requiring a personal skill installation.
+- Created an isolated `docs/agent-workflow` worktree from `origin/main`, separate from open implementation PR #2.
+- Documented worktree ownership, explicit delegation, shared-service limitations, prerequisite PR sequencing, validation, and safe cleanup.
+
+## README authorship
 
 The challenge explicitly requires a README written by the candidate. The assistant has not written that README. These notes are supporting material for the candidate's own account of the work.
