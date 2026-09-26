@@ -79,3 +79,17 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Verified the reported coupling with a minimal function-free read/project/sort/fetch test: the public API emits declarations and compilePlan selects compileAnalytics on both dialects.
 - Verified the risk before changing behavior: deleting declarations from a function-free nested-limit plan causes the old visitor to reject it. The existing API integration suite relies on this supported composition.
 - Chose the review's explicitly permitted option 2: preserve behavior, document the dependency, defer metadata/dispatch cleanup to #7. Added a focused characterization test; no compiler refactor or schema-validation expansion.
+
+## Window extension and delegated review checkpoint
+
+- User approved a separate top-N-per-customer extension and later clarified it should continue independently while agents investigate issues and local architecture instructions.
+- Added a narrow withRowNumber API using official v0.63.0 WindowRel and numeric lte; native windows execute remotely, then an outer filter selects top N. No general optimizer/window API or compiler unification.
+- Added binary/profile rejection checks, independent Northwind sorting oracles, cross-backend comparison, and isolated fixtures for ties/nulls/empty/small partitions. No sample rows changed.
+- User explicitly authorized agents for #6/#7/#8: #6 validation and #8 wire hardening concluded KEEP/FREEZE with no code change. Per user direction, findings were posted to issues and those investigations closed; documentation-only PRs #9/#10 were closed unmerged. #7 comparison tests remain PR #11; root independently reran all four tests successfully. Analytics is not a strict semantic superset, so consolidation is deferred.
+- Agents read the complete Arch_instruction_V2.txt and rerendered/read the original formal email PDF. V2 matches the earlier brief. Original email requires an extension, driver, DB tests, candidate README/video; it allows incomplete polish and only some sample queries. Capability/error/logging layers are not original email obligations. Latest user direction defers README/video/access/final packaging.
+- Agent verified fresh remote main 8fe7d4a with fresh dependencies and a separate healthy Docker container on alternate ports: check, 17 unit tests, 11 integration tests, demo and codec regeneration passed. Extension branch requires its own fresh-clone rerun before this checkpoint is complete.
+- An automatic approval review blocked root editing another agent's worktree for a shared log update. No write occurred; this coordinated entry is recorded in root's own extension worktree instead.
+
+- Fresh clone of window code 603accf passed fresh install, separate fresh Docker instance, typecheck, all 36 tests and driver; isolated container/network cleaned up. See CHECKPOINT.md. User explicitly requested capabilities, authentication/authorization and useful errors be recorded as essential cross-database production work outside MVP; FUTURE-WORK.md captures these plus researched follow-ups without writing the final README.
+
+- Independent PR #13 review found no blocking correctness issue. Its non-blocking note about validated-input assumptions is now explicit in compileAnalytics JSDoc and window documentation. No new validation or behavior change; local/fresh-clone results still apply to unchanged executable logic.
