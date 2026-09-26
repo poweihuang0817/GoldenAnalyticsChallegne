@@ -19,6 +19,13 @@
 - User requested that delivery plans and Git workflow be recorded before settling the architecture.
 - Added `PLAN.md`, `GIT-WORKFLOW.md`, and a proposed `ARCHITECTURE.md`. No architecture or extension has been accepted yet.
 
-## Candidate authorship
+## Agent workflow guidance
+
+- User requested worktree and agent best practices in a skill or agent instruction file, in a separate PR.
+- Selected repository-level `AGENTS.md` so future agents receive project-specific guidance without requiring a personal skill installation.
+- Created an isolated `docs/agent-workflow` worktree from `origin/main`, separate from open implementation PR #2.
+- Documented worktree ownership, explicit delegation, shared-service limitations, prerequisite PR sequencing, validation, and safe cleanup.
+
+## README authorship
 
 The challenge explicitly requires a README written by the candidate. The assistant has not written that README. These notes are supporting material for the candidate's own account of the work.
