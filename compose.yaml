@@ -1,0 +1,13 @@
+services:
+  databases:
+    image: goldenbeers/golden-query-challenge:1.0
+    ports:
+      - "127.0.0.1:3306:3306"
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      # The image's default check uses /run/postgresql, but its socket is in /tmp.
+      test: ["CMD-SHELL", "pg_isready -q -h /tmp -U postgres && test -S /run/mysqld/mysqld.sock"]
+      interval: 5s
+      timeout: 3s
+      start_period: 10s
+      retries: 10
