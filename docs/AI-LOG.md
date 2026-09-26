@@ -86,3 +86,23 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Clarified in server comments and supporting documentation that HTTP receive timeouts do not bound or cancel database execution, and Host/Origin checks are not authentication. Preserved loopback binding, the fixed query allowlist and the warning against public proxies.
 - No timeout/authentication framework or runtime behavior changed. Validation for this follow-up is staged diff inspection and `git diff --check`; the prior type check, 17 existing unit tests, two HTTP tests and six real database smoke runs were not rerun for comments/docs only.
 - Browser visual verification remains pending: the prior attempt reported no available IAB and an empty enabled-browser inventory. No visual inspection is claimed.
+
+## Window extension and delegated review checkpoint
+
+- User approved a separate top-N-per-customer extension and later clarified it should continue independently while agents investigate issues and local architecture instructions.
+- Added a narrow withRowNumber API using official v0.63.0 WindowRel and numeric lte; native windows execute remotely, then an outer filter selects top N. No general optimizer/window API or compiler unification.
+- Added binary/profile rejection checks, independent Northwind sorting oracles, cross-backend comparison, and isolated fixtures for ties/nulls/empty/small partitions. No sample rows changed.
+- User explicitly authorized agents for #6/#7/#8: #6 validation and #8 wire hardening concluded KEEP/FREEZE with no code change. Per user direction, findings were posted to issues and those investigations closed; documentation-only PRs #9/#10 were closed unmerged. #7 comparison tests remain PR #11; root independently reran all four tests successfully. Analytics is not a strict semantic superset, so consolidation is deferred.
+- Agents read the complete Arch_instruction_V2.txt and rerendered/read the original formal email PDF. V2 matches the earlier brief. Original email requires an extension, driver, DB tests, candidate README/video; it allows incomplete polish and only some sample queries. Capability/error/logging layers are not original email obligations. Latest user direction defers README/video/access/final packaging.
+- Agent verified fresh remote main 8fe7d4a with fresh dependencies and a separate healthy Docker container on alternate ports: check, 17 unit tests, 11 integration tests, demo and codec regeneration passed. Extension branch requires its own fresh-clone rerun before this checkpoint is complete.
+- An automatic approval review blocked root editing another agent's worktree for a shared log update. No write occurred; this coordinated entry is recorded in root's own extension worktree instead.
+
+- Fresh clone of window code 603accf passed fresh install, separate fresh Docker instance, typecheck, all 36 tests and driver; isolated container/network cleaned up. See CHECKPOINT.md. User explicitly requested capabilities, authentication/authorization and useful errors be recorded as essential cross-database production work outside MVP; FUTURE-WORK.md captures these plus researched follow-ups without writing the final README.
+
+- Independent PR #13 review found no blocking correctness issue. Its non-blocking note about validated-input assumptions is now explicit in compileAnalytics JSDoc and window documentation. No new validation or behavior change; local/fresh-clone results still apply to unchanged executable logic.
+
+## PR #14 merge-conflict resolution
+
+- User requested reconciliation with current main. Merged origin/main without rebasing or rewriting published commits. The only conflict was concurrent appended AI-log entries; preserved both the walkthrough review and main's window/review checkpoint. Runtime files merged cleanly.
+- Integration owner requested adding the HTTP boundary tests to the default npm test command now that package-script ownership is available. No new UI examples or backend behavior were added.
+- Merged-branch typecheck, all 22 default unit/HTTP tests and diff checks passed. Database-mutating integration was reserved for the parallel DuckDB agent, avoiding concurrent fixture work. Browser visual verification remains pending as recorded above.
