@@ -1,6 +1,6 @@
 # Initial Substrait profile and development commands
 
-This is the first working slice, not the complete challenge. The public input follows a restricted subset of [Substrait v0.63.0](https://github.com/substrait-io/substrait/tree/v0.63.0/proto/substrait) Protobuf JSON conventions. It is not the separate Substrait text format. `src/plan.ts` validates this profile; no binary codec or complete generated schema is included yet.
+This is the first working slice, not the complete challenge. The public input follows a restricted subset of [Substrait v0.63.0](https://github.com/substrait-io/substrait/tree/v0.63.0/proto/substrait) Protobuf JSON conventions. It is not the separate Substrait text format. Official schema files are vendored at a pinned revision with their license. `protobufjs-cli` generates the codec, TypeScript declarations, and reflection metadata; `src/plan.ts` separately restricts capabilities. See [schema provenance](../vendor/substrait/PROVENANCE.md).
 
 ## Supported input
 
@@ -16,7 +16,9 @@ This is the first working slice, not the complete challenge. The public input fo
 
 The catalog binds logical schemas to physical table columns. The example exposes a two-column logical view of `orders`; it does not claim to describe every physical column in Northwind. Catalog entries are trusted application configuration and must accurately describe the remote columns.
 
-Unknown JSON keys, unsupported operators, mismatched schemas, invalid field positions, duplicate output names, unsafe pagination, excessive plan size/depth, repeated sorts, and repeated fetches fail before execution. This profile intentionally requires some explicit defaults that general Protobuf JSON can omit. Valid Substrait outside this profile is rejected, not silently approximated.
+Unknown JSON keys, unsupported operators, mismatched schemas, invalid field positions, duplicate output names, unsafe pagination, excessive plan size/depth, repeated sorts, and repeated fetches fail before execution. Zero-valued field indices and version components may be omitted following Protobuf defaults. Other JSON spellings/default forms outside this profile may still be rejected. Valid Substrait outside this profile is rejected, not silently approximated.
+
+`Plan` is the generated upstream interface. The example constructs that type with generated enums. `toPlanJson` applies the supported profile after checking generated messages; `fromPlanJson` rejects unsupported JSON before codec conversion can discard keys. `encodePlan` and `decodePlan` expose binary round trips for supported plans. A schema-derived wire scanner rejects unknown tags and excessive nesting before decoding. This is deliberately stricter than Protobuf's usual unknown-field tolerance.
 
 ## Compilation and execution
 
@@ -45,7 +47,7 @@ Unit tests compile without connecting to databases. Integration tests execute th
 1. Function extension anchors and typed literals, then filtering with explicit case semantics.
 2. Aggregate and join relations, with subquery scopes preserving relation boundaries and aggregate grain.
 3. Nested analytical queries and the remaining examples.
-4. Official protobuf schema/binary round-trip conformance tests and broader malformed-plan tests.
+4. Broader cross-implementation interoperability and malformed-plan tests.
 5. A separately selected advanced extension.
 
-The handwritten validator deliberately limits the first implementation. It is not a substitute for full Substrait validation or a production authorization boundary.
+The capability validator deliberately limits the first implementation. Its narrowed types are inferred from validation rules; the public standard types come from generated definitions. Neither structural validation nor codec compatibility proves complete Substrait semantics or provides a production authorization boundary.

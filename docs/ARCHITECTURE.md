@@ -86,7 +86,7 @@ Substrait was chosen to retain an established relational representation rather t
 ## Decisions pending
 
 1. Extend the strict profile with filters and function anchors, followed by aggregates and joins with derived-table scopes.
-2. Add official Protobuf-generated types and binary interchange when needed; the initial validator is handwritten against the pinned schema and does not claim general Substrait interoperability.
+2. Broaden interoperability tests beyond the initial official-schema binary round trips. Generated types/codecs now come from the vendored v0.63.0 schemas; a separate capability validator rejects everything outside the implemented subset.
 3. Choose one extension. Candidate: portable window ranking (top products per category), separately demonstrated and tested. This remains a proposal.
 
 The initial profile and its limitations are documented in `SUBSTRAIT-PROFILE.md`. Acceptance of the architecture does not imply full Substrait support or a complete challenge submission.

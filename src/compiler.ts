@@ -1,22 +1,12 @@
 import { Kysely, sql, type SelectQueryBuilder } from 'kysely';
-import { planSchema, type Field, type Rel } from './plan.js';
+import { fromPlanJson, toPlanJson, type Field, type Rel } from './plan.js';
 
 export type Catalog = Record<string, readonly { name: string; type: 'i32' | 'date' | 'string'; nullable: boolean }[]>;
 // Dynamic database shape is confined to the compiler; the external boundary is validated.
 export type Database = Record<string, Record<string, unknown>>;
 type Query = SelectQueryBuilder<Database, string, {}>;
 export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catalog) {
-  // Bound input before recursive schema parsing (also rejects cyclic JS objects).
-  const pending: { value: unknown; depth: number }[] = [{ value: input, depth: 0 }];
-  let nodes = 0;
-  while (pending.length) {
-    const { value, depth } = pending.pop()!;
-    if (++nodes > 10000 || depth > 100) throw new Error('Plan exceeds size or depth limit');
-    if (value && typeof value === 'object') {
-      for (const child of Object.values(value)) pending.push({ value: child, depth: depth + 1 });
-    }
-  }
-  const plan = planSchema.parse(input);
+  const plan = toPlanJson(fromPlanJson(input));
   const root = plan.relations[0].root;
   let query: Query;
   let columns: string[] = [];

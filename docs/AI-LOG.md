@@ -27,6 +27,14 @@
 - Compiler tests cover parameter binding, validation, and append-before-emit projection behavior; shared integration tests compare each backend to reference SQL.
 - Node.js LTS was installed and Docker restarted to run validation. Actual elapsed work time has not been recorded by the candidate.
 
-## README authorship
+## User correction: standard definitions before subset restrictions
+
+- User identified that PR #2 used handwritten Substrait-shaped types and requested official standard definitions with unsupported features explicitly blocked.
+- Assistant revised the existing PR #2 branch in an isolated worktree, without merging it or altering PR #3.
+- Vendored upstream v0.63.0 Protobuf schemas and generated TypeScript declarations/codecs using pinned protobufjs tooling. This uses the official schemas, not the separate substrait-js package.
+- Kept capability restrictions as validation rules; removed the manually declared relation type union and built the example with generated interfaces/enums.
+- Added binary round trips, separate reflection checks against the upstream schemas, unsupported-feature rejection, and malformed/unknown-field checks. Database integration now includes the binary round trip.
+
+## README authorship reminder
 
 The challenge explicitly requires a README written by the candidate. The assistant has not written that README. These notes are supporting material for the candidate's own account of the work.
