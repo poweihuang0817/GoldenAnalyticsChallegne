@@ -91,3 +91,5 @@ The challenge explicitly requires a README written by the candidate. The assista
 - An automatic approval review blocked root editing another agent's worktree for a shared log update. No write occurred; this coordinated entry is recorded in root's own extension worktree instead.
 
 - Fresh clone of window code 603accf passed fresh install, separate fresh Docker instance, typecheck, all 36 tests and driver; isolated container/network cleaned up. See CHECKPOINT.md. User explicitly requested capabilities, authentication/authorization and useful errors be recorded as essential cross-database production work outside MVP; FUTURE-WORK.md captures these plus researched follow-ups without writing the final README.
+
+- Independent PR #13 review found no blocking correctness issue. Its non-blocking note about validated-input assumptions is now explicit in compileAnalytics JSDoc and window documentation. No new validation or behavior change; local/fresh-clone results still apply to unchanged executable logic.

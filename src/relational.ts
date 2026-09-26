@@ -8,7 +8,12 @@ type Kind = Catalog[string][number]['type'];
 type Value = { expr: RawBuilder<unknown>; kind: Kind; nullable: boolean };
 type Relation = { query: RawBuilder<unknown>; fields: Omit<Value, 'expr'>[]; order?: { index: number; direction: string }[] };
 
-/** Compile relation boundaries as derived tables: never flatten aggregates or joins. */
+/**
+ * Internal lowering entry: callers must pass a profile-validated plan via compilePlan.
+ * SupportedPlanJson is a TypeScript shape, not proof of runtime validation.
+ * In particular, planSchema enforces window arity/output/phase/frame restrictions.
+ * Compile relation boundaries as derived tables; never flatten aggregates or joins.
+ */
 export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, catalog: Catalog) {
   const mysql = db.getExecutor().adapter instanceof MysqlAdapter;
   const float = (value: RawBuilder<unknown>) => mysql ? sql`cast(${value} as double)` : sql`cast(${value} as double precision)`;
