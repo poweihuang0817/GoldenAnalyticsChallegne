@@ -44,3 +44,11 @@ These are AI-generated working notes, not the candidate-authored README required
 - Kept application capability validation separate, rejecting schema-valid but unimplemented operators.
 - Example uses generated types and enum values. Both database tests now execute a plan after its binary round trip.
 - Schema provenance, license, and regeneration commands are checked in.
+
+## Analytical coverage after PR #2
+
+- PR #2 is merged as `b26668d`; PR #3's agent workflow is also on main.
+- New branch `feat/challenge-coverage` implements all six sample query families, including both example city inputs.
+- Scoped compilation preserves aggregate grain. Freight is counted once per order; prices include line discounts.
+- Decimal(38,10) monetary results and continuous percentiles are independently checked with BigInt arithmetic. Native PostgreSQL percentile and temporary edge fixtures provide additional verification.
+- High-level API, a separate advanced extension, candidate README, and video remain outstanding. See `CHALLENGE-COVERAGE.md`.

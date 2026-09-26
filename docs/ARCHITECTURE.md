@@ -1,6 +1,6 @@
 # Architecture decision: portable analytical query API
 
-Status: ACCEPTED on September 26, 2026: a constrained Substrait profile compiled through Kysely, selected explicitly by the user. Implementation begins with reads, projections, sorting, and fetch; the rest is incremental.
+Status: ACCEPTED on September 26, 2026: a constrained Substrait profile compiled through Kysely, selected explicitly by the user. The lower layer now covers all six sample query families; see `CHALLENGE-COVERAGE.md` for semantics and evidence.
 
 ![Substrait validation, Kysely compilation, and remote database execution](diagrams/architecture.png)
 
@@ -89,7 +89,7 @@ Substrait was chosen to retain an established relational representation rather t
 
 ## Decisions pending
 
-1. Extend the strict profile with filters and function anchors, followed by aggregates and joins with derived-table scopes.
+1. Build the high-level query API over the validated lower layer. Filters, function anchors, inner/left joins, aggregates, CASE, and derived-table scopes are implemented for the sample queries.
 2. Broaden interoperability tests beyond the initial official-schema binary round trips. Generated types/codecs now come from the vendored v0.63.0 schemas; a separate capability validator rejects everything outside the implemented subset.
 3. Choose one extension. Candidate: portable window ranking (top products per category), separately demonstrated and tested. This remains a proposal.
 

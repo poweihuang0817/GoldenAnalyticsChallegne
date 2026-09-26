@@ -8,7 +8,7 @@ export type Plan = Substrait.IPlan;
 
 // A strict JSON profile of Substrait v0.63.0, not a new relational IR.
 const empty = z.strictObject({});
-const index = z.number().int().nonnegative();
+const index = z.number().int().min(0).max(4294967295);
 const common = z.union([
   z.strictObject({ direct: empty }),
   z.strictObject({ emit: z.strictObject({ outputMapping: z.array(index).min(1) }) }),
@@ -24,8 +24,26 @@ const primitive = z.strictObject({
 });
 const type = z.union([
   z.strictObject({ i32: primitive }), z.strictObject({ date: primitive }),
-  z.strictObject({ string: primitive }),
+  z.strictObject({ string: primitive }), z.strictObject({ fp64: primitive }),
+  z.strictObject({ i64: primitive }), z.strictObject({ bool: primitive }),
+  z.strictObject({ decimal: z.strictObject({ ...primitive.shape, precision: z.literal(38), scale: z.literal(10) }) }),
 ]);
+const expression = z.union([
+  field,
+  z.strictObject({ literal: z.union([
+    z.strictObject({ string: z.string() }), z.strictObject({ fp64: z.number().finite() }),
+    z.strictObject({ i32: z.number().int().min(-2147483648).max(2147483647) }), z.strictObject({ boolean: z.boolean() }),
+  ]) }),
+  z.strictObject({ scalarFunction: z.strictObject({
+    functionReference: index, outputType: type,
+    get arguments() { return z.array(z.strictObject({ value: expression })); },
+  }) }),
+  z.strictObject({ ifThen: z.strictObject({
+    get ifs() { return z.array(z.strictObject({ if: expression, then: expression })).min(1); },
+    get else() { return expression; },
+  }) }),
+]);
+export type Expression = z.infer<typeof expression>;
 const integer = z.string().regex(/^(0|[1-9][0-9]*)$/).refine(
   value => BigInt(value) <= BigInt(Number.MAX_SAFE_INTEGER), 'Integer exceeds safe range',
 );
@@ -41,7 +59,21 @@ const rel = z.union([
       types: z.array(type).min(1), nullability: z.literal('NULLABILITY_REQUIRED'),
     }) }),
   }) }),
-  z.strictObject({ project: z.strictObject({ common: common.optional(), get input() { return rel; }, expressions: z.array(field).min(1) }) }),
+  z.strictObject({ project: z.strictObject({ common: common.optional(), get input() { return rel; }, expressions: z.array(expression).min(1) }) }),
+  z.strictObject({ filter: z.strictObject({ get input() { return rel; }, condition: expression }) }),
+  z.strictObject({ join: z.strictObject({
+    get left() { return rel; }, get right() { return rel; }, expression,
+    type: z.enum(['JOIN_TYPE_INNER', 'JOIN_TYPE_LEFT']),
+  }) }),
+  z.strictObject({ aggregate: z.strictObject({
+    get input() { return rel; },
+    groupings: z.array(z.strictObject({ groupingExpressions: z.array(expression).default([]) })).length(1),
+    measures: z.array(z.strictObject({ measure: z.strictObject({
+      functionReference: index, arguments: z.array(z.strictObject({ value: expression })).default([]),
+      outputType: type, phase: z.literal('AGGREGATION_PHASE_INITIAL_TO_RESULT'),
+      invocation: z.literal('AGGREGATION_INVOCATION_ALL'),
+    }) })).min(1),
+  }) }),
   z.strictObject({ sort: z.strictObject({ get input() { return rel; }, sorts: z.array(z.strictObject({ expr: field, direction })).min(1) }) }),
   z.strictObject({ fetch: z.strictObject({ get input() { return rel; }, count: integer, offset: integer.optional() }) }),
 ]);
@@ -49,6 +81,10 @@ export type Rel = z.infer<typeof rel>;
 export const planSchema = z.strictObject({
   version: z.strictObject({ majorNumber: z.literal(0).default(0), minorNumber: z.literal(63), patchNumber: z.literal(0).default(0) }),
   relations: z.array(z.strictObject({ root: z.strictObject({ input: rel, names: z.array(z.string().min(1)).min(1) }) })).length(1),
+  extensionUris: z.array(z.strictObject({ extensionUriAnchor: index, uri: z.string() })).optional(),
+  extensions: z.array(z.strictObject({ extensionFunction: z.strictObject({
+    extensionUriReference: index, functionAnchor: index, name: z.string(),
+  }) })).optional(),
 });
 export type SupportedPlanJson = z.infer<typeof planSchema>;
 export const ref = (position: number) => ({ selection: {
