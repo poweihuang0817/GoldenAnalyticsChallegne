@@ -96,3 +96,28 @@ test('join predicate columns cannot escape into output with pre-join nullability
     select: () => ({ employee_id: predicateColumn }),
   }), /scope/);
 });
+
+test('function-free API plans currently require scoped compiler dispatch for composition (#7)', async () => {
+  const query = source.table('orders').select(t => ({ id: t.col('order_id') }))
+    .orderBy({ column: 'id' }).limit(5);
+  const plan = query.toSubstrait();
+  // Minimal read/project/sort/fetch example: there are no function references.
+  assert.ok(!JSON.stringify(plan.relations).includes('functionReference'));
+  assert.ok(plan.extensions?.length);
+  const { compileAnalytics } = await import('../src/relational.js');
+  for (const backend of ['postgres', 'mysql'] as const) {
+    const db = connect(backend);
+    try {
+      const actual = compilePlan(db, plan, challengeCatalog);
+      const scoped = compileAnalytics(db, plan, challengeCatalog);
+      assert.equal(actual.sql, scoped.sql);
+      assert.deepEqual(actual.parameters, scoped.parameters);
+      // Removing unused declarations alone would break valid, function-free nested limits.
+      const nested = query.limit(2).toSubstrait();
+      assert.doesNotThrow(() => compilePlan(db, nested, challengeCatalog));
+      delete nested.extensions;
+      delete nested.extensionUris;
+      assert.throws(() => compilePlan(db, nested, challengeCatalog), /Nested fetch/);
+    } finally { await db.destroy(); }
+  }
+});

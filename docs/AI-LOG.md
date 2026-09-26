@@ -73,3 +73,9 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Added a minimal regression test and confirmed it failed before the fix. Separated predicate and output scope identities; the stale reference now fails immediately.
 - Re-ran type checking, 16 unit tests and 11 integration tests successfully. All six challenge query families remain covered on both databases.
 - Remaining MVP gaps are the separately demonstrated extension, fresh-clone setup verification, candidate README/video, and reviewer access. Capabilities/errors/logging are useful future improvements, not prerequisites to demonstrating the current core.
+
+## Independent review comment on PR #5
+
+- Verified the reported coupling with a minimal function-free read/project/sort/fetch test: the public API emits declarations and compilePlan selects compileAnalytics on both dialects.
+- Verified the risk before changing behavior: deleting declarations from a function-free nested-limit plan causes the old visitor to reject it. The existing API integration suite relies on this supported composition.
+- Chose the review's explicitly permitted option 2: preserve behavior, document the dependency, defer metadata/dispatch cleanup to #7. Added a focused characterization test; no compiler refactor or schema-validation expansion.

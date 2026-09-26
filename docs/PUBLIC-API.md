@@ -48,3 +48,9 @@ There is no general cast, decimal literal, timestamp, union, distinct, window AP
 `npm run test:integration` runs the public queries through both databases against the existing independent raw-data/BigInt oracle and compares backend results directly. Recent orders have an independent SQL reference. Deterministic equivalence cases cover true filters, identity projection, composed filters, and nested limits on a total ordering; additional cases cover empty aggregates and unmatched joins. These are finite property examples, not randomized property-based testing or full conformance.
 
 Next verification priorities: more isolated expression cases and schema-derived typing; small generated cases with shrinking; selected supported Substrait consumer cases. These precede capability/error/logging expansion. Mutation testing, formal solvers, additional engines, and large benchmark corpora remain future work.
+
+## Temporary compiler dispatch dependency — review follow-up
+
+Function-free public API plans currently emit the allowlisted function declarations and select the scoped analytics compiler. This is a known metadata/dispatch coupling, not evidence that the query uses those functions. A focused test verifies it with Read -> Project -> Sort -> Fetch on both dialects.
+
+The same test shows that removing unused declarations alone breaks a valid function-free nested-limit query: the original visitor rejects nested fetch. Following the review's option 2, this PR deliberately preserves behavior and defers declaration minimization/dispatch cleanup to [issue #7](https://github.com/poweihuang0817/GoldenAnalytics/issues/7). That work must compare both visitors before changing dispatch; the temporary characterization test should then be replaced by metadata-independent composition tests. No compiler refactor is included here.
