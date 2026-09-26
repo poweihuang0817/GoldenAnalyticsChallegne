@@ -19,6 +19,14 @@
 - User requested that delivery plans and Git workflow be recorded before settling the architecture.
 - Added `PLAN.md`, `GIT-WORKFLOW.md`, and a proposed `ARCHITECTURE.md`. No architecture or extension has been accepted yet.
 
-## Candidate authorship
+## Accepted architecture and first implementation
+
+- User clarified this is a relational query translation/folding problem, not BI semantic modeling, and explicitly chose a Substrait subset with Kysely.
+- Assistant implemented a strict v0.63.0 JSON profile, a positional-field compiler, PostgreSQL/MySQL adapters, and a recent-orders driver.
+- Initial scope is read/project/sort/fetch. Unsupported operators are rejected rather than accepted with incomplete semantics.
+- Compiler tests cover parameter binding, validation, and append-before-emit projection behavior; shared integration tests compare each backend to reference SQL.
+- Node.js LTS was installed and Docker restarted to run validation. Actual elapsed work time has not been recorded by the candidate.
+
+## README authorship
 
 The challenge explicitly requires a README written by the candidate. The assistant has not written that README. These notes are supporting material for the candidate's own account of the work.
