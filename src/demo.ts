@@ -2,7 +2,8 @@ import { connect } from './backend.js';
 import { compilePlan } from './compiler.js';
 import { challengeCatalog } from './challenge.js';
 import { queryExamples } from './queries.js';
-for (const backend of ['postgres', 'mysql'] as const) {
+const backends = process.argv.includes('--duckdb') ? ['duckdb'] as const : ['postgres', 'mysql'] as const;
+for (const backend of backends) {
   const db = connect(backend);
   try {
     for (const { name, query } of queryExamples) {

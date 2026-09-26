@@ -8,3 +8,6 @@ coverage/
 *.log
 .DS_Store
 Thumbs.db
+*.duckdb
+*.duckdb.wal
+*.duckdb.tmp/
