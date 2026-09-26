@@ -37,4 +37,6 @@
 
 ## README authorship reminder
 
+- User requested a real architecture image in PR #2. Added a reproducible PNG diagram showing generated types/JSON/binary inputs, capability validation, Kysely compilation, and remote execution. Visually checked the rendered image before delivery.
+
 The challenge explicitly requires a README written by the candidate. The assistant has not written that README. These notes are supporting material for the candidate's own account of the work.

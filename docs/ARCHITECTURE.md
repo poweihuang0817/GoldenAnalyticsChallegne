@@ -2,6 +2,10 @@
 
 Status: ACCEPTED on September 26, 2026: a constrained Substrait profile compiled through Kysely, selected explicitly by the user. Implementation begins with reads, projections, sorting, and fetch; the rest is incremental.
 
+![Substrait validation, Kysely compilation, and remote database execution](diagrams/architecture.png)
+
+Diagram source: [`diagrams/render-architecture.ps1`](diagrams/render-architecture.ps1). Run it on Windows to regenerate the PNG.
+
 ## Requirements
 
 - Prefer Node.js/TypeScript.
