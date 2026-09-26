@@ -366,6 +366,51 @@ scalar_functions:
             value: "i32"
         nullability: DECLARED_OUTPUT
         return: "decimal<38,10>"
+  - name: less_than_or_equal
+    description: "Numeric comparison without float conversion; matching types or mixed integer widths. Null propagates."
+    impls:
+      - args:
+          - name: arg0
+            value: "i32"
+          - name: arg1
+            value: "i32"
+        nullability: DECLARED_OUTPUT
+        return: "boolean"
+      - args:
+          - name: arg0
+            value: "i64"
+          - name: arg1
+            value: "i64"
+        nullability: DECLARED_OUTPUT
+        return: "boolean"
+      - args:
+          - name: arg0
+            value: "fp64"
+          - name: arg1
+            value: "fp64"
+        nullability: DECLARED_OUTPUT
+        return: "boolean"
+      - args:
+          - name: arg0
+            value: "decimal<38,10>"
+          - name: arg1
+            value: "decimal<38,10>"
+        nullability: DECLARED_OUTPUT
+        return: "boolean"
+      - args:
+          - name: arg0
+            value: "i64"
+          - name: arg1
+            value: "i32"
+        nullability: DECLARED_OUTPUT
+        return: "boolean"
+      - args:
+          - name: arg0
+            value: "i32"
+          - name: arg1
+            value: "i64"
+        nullability: DECLARED_OUTPUT
+        return: "boolean"
 aggregate_functions:
   - name: sum
     description: "Sum non-null values; empty input returns null."
@@ -452,3 +497,10 @@ aggregate_functions:
             value: "fp64"
         nullability: DECLARED_OUTPUT
         return: "decimal<38,10>"
+window_functions:
+  - name: row_number
+    description: "Required i64 one-based ordinal within each partition in the specified ordering. Ties require a caller-supplied unique key for deterministic results. No frame options supported."
+    impls:
+      - args: []
+        nullability: DECLARED_OUTPUT
+        return: "i64"

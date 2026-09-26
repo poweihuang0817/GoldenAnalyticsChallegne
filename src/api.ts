@@ -6,6 +6,7 @@ import { FUNCTIONS, FUNCTION_URI } from './functions.js';
 type Kind = Catalog[string][number]['type'];
 type Field = { name: string; type: Kind; nullable: boolean };
 type Scope = Map<symbol, number>;
+export type Sort = { column: string; direction?: 'asc' | 'desc'; nulls?: 'first' | 'last' };
 const type = (kind: Kind, nullable: boolean): S.IType => ({ [kind]: {
   nullability: nullable ? s.Type.Nullability.NULLABILITY_NULLABLE : s.Type.Nullability.NULLABILITY_REQUIRED,
   ...(kind === 'decimal' ? { precision: 38, scale: 10 } : {}),
@@ -31,6 +32,12 @@ export class Expr {
   lower() {
     if (this.kind !== 'string') throw new Error('lower requires string');
     return this.call('lower', [this], 'string', this.nullable);
+  }
+  lte(value: Expr | number) {
+    const other = typeof value === 'number' && this.kind === 'i64' ? integer(value) : asExpr(value, this.kind);
+    numeric(this); numeric(other);
+    if (this.kind !== other.kind && ![this.kind, other.kind].every(k => ['i32', 'i64'].includes(k))) throw new Error('Comparison requires matching numeric types or integer widths');
+    return this.call('less_than_or_equal', [this, other], 'bool', this.nullable || other.nullable);
   }
   isNull() { return this.call('is_null', [this], 'bool', false); }
   isNotNull() { return this.call('is_not_null', [this], 'bool', false); }
@@ -166,14 +173,29 @@ export class Table {
       common: { emit: { outputMapping: entries.map((_, i) => this.fields.length + right.fields.length + i) } } } },
     entries.map(([name, e]) => ({ name, type: e.kind, nullable: e.nullable })), this.source);
   }
-  orderBy(...sorts: { column: string; direction?: 'asc' | 'desc'; nulls?: 'first' | 'last' }[]): Table {
+  private sortFields(sorts: Sort[]) {
     if (!sorts.length) throw new Error('At least one sort required');
-    return new Table({ sort: { input: this.relation, sorts: sorts.map(sort => {
+    return sorts.map(sort => {
       const direction = sort.direction ?? 'asc', nulls = sort.nulls ?? 'last';
       if (!['asc', 'desc'].includes(direction) || !['first', 'last'].includes(nulls)) throw new Error('Invalid sort');
       const key = `SORT_DIRECTION_${direction.toUpperCase()}_NULLS_${nulls.toUpperCase()}` as keyof typeof s.SortField.SortDirection;
       return { expr: this.columns().col(sort.column).resolve(this.scope()), direction: s.SortField.SortDirection[key] };
-    }) } }, this.fields, this.source);
+    });
+  }
+  orderBy(...sorts: Sort[]): Table {
+    return new Table({ sort: { input: this.relation, sorts: this.sortFields(sorts) } }, this.fields, this.source);
+  }
+  withRowNumber(name: string, options: { partitionBy: string[]; orderBy: Sort[] }): Table {
+    names([...this.fields.map(f => f.name), name]);
+    if (new Set(options.partitionBy).size !== options.partitionBy.length) throw new Error('Duplicate partition columns');
+    return new Table({ window: {
+      input: this.relation,
+      partitionExpressions: options.partitionBy.map(key => this.columns().col(key).resolve(this.scope())),
+      sorts: this.sortFields(options.orderBy),
+      windowFunctions: [{ functionReference: anchor('row_number'), arguments: [], outputType: type('i64', false),
+        phase: s.AggregationPhase.AGGREGATION_PHASE_INITIAL_TO_RESULT,
+        invocation: s.AggregateFunction.AggregationInvocation.AGGREGATION_INVOCATION_ALL }],
+    } }, [...this.fields, { name, type: 'i64', nullable: false }], this.source);
   }
   limit(count: number, offset = 0): Table {
     if (![count, offset].every(n => Number.isSafeInteger(n) && n >= 0)) throw new Error('Limit and offset must be nonnegative safe integers');

@@ -76,6 +76,17 @@ const rel = z.union([
   }) }),
   z.strictObject({ sort: z.strictObject({ get input() { return rel; }, sorts: z.array(z.strictObject({ expr: field, direction })).min(1) }) }),
   z.strictObject({ fetch: z.strictObject({ get input() { return rel; }, count: integer, offset: integer.optional() }) }),
+  z.strictObject({ window: z.strictObject({
+    get input() { return rel; },
+    partitionExpressions: z.array(field).default([]),
+    sorts: z.array(z.strictObject({ expr: field, direction })).min(1),
+    windowFunctions: z.array(z.strictObject({
+      functionReference: index, arguments: z.array(z.never()).default([]),
+      outputType: z.strictObject({ i64: z.strictObject({ nullability: z.literal('NULLABILITY_REQUIRED') }) }),
+      phase: z.literal('AGGREGATION_PHASE_INITIAL_TO_RESULT'),
+      invocation: z.literal('AGGREGATION_INVOCATION_ALL'),
+    })).length(1),
+  }) }),
 ]);
 export type Rel = z.infer<typeof rel>;
 export const planSchema = z.strictObject({

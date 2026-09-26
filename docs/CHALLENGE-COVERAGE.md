@@ -45,4 +45,4 @@ Tests also interpolate values above JavaScript's safe-integer limit, preserving 
 
 `npm test` runs compiler/codec rejection tests. `npm run test:integration` runs the sample cases and edge fixtures on both supplied databases. Every analytical sample goes through a binary Protobuf round trip before compilation. Temporary fixtures use unique names and a dedicated connection, then are dropped; supplied Northwind rows are not changed.
 
-The percentile sample is part of the requested baseline, not the separately requested extension. The high-level fluent API, one additional extension, final candidate-authored README, and walkthrough video remain outstanding.
+The percentile sample is part of the requested baseline, not the separately requested extension. The public Table/Expr API is implemented. The separate [window-ranking extension](WINDOW-EXTENSION.md) now demonstrates recent N orders per customer through the driver. Candidate-authored README, video, reviewer access, and final submission packaging remain later work.

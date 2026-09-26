@@ -80,6 +80,10 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
       case 'equal':
         if (a.kind !== b.kind) throw new Error('equal requires matching types');
         value = { expr: a.kind === 'string' && mysql ? sql`(cast(${a.expr} as binary) = cast(${b.expr} as binary))` : sql`(${a.expr} = ${b.expr})`, kind: 'bool', nullable }; break;
+      case 'less_than_or_equal':
+        numeric(args);
+        if (a.kind !== b.kind && !args.every(arg => ['i32', 'i64'].includes(arg.kind))) throw new Error('Comparison requires matching numeric types or integer widths');
+        value = { expr: sql`(${a.expr} <= ${b.expr})`, kind: 'bool', nullable }; break;
       case 'is_null': value = { expr: sql`(${a.expr} is null)`, kind: 'bool', nullable: false }; break;
       case 'is_not_null': value = { expr: sql`(${a.expr} is not null)`, kind: 'bool', nullable: false }; break;
       case 'and':
@@ -142,8 +146,21 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
       const join = rel.join.type === 'JOIN_TYPE_LEFT' ? sql`left join` : sql`inner join`;
       return { query: sql`select ${select(output)} from ${from(left, name)} ${join} ${from(right, rightName)} on ${condition.expr}`, fields: output };
     }
-    const node = 'project' in rel ? rel.project : 'filter' in rel ? rel.filter : 'aggregate' in rel ? rel.aggregate : 'sort' in rel ? rel.sort : rel.fetch;
+    const node = 'project' in rel ? rel.project : 'filter' in rel ? rel.filter : 'aggregate' in rel ? rel.aggregate : 'sort' in rel ? rel.sort : 'window' in rel ? rel.window : rel.fetch;
     const child = visit(node.input, depth+1), input = fields(child, name);
+    if ('window' in rel) {
+      const fn = rel.window.windowFunctions[0];
+      if (functions.get(fn.functionReference) !== 'row_number') throw new Error('Only row_number window functions are supported');
+      const partitions = rel.window.partitionExpressions.map(e => expression(e, input));
+      const sorts = rel.window.sorts.map(sort => {
+        expression(sort.expr, input);
+        return { index: sort.expr.selection.directReference.structField.field, direction: sort.direction };
+      });
+      const partition = partitions.length ? sql`partition by ${sql.join(partitions.map(p => p.expr))}` : sql``;
+      const number: Value = { expr: sql`row_number() over (${partition}${ordering({ ...child, order: sorts }, name)})`, kind: 'i64', nullable: false };
+      const output = [...input, number];
+      return { query: sql`select ${select(output)} from ${from(child, name)}`, fields: output, order: child.order };
+    }
     if ('project' in rel) {
       const output = emit([...input, ...rel.project.expressions.map(e => expression(e, input))], rel.project.common);
       const order = child.order?.map(sort => {

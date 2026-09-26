@@ -54,3 +54,7 @@ Next verification priorities: more isolated expression cases and schema-derived 
 Function-free public API plans currently emit the allowlisted function declarations and select the scoped analytics compiler. This is a known metadata/dispatch coupling, not evidence that the query uses those functions. A focused test verifies it with Read -> Project -> Sort -> Fetch on both dialects.
 
 The same test shows that removing unused declarations alone breaks a valid function-free nested-limit query: the original visitor rejects nested fetch. Following the review's option 2, this PR deliberately preserves behavior and defers declaration minimization/dispatch cleanup to [issue #7](https://github.com/poweihuang0817/GoldenAnalytics/issues/7). That work must compare both visitors before changing dispatch; the temporary characterization test should then be replaced by metadata-independent composition tests. No compiler refactor is included here.
+
+## Window extension
+
+The separately demonstrated extension adds `withRowNumber(name, { partitionBy, orderBy })` and numeric `lte`. See [window extension](WINDOW-EXTENSION.md) for semantics, supported bounds and tests. This is a narrow ranking API, not a general window/cast/mutation API.
