@@ -79,3 +79,10 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Verified the reported coupling with a minimal function-free read/project/sort/fetch test: the public API emits declarations and compilePlan selects compileAnalytics on both dialects.
 - Verified the risk before changing behavior: deleting declarations from a function-free nested-limit plan causes the old visitor to reject it. The existing API integration suite relies on this supported composition.
 - Chose the review's explicitly permitted option 2: preserve behavior, document the dependency, defer metadata/dispatch cleanup to #7. Added a focused characterization test; no compiler refactor or schema-validation expansion.
+
+## PR #14 local walkthrough review
+
+- User requested fixes for the independent demo-page review. Read the latest comment; it found no blocking P0/P1 issue and asked for two explicit boundary clarifications.
+- Clarified in server comments and supporting documentation that HTTP receive timeouts do not bound or cancel database execution, and Host/Origin checks are not authentication. Preserved loopback binding, the fixed query allowlist and the warning against public proxies.
+- No timeout/authentication framework or runtime behavior changed. Validation for this follow-up is staged diff inspection and `git diff --check`; the prior type check, 17 existing unit tests, two HTTP tests and six real database smoke runs were not rerun for comments/docs only.
+- Browser visual verification remains pending: the prior attempt reported no available IAB and an empty enabled-browser inventory. No visual inspection is claimed.

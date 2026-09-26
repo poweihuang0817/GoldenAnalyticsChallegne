@@ -27,9 +27,15 @@ Only three fixed examples, two backends and Compile/Run are accepted. There is n
 arbitrary SQL, plan submission, code evaluation or editable query. Server binds
 loopback, checks Host/Origin, limits JSON to 1024 bytes and concurrent work to one
 request. Returned failures omit driver errors/credentials. UI renders data using
-`textContent`. This is not authentication or a production service: do not expose
-it through a public proxy. Database execution cancellation/timeouts remain future
-work; only fixed small demonstration queries are accepted.
+`textContent`. Host/Origin checks are defense in depth, not authentication. The
+local-only design depends on loopback binding and the fixed request allowlist;
+do not expose it through a public proxy.
+
+The server's five-second `requestTimeout` and `headersTimeout` concern receiving
+HTTP requests/headers. They do **not** bound or cancel an already-running database
+query. Database execution cancellation/timeouts remain future work; only fixed
+small demonstration queries are accepted. A slow database query can keep the
+single execution slot busy beyond five seconds.
 
 Focused routing tests use an injected executor and do not connect to databases:
 
@@ -37,5 +43,5 @@ Focused routing tests use an injected executor and do not connect to databases:
 node --import tsx --test test/playground.test.ts
 ```
 
-The integration owner maintains the shared AI log and package scripts for this
-parallel task; this branch does not edit dependency manifests or compiler/API code.
+The integration owner maintains package scripts for this parallel task; this
+branch does not edit dependency manifests or compiler/API code.

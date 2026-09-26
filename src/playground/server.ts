@@ -46,12 +46,15 @@ async function body(request: IncomingMessage) {
 }
 export function createDemoServer(execute: (request: Request) => Promise<unknown> = executeExample) {
   let busy = false;
+  // HTTP receive timeouts only: these do not limit or cancel database execution.
   return createServer({ requestTimeout: 5000, headersTimeout: 5000 }, async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
     const send = (status: number, value: unknown) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(value)); };
     const port = req.socket.localPort, host = `127.0.0.1:${port}`;
+    // Defense in depth, not authentication. Keep the loopback bind and fixed allowlist;
+    // this walkthrough must not be exposed through a public proxy.
     if (req.headers.host !== host || (req.headers.origin && req.headers.origin !== `http://${host}`)
       || (req.headers['sec-fetch-site'] && !['same-origin', 'none'].includes(String(req.headers['sec-fetch-site'])))) {
       send(403, { error: 'Only the local demo page may access this server.' }); return;
