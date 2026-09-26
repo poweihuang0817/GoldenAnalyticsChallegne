@@ -27,3 +27,20 @@ The manually started `golden-query-challenge` container currently occupies the s
 - Candidate writes the README and records a five-minute walkthrough.
 
 These are AI-generated working notes, not the candidate-authored README required by the challenge.
+
+## First implementation - September 26, 2026
+
+- Accepted Substrait subset + Kysely architecture; remote databases own execution.
+- Implemented read/project/sort/fetch profile and recent-orders demo on both databases.
+- Verified four compiler tests and three integration tests, including independent reference SQL, offset pagination, and identical cross-backend date values.
+- Initial top-five order IDs: 11077, 11076, 11075, 11074, 11073.
+- Remaining: filtering/functions, joins, aggregation, nested analytical queries, remaining samples, and one extension.
+- Development commands and exact supported profile are in `SUBSTRAIT-PROFILE.md`.
+
+## Official-schema revision of PR #2
+
+- Replaced handwritten public plan types with generated declarations from pinned upstream Substrait v0.63.0 schemas.
+- Added generated Protobuf codec, supported-plan binary round trips, and schema-derived rejection of unknown binary fields.
+- Kept application capability validation separate, rejecting schema-valid but unimplemented operators.
+- Example uses generated types and enum values. Both database tests now execute a plan after its binary round trip.
+- Schema provenance, license, and regeneration commands are checked in.

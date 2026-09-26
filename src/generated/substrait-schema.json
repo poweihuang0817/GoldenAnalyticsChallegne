@@ -1,0 +1,3972 @@
+{
+  "nested": {
+    "substrait": {
+      "options": {
+        "csharp_namespace": "Substrait.Protobuf",
+        "go_package": "github.com/substrait-io/substrait-go/proto",
+        "java_multiple_files": true,
+        "java_package": "io.substrait.proto"
+      },
+      "nested": {
+        "PlanRel": {
+          "oneofs": {
+            "relType": {
+              "oneof": [
+                "rel",
+                "root"
+              ]
+            }
+          },
+          "fields": {
+            "rel": {
+              "type": "Rel",
+              "id": 1
+            },
+            "root": {
+              "type": "RelRoot",
+              "id": 2
+            }
+          }
+        },
+        "Plan": {
+          "fields": {
+            "version": {
+              "type": "Version",
+              "id": 6
+            },
+            "extensionUris": {
+              "rule": "repeated",
+              "type": "substrait.extensions.SimpleExtensionURI",
+              "id": 1,
+              "protoName": "extension_uris"
+            },
+            "extensions": {
+              "rule": "repeated",
+              "type": "substrait.extensions.SimpleExtensionDeclaration",
+              "id": 2
+            },
+            "relations": {
+              "rule": "repeated",
+              "type": "PlanRel",
+              "id": 3
+            },
+            "advancedExtensions": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 4,
+              "protoName": "advanced_extensions"
+            },
+            "expectedTypeUrls": {
+              "rule": "repeated",
+              "type": "string",
+              "id": 5,
+              "protoName": "expected_type_urls"
+            }
+          }
+        },
+        "PlanVersion": {
+          "fields": {
+            "version": {
+              "type": "Version",
+              "id": 6
+            }
+          }
+        },
+        "Version": {
+          "fields": {
+            "majorNumber": {
+              "type": "uint32",
+              "id": 1,
+              "protoName": "major_number"
+            },
+            "minorNumber": {
+              "type": "uint32",
+              "id": 2,
+              "protoName": "minor_number"
+            },
+            "patchNumber": {
+              "type": "uint32",
+              "id": 3,
+              "protoName": "patch_number"
+            },
+            "gitHash": {
+              "type": "string",
+              "id": 4,
+              "protoName": "git_hash"
+            },
+            "producer": {
+              "type": "string",
+              "id": 5
+            }
+          }
+        },
+        "RelCommon": {
+          "oneofs": {
+            "emitKind": {
+              "oneof": [
+                "direct",
+                "emit"
+              ]
+            }
+          },
+          "fields": {
+            "direct": {
+              "type": "Direct",
+              "id": 1
+            },
+            "emit": {
+              "type": "Emit",
+              "id": 2
+            },
+            "hint": {
+              "type": "Hint",
+              "id": 3
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 4,
+              "protoName": "advanced_extension"
+            }
+          },
+          "nested": {
+            "Direct": {
+              "fields": {}
+            },
+            "Emit": {
+              "fields": {
+                "outputMapping": {
+                  "rule": "repeated",
+                  "type": "int32",
+                  "id": 1,
+                  "protoName": "output_mapping"
+                }
+              }
+            },
+            "Hint": {
+              "fields": {
+                "stats": {
+                  "type": "Stats",
+                  "id": 1
+                },
+                "constraint": {
+                  "type": "RuntimeConstraint",
+                  "id": 2
+                },
+                "alias": {
+                  "type": "string",
+                  "id": 3
+                },
+                "outputNames": {
+                  "rule": "repeated",
+                  "type": "string",
+                  "id": 4,
+                  "protoName": "output_names"
+                },
+                "advancedExtension": {
+                  "type": "substrait.extensions.AdvancedExtension",
+                  "id": 10,
+                  "protoName": "advanced_extension"
+                },
+                "savedComputations": {
+                  "rule": "repeated",
+                  "type": "SavedComputation",
+                  "id": 11,
+                  "protoName": "saved_computations"
+                },
+                "loadedComputations": {
+                  "rule": "repeated",
+                  "type": "LoadedComputation",
+                  "id": 12,
+                  "protoName": "loaded_computations"
+                }
+              },
+              "nested": {
+                "Stats": {
+                  "fields": {
+                    "rowCount": {
+                      "type": "double",
+                      "id": 1,
+                      "protoName": "row_count"
+                    },
+                    "recordSize": {
+                      "type": "double",
+                      "id": 2,
+                      "protoName": "record_size"
+                    },
+                    "advancedExtension": {
+                      "type": "substrait.extensions.AdvancedExtension",
+                      "id": 10,
+                      "protoName": "advanced_extension"
+                    }
+                  }
+                },
+                "RuntimeConstraint": {
+                  "fields": {
+                    "advancedExtension": {
+                      "type": "substrait.extensions.AdvancedExtension",
+                      "id": 10,
+                      "protoName": "advanced_extension"
+                    }
+                  }
+                },
+                "ComputationType": {
+                  "values": {
+                    "COMPUTATION_TYPE_UNSPECIFIED": 0,
+                    "COMPUTATION_TYPE_HASHTABLE": 1,
+                    "COMPUTATION_TYPE_BLOOM_FILTER": 2,
+                    "COMPUTATION_TYPE_UNKNOWN": 9999
+                  }
+                },
+                "SavedComputation": {
+                  "fields": {
+                    "computationId": {
+                      "type": "int32",
+                      "id": 1,
+                      "protoName": "computation_id"
+                    },
+                    "type": {
+                      "type": "ComputationType",
+                      "id": 2
+                    }
+                  }
+                },
+                "LoadedComputation": {
+                  "fields": {
+                    "computationIdReference": {
+                      "type": "int32",
+                      "id": 1,
+                      "protoName": "computation_id_reference"
+                    },
+                    "type": {
+                      "type": "ComputationType",
+                      "id": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ReadRel": {
+          "oneofs": {
+            "readType": {
+              "oneof": [
+                "virtualTable",
+                "localFiles",
+                "namedTable",
+                "extensionTable"
+              ]
+            }
+          },
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "baseSchema": {
+              "type": "NamedStruct",
+              "id": 2,
+              "protoName": "base_schema"
+            },
+            "filter": {
+              "type": "Expression",
+              "id": 3
+            },
+            "bestEffortFilter": {
+              "type": "Expression",
+              "id": 11,
+              "protoName": "best_effort_filter"
+            },
+            "projection": {
+              "type": "Expression.MaskExpression",
+              "id": 4
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            },
+            "virtualTable": {
+              "type": "VirtualTable",
+              "id": 5,
+              "protoName": "virtual_table"
+            },
+            "localFiles": {
+              "type": "LocalFiles",
+              "id": 6,
+              "protoName": "local_files"
+            },
+            "namedTable": {
+              "type": "NamedTable",
+              "id": 7,
+              "protoName": "named_table"
+            },
+            "extensionTable": {
+              "type": "ExtensionTable",
+              "id": 8,
+              "protoName": "extension_table"
+            }
+          },
+          "nested": {
+            "NamedTable": {
+              "fields": {
+                "names": {
+                  "rule": "repeated",
+                  "type": "string",
+                  "id": 1
+                },
+                "advancedExtension": {
+                  "type": "substrait.extensions.AdvancedExtension",
+                  "id": 10,
+                  "protoName": "advanced_extension"
+                }
+              }
+            },
+            "VirtualTable": {
+              "fields": {
+                "values": {
+                  "rule": "repeated",
+                  "type": "Expression.Literal.Struct",
+                  "id": 1,
+                  "options": {
+                    "deprecated": true
+                  }
+                },
+                "expressions": {
+                  "rule": "repeated",
+                  "type": "Expression.Nested.Struct",
+                  "id": 2
+                }
+              }
+            },
+            "ExtensionTable": {
+              "fields": {
+                "detail": {
+                  "type": "google.protobuf.Any",
+                  "id": 1
+                }
+              }
+            },
+            "LocalFiles": {
+              "fields": {
+                "items": {
+                  "rule": "repeated",
+                  "type": "FileOrFiles",
+                  "id": 1
+                },
+                "advancedExtension": {
+                  "type": "substrait.extensions.AdvancedExtension",
+                  "id": 10,
+                  "protoName": "advanced_extension"
+                }
+              },
+              "nested": {
+                "FileOrFiles": {
+                  "oneofs": {
+                    "pathType": {
+                      "oneof": [
+                        "uriPath",
+                        "uriPathGlob",
+                        "uriFile",
+                        "uriFolder"
+                      ]
+                    },
+                    "fileFormat": {
+                      "oneof": [
+                        "parquet",
+                        "arrow",
+                        "orc",
+                        "extension",
+                        "dwrf",
+                        "text"
+                      ]
+                    }
+                  },
+                  "fields": {
+                    "uriPath": {
+                      "type": "string",
+                      "id": 1,
+                      "protoName": "uri_path"
+                    },
+                    "uriPathGlob": {
+                      "type": "string",
+                      "id": 2,
+                      "protoName": "uri_path_glob"
+                    },
+                    "uriFile": {
+                      "type": "string",
+                      "id": 3,
+                      "protoName": "uri_file"
+                    },
+                    "uriFolder": {
+                      "type": "string",
+                      "id": 4,
+                      "protoName": "uri_folder"
+                    },
+                    "partitionIndex": {
+                      "type": "uint64",
+                      "id": 6,
+                      "protoName": "partition_index"
+                    },
+                    "start": {
+                      "type": "uint64",
+                      "id": 7
+                    },
+                    "length": {
+                      "type": "uint64",
+                      "id": 8
+                    },
+                    "parquet": {
+                      "type": "ParquetReadOptions",
+                      "id": 9
+                    },
+                    "arrow": {
+                      "type": "ArrowReadOptions",
+                      "id": 10
+                    },
+                    "orc": {
+                      "type": "OrcReadOptions",
+                      "id": 11
+                    },
+                    "extension": {
+                      "type": "google.protobuf.Any",
+                      "id": 12
+                    },
+                    "dwrf": {
+                      "type": "DwrfReadOptions",
+                      "id": 13
+                    },
+                    "text": {
+                      "type": "DelimiterSeparatedTextReadOptions",
+                      "id": 14
+                    }
+                  },
+                  "reserved": [
+                    [
+                      5,
+                      5
+                    ],
+                    "format"
+                  ],
+                  "nested": {
+                    "ParquetReadOptions": {
+                      "fields": {}
+                    },
+                    "ArrowReadOptions": {
+                      "fields": {}
+                    },
+                    "OrcReadOptions": {
+                      "fields": {}
+                    },
+                    "DwrfReadOptions": {
+                      "fields": {}
+                    },
+                    "DelimiterSeparatedTextReadOptions": {
+                      "oneofs": {
+                        "_valueTreatedAsNull": {
+                          "oneof": [
+                            "valueTreatedAsNull"
+                          ]
+                        }
+                      },
+                      "fields": {
+                        "fieldDelimiter": {
+                          "type": "string",
+                          "id": 1,
+                          "protoName": "field_delimiter"
+                        },
+                        "maxLineSize": {
+                          "type": "uint64",
+                          "id": 2,
+                          "protoName": "max_line_size"
+                        },
+                        "quote": {
+                          "type": "string",
+                          "id": 3
+                        },
+                        "headerLinesToSkip": {
+                          "type": "uint64",
+                          "id": 4,
+                          "protoName": "header_lines_to_skip"
+                        },
+                        "escape": {
+                          "type": "string",
+                          "id": 5
+                        },
+                        "valueTreatedAsNull": {
+                          "type": "string",
+                          "id": 6,
+                          "protoName": "value_treated_as_null",
+                          "options": {
+                            "proto3_optional": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ProjectRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "input": {
+              "type": "Rel",
+              "id": 2
+            },
+            "expressions": {
+              "rule": "repeated",
+              "type": "Expression",
+              "id": 3
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          }
+        },
+        "JoinRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "left": {
+              "type": "Rel",
+              "id": 2
+            },
+            "right": {
+              "type": "Rel",
+              "id": 3
+            },
+            "expression": {
+              "type": "Expression",
+              "id": 4
+            },
+            "postJoinFilter": {
+              "type": "Expression",
+              "id": 5,
+              "protoName": "post_join_filter"
+            },
+            "type": {
+              "type": "JoinType",
+              "id": 6
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          },
+          "nested": {
+            "JoinType": {
+              "values": {
+                "JOIN_TYPE_UNSPECIFIED": 0,
+                "JOIN_TYPE_INNER": 1,
+                "JOIN_TYPE_OUTER": 2,
+                "JOIN_TYPE_LEFT": 3,
+                "JOIN_TYPE_RIGHT": 4,
+                "JOIN_TYPE_LEFT_SEMI": 5,
+                "JOIN_TYPE_LEFT_ANTI": 6,
+                "JOIN_TYPE_LEFT_SINGLE": 7,
+                "JOIN_TYPE_RIGHT_SEMI": 8,
+                "JOIN_TYPE_RIGHT_ANTI": 9,
+                "JOIN_TYPE_RIGHT_SINGLE": 10,
+                "JOIN_TYPE_LEFT_MARK": 11,
+                "JOIN_TYPE_RIGHT_MARK": 12
+              }
+            }
+          }
+        },
+        "CrossRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "left": {
+              "type": "Rel",
+              "id": 2
+            },
+            "right": {
+              "type": "Rel",
+              "id": 3
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          }
+        },
+        "FetchRel": {
+          "oneofs": {
+            "offsetMode": {
+              "oneof": [
+                "offset",
+                "offsetExpr"
+              ]
+            },
+            "countMode": {
+              "oneof": [
+                "count",
+                "countExpr"
+              ]
+            }
+          },
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "input": {
+              "type": "Rel",
+              "id": 2
+            },
+            "offset": {
+              "type": "int64",
+              "id": 3,
+              "options": {
+                "deprecated": true
+              }
+            },
+            "offsetExpr": {
+              "type": "Expression",
+              "id": 5,
+              "protoName": "offset_expr"
+            },
+            "count": {
+              "type": "int64",
+              "id": 4,
+              "options": {
+                "deprecated": true
+              }
+            },
+            "countExpr": {
+              "type": "Expression",
+              "id": 6,
+              "protoName": "count_expr"
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          }
+        },
+        "AggregateRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "input": {
+              "type": "Rel",
+              "id": 2
+            },
+            "groupings": {
+              "rule": "repeated",
+              "type": "Grouping",
+              "id": 3
+            },
+            "measures": {
+              "rule": "repeated",
+              "type": "Measure",
+              "id": 4
+            },
+            "groupingExpressions": {
+              "rule": "repeated",
+              "type": "Expression",
+              "id": 5,
+              "protoName": "grouping_expressions"
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          },
+          "nested": {
+            "Grouping": {
+              "fields": {
+                "groupingExpressions": {
+                  "rule": "repeated",
+                  "type": "Expression",
+                  "id": 1,
+                  "protoName": "grouping_expressions",
+                  "options": {
+                    "deprecated": true
+                  }
+                },
+                "expressionReferences": {
+                  "rule": "repeated",
+                  "type": "uint32",
+                  "id": 2,
+                  "protoName": "expression_references"
+                }
+              }
+            },
+            "Measure": {
+              "fields": {
+                "measure": {
+                  "type": "AggregateFunction",
+                  "id": 1
+                },
+                "filter": {
+                  "type": "Expression",
+                  "id": 2
+                }
+              }
+            }
+          }
+        },
+        "ConsistentPartitionWindowRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "input": {
+              "type": "Rel",
+              "id": 2
+            },
+            "windowFunctions": {
+              "rule": "repeated",
+              "type": "WindowRelFunction",
+              "id": 3,
+              "protoName": "window_functions"
+            },
+            "partitionExpressions": {
+              "rule": "repeated",
+              "type": "Expression",
+              "id": 4,
+              "protoName": "partition_expressions"
+            },
+            "sorts": {
+              "rule": "repeated",
+              "type": "SortField",
+              "id": 5
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          },
+          "nested": {
+            "WindowRelFunction": {
+              "fields": {
+                "functionReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "function_reference"
+                },
+                "arguments": {
+                  "rule": "repeated",
+                  "type": "FunctionArgument",
+                  "id": 9
+                },
+                "options": {
+                  "rule": "repeated",
+                  "type": "FunctionOption",
+                  "id": 11
+                },
+                "outputType": {
+                  "type": "Type",
+                  "id": 7,
+                  "protoName": "output_type"
+                },
+                "phase": {
+                  "type": "AggregationPhase",
+                  "id": 6
+                },
+                "invocation": {
+                  "type": "AggregateFunction.AggregationInvocation",
+                  "id": 10
+                },
+                "lowerBound": {
+                  "type": "Expression.WindowFunction.Bound",
+                  "id": 5,
+                  "protoName": "lower_bound"
+                },
+                "upperBound": {
+                  "type": "Expression.WindowFunction.Bound",
+                  "id": 4,
+                  "protoName": "upper_bound"
+                },
+                "boundsType": {
+                  "type": "Expression.WindowFunction.BoundsType",
+                  "id": 12,
+                  "protoName": "bounds_type"
+                }
+              }
+            }
+          }
+        },
+        "SortRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "input": {
+              "type": "Rel",
+              "id": 2
+            },
+            "sorts": {
+              "rule": "repeated",
+              "type": "SortField",
+              "id": 3
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          }
+        },
+        "FilterRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "input": {
+              "type": "Rel",
+              "id": 2
+            },
+            "condition": {
+              "type": "Expression",
+              "id": 3
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          }
+        },
+        "SetRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "inputs": {
+              "rule": "repeated",
+              "type": "Rel",
+              "id": 2
+            },
+            "op": {
+              "type": "SetOp",
+              "id": 3
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          },
+          "nested": {
+            "SetOp": {
+              "values": {
+                "SET_OP_UNSPECIFIED": 0,
+                "SET_OP_MINUS_PRIMARY": 1,
+                "SET_OP_MINUS_PRIMARY_ALL": 7,
+                "SET_OP_MINUS_MULTISET": 2,
+                "SET_OP_INTERSECTION_PRIMARY": 3,
+                "SET_OP_INTERSECTION_MULTISET": 4,
+                "SET_OP_INTERSECTION_MULTISET_ALL": 8,
+                "SET_OP_UNION_DISTINCT": 5,
+                "SET_OP_UNION_ALL": 6
+              }
+            }
+          }
+        },
+        "ExtensionSingleRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "input": {
+              "type": "Rel",
+              "id": 2
+            },
+            "detail": {
+              "type": "google.protobuf.Any",
+              "id": 3
+            }
+          }
+        },
+        "ExtensionLeafRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "detail": {
+              "type": "google.protobuf.Any",
+              "id": 2
+            }
+          }
+        },
+        "ExtensionMultiRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "inputs": {
+              "rule": "repeated",
+              "type": "Rel",
+              "id": 2
+            },
+            "detail": {
+              "type": "google.protobuf.Any",
+              "id": 3
+            }
+          }
+        },
+        "ExchangeRel": {
+          "oneofs": {
+            "exchangeKind": {
+              "oneof": [
+                "scatterByFields",
+                "singleTarget",
+                "multiTarget",
+                "roundRobin",
+                "broadcast"
+              ]
+            }
+          },
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "input": {
+              "type": "Rel",
+              "id": 2
+            },
+            "partitionCount": {
+              "type": "int32",
+              "id": 3,
+              "protoName": "partition_count"
+            },
+            "targets": {
+              "rule": "repeated",
+              "type": "ExchangeTarget",
+              "id": 4
+            },
+            "scatterByFields": {
+              "type": "ScatterFields",
+              "id": 5,
+              "protoName": "scatter_by_fields"
+            },
+            "singleTarget": {
+              "type": "SingleBucketExpression",
+              "id": 6,
+              "protoName": "single_target"
+            },
+            "multiTarget": {
+              "type": "MultiBucketExpression",
+              "id": 7,
+              "protoName": "multi_target"
+            },
+            "roundRobin": {
+              "type": "RoundRobin",
+              "id": 8,
+              "protoName": "round_robin"
+            },
+            "broadcast": {
+              "type": "Broadcast",
+              "id": 9
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          },
+          "nested": {
+            "ScatterFields": {
+              "fields": {
+                "fields": {
+                  "rule": "repeated",
+                  "type": "Expression.FieldReference",
+                  "id": 1
+                }
+              }
+            },
+            "SingleBucketExpression": {
+              "fields": {
+                "expression": {
+                  "type": "Expression",
+                  "id": 1
+                }
+              }
+            },
+            "MultiBucketExpression": {
+              "fields": {
+                "expression": {
+                  "type": "Expression",
+                  "id": 1
+                },
+                "constrainedToCount": {
+                  "type": "bool",
+                  "id": 2,
+                  "protoName": "constrained_to_count"
+                }
+              }
+            },
+            "Broadcast": {
+              "fields": {}
+            },
+            "RoundRobin": {
+              "fields": {
+                "exact": {
+                  "type": "bool",
+                  "id": 1
+                }
+              }
+            },
+            "ExchangeTarget": {
+              "oneofs": {
+                "targetType": {
+                  "oneof": [
+                    "uri",
+                    "extended"
+                  ]
+                }
+              },
+              "fields": {
+                "partitionId": {
+                  "rule": "repeated",
+                  "type": "int32",
+                  "id": 1,
+                  "protoName": "partition_id"
+                },
+                "uri": {
+                  "type": "string",
+                  "id": 2
+                },
+                "extended": {
+                  "type": "google.protobuf.Any",
+                  "id": 3
+                }
+              }
+            }
+          }
+        },
+        "ExpandRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "input": {
+              "type": "Rel",
+              "id": 2
+            },
+            "fields": {
+              "rule": "repeated",
+              "type": "ExpandField",
+              "id": 4
+            }
+          },
+          "nested": {
+            "ExpandField": {
+              "oneofs": {
+                "fieldType": {
+                  "oneof": [
+                    "switchingField",
+                    "consistentField"
+                  ]
+                }
+              },
+              "fields": {
+                "switchingField": {
+                  "type": "SwitchingField",
+                  "id": 2,
+                  "protoName": "switching_field"
+                },
+                "consistentField": {
+                  "type": "Expression",
+                  "id": 3,
+                  "protoName": "consistent_field"
+                }
+              }
+            },
+            "SwitchingField": {
+              "fields": {
+                "duplicates": {
+                  "rule": "repeated",
+                  "type": "Expression",
+                  "id": 1
+                }
+              }
+            }
+          }
+        },
+        "RelRoot": {
+          "fields": {
+            "input": {
+              "type": "Rel",
+              "id": 1
+            },
+            "names": {
+              "rule": "repeated",
+              "type": "string",
+              "id": 2
+            }
+          }
+        },
+        "Rel": {
+          "oneofs": {
+            "relType": {
+              "oneof": [
+                "read",
+                "filter",
+                "fetch",
+                "aggregate",
+                "sort",
+                "join",
+                "project",
+                "set",
+                "extensionSingle",
+                "extensionMulti",
+                "extensionLeaf",
+                "cross",
+                "reference",
+                "write",
+                "ddl",
+                "update",
+                "hashJoin",
+                "mergeJoin",
+                "nestedLoopJoin",
+                "window",
+                "exchange",
+                "expand"
+              ]
+            }
+          },
+          "fields": {
+            "read": {
+              "type": "ReadRel",
+              "id": 1
+            },
+            "filter": {
+              "type": "FilterRel",
+              "id": 2
+            },
+            "fetch": {
+              "type": "FetchRel",
+              "id": 3
+            },
+            "aggregate": {
+              "type": "AggregateRel",
+              "id": 4
+            },
+            "sort": {
+              "type": "SortRel",
+              "id": 5
+            },
+            "join": {
+              "type": "JoinRel",
+              "id": 6
+            },
+            "project": {
+              "type": "ProjectRel",
+              "id": 7
+            },
+            "set": {
+              "type": "SetRel",
+              "id": 8
+            },
+            "extensionSingle": {
+              "type": "ExtensionSingleRel",
+              "id": 9,
+              "protoName": "extension_single"
+            },
+            "extensionMulti": {
+              "type": "ExtensionMultiRel",
+              "id": 10,
+              "protoName": "extension_multi"
+            },
+            "extensionLeaf": {
+              "type": "ExtensionLeafRel",
+              "id": 11,
+              "protoName": "extension_leaf"
+            },
+            "cross": {
+              "type": "CrossRel",
+              "id": 12
+            },
+            "reference": {
+              "type": "ReferenceRel",
+              "id": 21
+            },
+            "write": {
+              "type": "WriteRel",
+              "id": 19
+            },
+            "ddl": {
+              "type": "DdlRel",
+              "id": 20
+            },
+            "update": {
+              "type": "UpdateRel",
+              "id": 22
+            },
+            "hashJoin": {
+              "type": "HashJoinRel",
+              "id": 13,
+              "protoName": "hash_join"
+            },
+            "mergeJoin": {
+              "type": "MergeJoinRel",
+              "id": 14,
+              "protoName": "merge_join"
+            },
+            "nestedLoopJoin": {
+              "type": "NestedLoopJoinRel",
+              "id": 18,
+              "protoName": "nested_loop_join"
+            },
+            "window": {
+              "type": "ConsistentPartitionWindowRel",
+              "id": 17
+            },
+            "exchange": {
+              "type": "ExchangeRel",
+              "id": 15
+            },
+            "expand": {
+              "type": "ExpandRel",
+              "id": 16
+            }
+          }
+        },
+        "NamedObjectWrite": {
+          "fields": {
+            "names": {
+              "rule": "repeated",
+              "type": "string",
+              "id": 1
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          }
+        },
+        "ExtensionObject": {
+          "fields": {
+            "detail": {
+              "type": "google.protobuf.Any",
+              "id": 1
+            }
+          }
+        },
+        "DdlRel": {
+          "oneofs": {
+            "writeType": {
+              "oneof": [
+                "namedObject",
+                "extensionObject"
+              ]
+            }
+          },
+          "fields": {
+            "namedObject": {
+              "type": "NamedObjectWrite",
+              "id": 1,
+              "protoName": "named_object"
+            },
+            "extensionObject": {
+              "type": "ExtensionObject",
+              "id": 2,
+              "protoName": "extension_object"
+            },
+            "tableSchema": {
+              "type": "NamedStruct",
+              "id": 3,
+              "protoName": "table_schema"
+            },
+            "tableDefaults": {
+              "type": "Expression.Literal.Struct",
+              "id": 4,
+              "protoName": "table_defaults"
+            },
+            "object": {
+              "type": "DdlObject",
+              "id": 5
+            },
+            "op": {
+              "type": "DdlOp",
+              "id": 6
+            },
+            "viewDefinition": {
+              "type": "Rel",
+              "id": 7,
+              "protoName": "view_definition"
+            },
+            "common": {
+              "type": "RelCommon",
+              "id": 8
+            }
+          },
+          "nested": {
+            "DdlObject": {
+              "values": {
+                "DDL_OBJECT_UNSPECIFIED": 0,
+                "DDL_OBJECT_TABLE": 1,
+                "DDL_OBJECT_VIEW": 2
+              }
+            },
+            "DdlOp": {
+              "values": {
+                "DDL_OP_UNSPECIFIED": 0,
+                "DDL_OP_CREATE": 1,
+                "DDL_OP_CREATE_OR_REPLACE": 2,
+                "DDL_OP_ALTER": 3,
+                "DDL_OP_DROP": 4,
+                "DDL_OP_DROP_IF_EXIST": 5
+              }
+            }
+          }
+        },
+        "WriteRel": {
+          "oneofs": {
+            "writeType": {
+              "oneof": [
+                "namedTable",
+                "extensionTable"
+              ]
+            }
+          },
+          "fields": {
+            "namedTable": {
+              "type": "NamedObjectWrite",
+              "id": 1,
+              "protoName": "named_table"
+            },
+            "extensionTable": {
+              "type": "ExtensionObject",
+              "id": 2,
+              "protoName": "extension_table"
+            },
+            "tableSchema": {
+              "type": "NamedStruct",
+              "id": 3,
+              "protoName": "table_schema"
+            },
+            "op": {
+              "type": "WriteOp",
+              "id": 4
+            },
+            "input": {
+              "type": "Rel",
+              "id": 5
+            },
+            "createMode": {
+              "type": "CreateMode",
+              "id": 8,
+              "protoName": "create_mode"
+            },
+            "output": {
+              "type": "OutputMode",
+              "id": 6
+            },
+            "common": {
+              "type": "RelCommon",
+              "id": 7
+            }
+          },
+          "nested": {
+            "WriteOp": {
+              "values": {
+                "WRITE_OP_UNSPECIFIED": 0,
+                "WRITE_OP_INSERT": 1,
+                "WRITE_OP_DELETE": 2,
+                "WRITE_OP_UPDATE": 3,
+                "WRITE_OP_CTAS": 4
+              }
+            },
+            "CreateMode": {
+              "values": {
+                "CREATE_MODE_UNSPECIFIED": 0,
+                "CREATE_MODE_APPEND_IF_EXISTS": 1,
+                "CREATE_MODE_REPLACE_IF_EXISTS": 2,
+                "CREATE_MODE_IGNORE_IF_EXISTS": 3,
+                "CREATE_MODE_ERROR_IF_EXISTS": 4
+              }
+            },
+            "OutputMode": {
+              "values": {
+                "OUTPUT_MODE_UNSPECIFIED": 0,
+                "OUTPUT_MODE_NO_OUTPUT": 1,
+                "OUTPUT_MODE_MODIFIED_RECORDS": 2
+              }
+            }
+          }
+        },
+        "UpdateRel": {
+          "oneofs": {
+            "updateType": {
+              "oneof": [
+                "namedTable"
+              ]
+            }
+          },
+          "fields": {
+            "namedTable": {
+              "type": "NamedTable",
+              "id": 1,
+              "protoName": "named_table"
+            },
+            "tableSchema": {
+              "type": "NamedStruct",
+              "id": 2,
+              "protoName": "table_schema"
+            },
+            "condition": {
+              "type": "Expression",
+              "id": 3
+            },
+            "transformations": {
+              "rule": "repeated",
+              "type": "TransformExpression",
+              "id": 4
+            }
+          },
+          "nested": {
+            "TransformExpression": {
+              "fields": {
+                "transformation": {
+                  "type": "Expression",
+                  "id": 1
+                },
+                "columnTarget": {
+                  "type": "int32",
+                  "id": 2,
+                  "protoName": "column_target"
+                }
+              }
+            }
+          }
+        },
+        "NamedTable": {
+          "fields": {
+            "names": {
+              "rule": "repeated",
+              "type": "string",
+              "id": 1
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          }
+        },
+        "ComparisonJoinKey": {
+          "fields": {
+            "left": {
+              "type": "Expression.FieldReference",
+              "id": 1
+            },
+            "right": {
+              "type": "Expression.FieldReference",
+              "id": 2
+            },
+            "comparison": {
+              "type": "ComparisonType",
+              "id": 3
+            }
+          },
+          "nested": {
+            "SimpleComparisonType": {
+              "values": {
+                "SIMPLE_COMPARISON_TYPE_UNSPECIFIED": 0,
+                "SIMPLE_COMPARISON_TYPE_EQ": 1,
+                "SIMPLE_COMPARISON_TYPE_IS_NOT_DISTINCT_FROM": 2,
+                "SIMPLE_COMPARISON_TYPE_MIGHT_EQUAL": 3
+              }
+            },
+            "ComparisonType": {
+              "oneofs": {
+                "innerType": {
+                  "oneof": [
+                    "simple",
+                    "customFunctionReference"
+                  ]
+                }
+              },
+              "fields": {
+                "simple": {
+                  "type": "SimpleComparisonType",
+                  "id": 1
+                },
+                "customFunctionReference": {
+                  "type": "uint32",
+                  "id": 2,
+                  "protoName": "custom_function_reference"
+                }
+              }
+            }
+          }
+        },
+        "HashJoinRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "left": {
+              "type": "Rel",
+              "id": 2
+            },
+            "right": {
+              "type": "Rel",
+              "id": 3
+            },
+            "leftKeys": {
+              "rule": "repeated",
+              "type": "Expression.FieldReference",
+              "id": 4,
+              "protoName": "left_keys",
+              "options": {
+                "deprecated": true
+              }
+            },
+            "rightKeys": {
+              "rule": "repeated",
+              "type": "Expression.FieldReference",
+              "id": 5,
+              "protoName": "right_keys",
+              "options": {
+                "deprecated": true
+              }
+            },
+            "keys": {
+              "rule": "repeated",
+              "type": "ComparisonJoinKey",
+              "id": 8
+            },
+            "postJoinFilter": {
+              "type": "Expression",
+              "id": 6,
+              "protoName": "post_join_filter"
+            },
+            "type": {
+              "type": "JoinType",
+              "id": 7
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          },
+          "nested": {
+            "JoinType": {
+              "values": {
+                "JOIN_TYPE_UNSPECIFIED": 0,
+                "JOIN_TYPE_INNER": 1,
+                "JOIN_TYPE_OUTER": 2,
+                "JOIN_TYPE_LEFT": 3,
+                "JOIN_TYPE_RIGHT": 4,
+                "JOIN_TYPE_LEFT_SEMI": 5,
+                "JOIN_TYPE_RIGHT_SEMI": 6,
+                "JOIN_TYPE_LEFT_ANTI": 7,
+                "JOIN_TYPE_RIGHT_ANTI": 8,
+                "JOIN_TYPE_LEFT_SINGLE": 9,
+                "JOIN_TYPE_RIGHT_SINGLE": 10,
+                "JOIN_TYPE_LEFT_MARK": 11,
+                "JOIN_TYPE_RIGHT_MARK": 12
+              }
+            }
+          }
+        },
+        "MergeJoinRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "left": {
+              "type": "Rel",
+              "id": 2
+            },
+            "right": {
+              "type": "Rel",
+              "id": 3
+            },
+            "leftKeys": {
+              "rule": "repeated",
+              "type": "Expression.FieldReference",
+              "id": 4,
+              "protoName": "left_keys",
+              "options": {
+                "deprecated": true
+              }
+            },
+            "rightKeys": {
+              "rule": "repeated",
+              "type": "Expression.FieldReference",
+              "id": 5,
+              "protoName": "right_keys",
+              "options": {
+                "deprecated": true
+              }
+            },
+            "keys": {
+              "rule": "repeated",
+              "type": "ComparisonJoinKey",
+              "id": 8
+            },
+            "postJoinFilter": {
+              "type": "Expression",
+              "id": 6,
+              "protoName": "post_join_filter"
+            },
+            "type": {
+              "type": "JoinType",
+              "id": 7
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          },
+          "nested": {
+            "JoinType": {
+              "values": {
+                "JOIN_TYPE_UNSPECIFIED": 0,
+                "JOIN_TYPE_INNER": 1,
+                "JOIN_TYPE_OUTER": 2,
+                "JOIN_TYPE_LEFT": 3,
+                "JOIN_TYPE_RIGHT": 4,
+                "JOIN_TYPE_LEFT_SEMI": 5,
+                "JOIN_TYPE_RIGHT_SEMI": 6,
+                "JOIN_TYPE_LEFT_ANTI": 7,
+                "JOIN_TYPE_RIGHT_ANTI": 8,
+                "JOIN_TYPE_LEFT_SINGLE": 9,
+                "JOIN_TYPE_RIGHT_SINGLE": 10,
+                "JOIN_TYPE_LEFT_MARK": 11,
+                "JOIN_TYPE_RIGHT_MARK": 12
+              }
+            }
+          }
+        },
+        "NestedLoopJoinRel": {
+          "fields": {
+            "common": {
+              "type": "RelCommon",
+              "id": 1
+            },
+            "left": {
+              "type": "Rel",
+              "id": 2
+            },
+            "right": {
+              "type": "Rel",
+              "id": 3
+            },
+            "expression": {
+              "type": "Expression",
+              "id": 4
+            },
+            "type": {
+              "type": "JoinType",
+              "id": 5
+            },
+            "advancedExtension": {
+              "type": "substrait.extensions.AdvancedExtension",
+              "id": 10,
+              "protoName": "advanced_extension"
+            }
+          },
+          "nested": {
+            "JoinType": {
+              "values": {
+                "JOIN_TYPE_UNSPECIFIED": 0,
+                "JOIN_TYPE_INNER": 1,
+                "JOIN_TYPE_OUTER": 2,
+                "JOIN_TYPE_LEFT": 3,
+                "JOIN_TYPE_RIGHT": 4,
+                "JOIN_TYPE_LEFT_SEMI": 5,
+                "JOIN_TYPE_RIGHT_SEMI": 6,
+                "JOIN_TYPE_LEFT_ANTI": 7,
+                "JOIN_TYPE_RIGHT_ANTI": 8,
+                "JOIN_TYPE_LEFT_SINGLE": 9,
+                "JOIN_TYPE_RIGHT_SINGLE": 10,
+                "JOIN_TYPE_LEFT_MARK": 11,
+                "JOIN_TYPE_RIGHT_MARK": 12
+              }
+            }
+          }
+        },
+        "FunctionArgument": {
+          "oneofs": {
+            "argType": {
+              "oneof": [
+                "enum",
+                "type",
+                "value"
+              ]
+            }
+          },
+          "fields": {
+            "enum": {
+              "type": "string",
+              "id": 1
+            },
+            "type": {
+              "type": "Type",
+              "id": 2
+            },
+            "value": {
+              "type": "Expression",
+              "id": 3
+            }
+          }
+        },
+        "FunctionOption": {
+          "fields": {
+            "name": {
+              "type": "string",
+              "id": 1
+            },
+            "preference": {
+              "rule": "repeated",
+              "type": "string",
+              "id": 2
+            }
+          }
+        },
+        "Expression": {
+          "oneofs": {
+            "rexType": {
+              "oneof": [
+                "literal",
+                "selection",
+                "scalarFunction",
+                "windowFunction",
+                "ifThen",
+                "switchExpression",
+                "singularOrList",
+                "multiOrList",
+                "cast",
+                "subquery",
+                "nested",
+                "enum"
+              ]
+            }
+          },
+          "fields": {
+            "literal": {
+              "type": "Literal",
+              "id": 1
+            },
+            "selection": {
+              "type": "FieldReference",
+              "id": 2
+            },
+            "scalarFunction": {
+              "type": "ScalarFunction",
+              "id": 3,
+              "protoName": "scalar_function"
+            },
+            "windowFunction": {
+              "type": "WindowFunction",
+              "id": 5,
+              "protoName": "window_function"
+            },
+            "ifThen": {
+              "type": "IfThen",
+              "id": 6,
+              "protoName": "if_then"
+            },
+            "switchExpression": {
+              "type": "SwitchExpression",
+              "id": 7,
+              "protoName": "switch_expression"
+            },
+            "singularOrList": {
+              "type": "SingularOrList",
+              "id": 8,
+              "protoName": "singular_or_list"
+            },
+            "multiOrList": {
+              "type": "MultiOrList",
+              "id": 9,
+              "protoName": "multi_or_list"
+            },
+            "cast": {
+              "type": "Cast",
+              "id": 11
+            },
+            "subquery": {
+              "type": "Subquery",
+              "id": 12
+            },
+            "nested": {
+              "type": "Nested",
+              "id": 13
+            },
+            "enum": {
+              "type": "Enum",
+              "id": 10,
+              "options": {
+                "deprecated": true
+              }
+            }
+          },
+          "nested": {
+            "Enum": {
+              "options": {
+                "deprecated": true
+              },
+              "oneofs": {
+                "enumKind": {
+                  "oneof": [
+                    "specified",
+                    "unspecified"
+                  ]
+                }
+              },
+              "fields": {
+                "specified": {
+                  "type": "string",
+                  "id": 1
+                },
+                "unspecified": {
+                  "type": "Empty",
+                  "id": 2
+                }
+              },
+              "nested": {
+                "Empty": {
+                  "options": {
+                    "deprecated": true
+                  },
+                  "fields": {}
+                }
+              }
+            },
+            "Literal": {
+              "oneofs": {
+                "literalType": {
+                  "oneof": [
+                    "boolean",
+                    "i8",
+                    "i16",
+                    "i32",
+                    "i64",
+                    "fp32",
+                    "fp64",
+                    "string",
+                    "binary",
+                    "timestamp",
+                    "date",
+                    "time",
+                    "intervalYearToMonth",
+                    "intervalDayToSecond",
+                    "intervalCompound",
+                    "fixedChar",
+                    "varChar",
+                    "fixedBinary",
+                    "decimal",
+                    "precisionTimestamp",
+                    "precisionTimestampTz",
+                    "struct",
+                    "map",
+                    "timestampTz",
+                    "uuid",
+                    "null",
+                    "list",
+                    "emptyList",
+                    "emptyMap",
+                    "userDefined"
+                  ]
+                }
+              },
+              "fields": {
+                "boolean": {
+                  "type": "bool",
+                  "id": 1
+                },
+                "i8": {
+                  "type": "int32",
+                  "id": 2
+                },
+                "i16": {
+                  "type": "int32",
+                  "id": 3
+                },
+                "i32": {
+                  "type": "int32",
+                  "id": 5
+                },
+                "i64": {
+                  "type": "int64",
+                  "id": 7
+                },
+                "fp32": {
+                  "type": "float",
+                  "id": 10
+                },
+                "fp64": {
+                  "type": "double",
+                  "id": 11
+                },
+                "string": {
+                  "type": "string",
+                  "id": 12
+                },
+                "binary": {
+                  "type": "bytes",
+                  "id": 13
+                },
+                "timestamp": {
+                  "type": "int64",
+                  "id": 14,
+                  "options": {
+                    "deprecated": true
+                  }
+                },
+                "date": {
+                  "type": "int32",
+                  "id": 16
+                },
+                "time": {
+                  "type": "int64",
+                  "id": 17
+                },
+                "intervalYearToMonth": {
+                  "type": "IntervalYearToMonth",
+                  "id": 19,
+                  "protoName": "interval_year_to_month"
+                },
+                "intervalDayToSecond": {
+                  "type": "IntervalDayToSecond",
+                  "id": 20,
+                  "protoName": "interval_day_to_second"
+                },
+                "intervalCompound": {
+                  "type": "IntervalCompound",
+                  "id": 36,
+                  "protoName": "interval_compound"
+                },
+                "fixedChar": {
+                  "type": "string",
+                  "id": 21,
+                  "protoName": "fixed_char"
+                },
+                "varChar": {
+                  "type": "VarChar",
+                  "id": 22,
+                  "protoName": "var_char"
+                },
+                "fixedBinary": {
+                  "type": "bytes",
+                  "id": 23,
+                  "protoName": "fixed_binary"
+                },
+                "decimal": {
+                  "type": "Decimal",
+                  "id": 24
+                },
+                "precisionTimestamp": {
+                  "type": "PrecisionTimestamp",
+                  "id": 34,
+                  "protoName": "precision_timestamp"
+                },
+                "precisionTimestampTz": {
+                  "type": "PrecisionTimestamp",
+                  "id": 35,
+                  "protoName": "precision_timestamp_tz"
+                },
+                "struct": {
+                  "type": "Struct",
+                  "id": 25
+                },
+                "map": {
+                  "type": "Map",
+                  "id": 26
+                },
+                "timestampTz": {
+                  "type": "int64",
+                  "id": 27,
+                  "protoName": "timestamp_tz",
+                  "options": {
+                    "deprecated": true
+                  }
+                },
+                "uuid": {
+                  "type": "bytes",
+                  "id": 28
+                },
+                "null": {
+                  "type": "Type",
+                  "id": 29
+                },
+                "list": {
+                  "type": "List",
+                  "id": 30
+                },
+                "emptyList": {
+                  "type": "Type.List",
+                  "id": 31,
+                  "protoName": "empty_list"
+                },
+                "emptyMap": {
+                  "type": "Type.Map",
+                  "id": 32,
+                  "protoName": "empty_map"
+                },
+                "userDefined": {
+                  "type": "UserDefined",
+                  "id": 33,
+                  "protoName": "user_defined"
+                },
+                "nullable": {
+                  "type": "bool",
+                  "id": 50
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 51,
+                  "protoName": "type_variation_reference"
+                }
+              },
+              "nested": {
+                "VarChar": {
+                  "fields": {
+                    "value": {
+                      "type": "string",
+                      "id": 1
+                    },
+                    "length": {
+                      "type": "uint32",
+                      "id": 2
+                    }
+                  }
+                },
+                "Decimal": {
+                  "fields": {
+                    "value": {
+                      "type": "bytes",
+                      "id": 1
+                    },
+                    "precision": {
+                      "type": "int32",
+                      "id": 2
+                    },
+                    "scale": {
+                      "type": "int32",
+                      "id": 3
+                    }
+                  }
+                },
+                "PrecisionTimestamp": {
+                  "fields": {
+                    "precision": {
+                      "type": "int32",
+                      "id": 1
+                    },
+                    "value": {
+                      "type": "int64",
+                      "id": 2
+                    }
+                  }
+                },
+                "Map": {
+                  "fields": {
+                    "keyValues": {
+                      "rule": "repeated",
+                      "type": "KeyValue",
+                      "id": 1,
+                      "protoName": "key_values"
+                    }
+                  },
+                  "nested": {
+                    "KeyValue": {
+                      "fields": {
+                        "key": {
+                          "type": "Literal",
+                          "id": 1
+                        },
+                        "value": {
+                          "type": "Literal",
+                          "id": 2
+                        }
+                      }
+                    }
+                  }
+                },
+                "IntervalYearToMonth": {
+                  "fields": {
+                    "years": {
+                      "type": "int32",
+                      "id": 1
+                    },
+                    "months": {
+                      "type": "int32",
+                      "id": 2
+                    }
+                  }
+                },
+                "IntervalDayToSecond": {
+                  "oneofs": {
+                    "precisionMode": {
+                      "oneof": [
+                        "microseconds",
+                        "precision"
+                      ]
+                    }
+                  },
+                  "fields": {
+                    "days": {
+                      "type": "int32",
+                      "id": 1
+                    },
+                    "seconds": {
+                      "type": "int32",
+                      "id": 2
+                    },
+                    "microseconds": {
+                      "type": "int32",
+                      "id": 3,
+                      "options": {
+                        "deprecated": true
+                      }
+                    },
+                    "precision": {
+                      "type": "int32",
+                      "id": 4
+                    },
+                    "subseconds": {
+                      "type": "int64",
+                      "id": 5
+                    }
+                  }
+                },
+                "IntervalCompound": {
+                  "fields": {
+                    "intervalYearToMonth": {
+                      "type": "IntervalYearToMonth",
+                      "id": 1,
+                      "protoName": "interval_year_to_month"
+                    },
+                    "intervalDayToSecond": {
+                      "type": "IntervalDayToSecond",
+                      "id": 2,
+                      "protoName": "interval_day_to_second"
+                    }
+                  }
+                },
+                "Struct": {
+                  "fields": {
+                    "fields": {
+                      "rule": "repeated",
+                      "type": "Literal",
+                      "id": 1
+                    }
+                  }
+                },
+                "List": {
+                  "fields": {
+                    "values": {
+                      "rule": "repeated",
+                      "type": "Literal",
+                      "id": 1
+                    }
+                  }
+                },
+                "UserDefined": {
+                  "oneofs": {
+                    "val": {
+                      "oneof": [
+                        "value",
+                        "struct"
+                      ]
+                    }
+                  },
+                  "fields": {
+                    "typeReference": {
+                      "type": "uint32",
+                      "id": 1,
+                      "protoName": "type_reference"
+                    },
+                    "typeParameters": {
+                      "rule": "repeated",
+                      "type": "Type.Parameter",
+                      "id": 3,
+                      "protoName": "type_parameters"
+                    },
+                    "value": {
+                      "type": "google.protobuf.Any",
+                      "id": 2
+                    },
+                    "struct": {
+                      "type": "Literal.Struct",
+                      "id": 4
+                    }
+                  }
+                }
+              }
+            },
+            "Nested": {
+              "oneofs": {
+                "nestedType": {
+                  "oneof": [
+                    "struct",
+                    "list",
+                    "map"
+                  ]
+                }
+              },
+              "fields": {
+                "nullable": {
+                  "type": "bool",
+                  "id": 1
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 2,
+                  "protoName": "type_variation_reference"
+                },
+                "struct": {
+                  "type": "Struct",
+                  "id": 3
+                },
+                "list": {
+                  "type": "List",
+                  "id": 4
+                },
+                "map": {
+                  "type": "Map",
+                  "id": 5
+                }
+              },
+              "nested": {
+                "Map": {
+                  "fields": {
+                    "keyValues": {
+                      "rule": "repeated",
+                      "type": "KeyValue",
+                      "id": 1,
+                      "protoName": "key_values"
+                    }
+                  },
+                  "nested": {
+                    "KeyValue": {
+                      "fields": {
+                        "key": {
+                          "type": "Expression",
+                          "id": 1
+                        },
+                        "value": {
+                          "type": "Expression",
+                          "id": 2
+                        }
+                      }
+                    }
+                  }
+                },
+                "Struct": {
+                  "fields": {
+                    "fields": {
+                      "rule": "repeated",
+                      "type": "Expression",
+                      "id": 1
+                    }
+                  }
+                },
+                "List": {
+                  "fields": {
+                    "values": {
+                      "rule": "repeated",
+                      "type": "Expression",
+                      "id": 1
+                    }
+                  }
+                }
+              }
+            },
+            "ScalarFunction": {
+              "fields": {
+                "functionReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "function_reference"
+                },
+                "arguments": {
+                  "rule": "repeated",
+                  "type": "FunctionArgument",
+                  "id": 4
+                },
+                "options": {
+                  "rule": "repeated",
+                  "type": "FunctionOption",
+                  "id": 5
+                },
+                "outputType": {
+                  "type": "Type",
+                  "id": 3,
+                  "protoName": "output_type"
+                },
+                "args": {
+                  "rule": "repeated",
+                  "type": "Expression",
+                  "id": 2,
+                  "options": {
+                    "deprecated": true
+                  }
+                }
+              }
+            },
+            "WindowFunction": {
+              "fields": {
+                "functionReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "function_reference"
+                },
+                "arguments": {
+                  "rule": "repeated",
+                  "type": "FunctionArgument",
+                  "id": 9
+                },
+                "options": {
+                  "rule": "repeated",
+                  "type": "FunctionOption",
+                  "id": 11
+                },
+                "outputType": {
+                  "type": "Type",
+                  "id": 7,
+                  "protoName": "output_type"
+                },
+                "phase": {
+                  "type": "AggregationPhase",
+                  "id": 6
+                },
+                "sorts": {
+                  "rule": "repeated",
+                  "type": "SortField",
+                  "id": 3
+                },
+                "invocation": {
+                  "type": "AggregateFunction.AggregationInvocation",
+                  "id": 10
+                },
+                "partitions": {
+                  "rule": "repeated",
+                  "type": "Expression",
+                  "id": 2
+                },
+                "boundsType": {
+                  "type": "BoundsType",
+                  "id": 12,
+                  "protoName": "bounds_type"
+                },
+                "lowerBound": {
+                  "type": "Bound",
+                  "id": 5,
+                  "protoName": "lower_bound"
+                },
+                "upperBound": {
+                  "type": "Bound",
+                  "id": 4,
+                  "protoName": "upper_bound"
+                },
+                "args": {
+                  "rule": "repeated",
+                  "type": "Expression",
+                  "id": 8,
+                  "options": {
+                    "deprecated": true
+                  }
+                }
+              },
+              "nested": {
+                "BoundsType": {
+                  "values": {
+                    "BOUNDS_TYPE_UNSPECIFIED": 0,
+                    "BOUNDS_TYPE_ROWS": 1,
+                    "BOUNDS_TYPE_RANGE": 2
+                  }
+                },
+                "Bound": {
+                  "oneofs": {
+                    "kind": {
+                      "oneof": [
+                        "preceding",
+                        "following",
+                        "currentRow",
+                        "unbounded"
+                      ]
+                    }
+                  },
+                  "fields": {
+                    "preceding": {
+                      "type": "Preceding",
+                      "id": 1
+                    },
+                    "following": {
+                      "type": "Following",
+                      "id": 2
+                    },
+                    "currentRow": {
+                      "type": "CurrentRow",
+                      "id": 3,
+                      "protoName": "current_row"
+                    },
+                    "unbounded": {
+                      "type": "Unbounded",
+                      "id": 4
+                    }
+                  },
+                  "nested": {
+                    "Preceding": {
+                      "fields": {
+                        "offset": {
+                          "type": "int64",
+                          "id": 1
+                        }
+                      }
+                    },
+                    "Following": {
+                      "fields": {
+                        "offset": {
+                          "type": "int64",
+                          "id": 1
+                        }
+                      }
+                    },
+                    "CurrentRow": {
+                      "fields": {}
+                    },
+                    "Unbounded": {
+                      "fields": {}
+                    }
+                  }
+                }
+              }
+            },
+            "IfThen": {
+              "fields": {
+                "ifs": {
+                  "rule": "repeated",
+                  "type": "IfClause",
+                  "id": 1
+                },
+                "else": {
+                  "type": "Expression",
+                  "id": 2
+                }
+              },
+              "nested": {
+                "IfClause": {
+                  "fields": {
+                    "if": {
+                      "type": "Expression",
+                      "id": 1
+                    },
+                    "then": {
+                      "type": "Expression",
+                      "id": 2
+                    }
+                  }
+                }
+              }
+            },
+            "Cast": {
+              "fields": {
+                "type": {
+                  "type": "Type",
+                  "id": 1
+                },
+                "input": {
+                  "type": "Expression",
+                  "id": 2
+                },
+                "failureBehavior": {
+                  "type": "FailureBehavior",
+                  "id": 3,
+                  "protoName": "failure_behavior"
+                }
+              },
+              "nested": {
+                "FailureBehavior": {
+                  "values": {
+                    "FAILURE_BEHAVIOR_UNSPECIFIED": 0,
+                    "FAILURE_BEHAVIOR_RETURN_NULL": 1,
+                    "FAILURE_BEHAVIOR_THROW_EXCEPTION": 2
+                  }
+                }
+              }
+            },
+            "SwitchExpression": {
+              "fields": {
+                "match": {
+                  "type": "Expression",
+                  "id": 3
+                },
+                "ifs": {
+                  "rule": "repeated",
+                  "type": "IfValue",
+                  "id": 1
+                },
+                "else": {
+                  "type": "Expression",
+                  "id": 2
+                }
+              },
+              "nested": {
+                "IfValue": {
+                  "fields": {
+                    "if": {
+                      "type": "Literal",
+                      "id": 1
+                    },
+                    "then": {
+                      "type": "Expression",
+                      "id": 2
+                    }
+                  }
+                }
+              }
+            },
+            "SingularOrList": {
+              "fields": {
+                "value": {
+                  "type": "Expression",
+                  "id": 1
+                },
+                "options": {
+                  "rule": "repeated",
+                  "type": "Expression",
+                  "id": 2
+                }
+              }
+            },
+            "MultiOrList": {
+              "fields": {
+                "value": {
+                  "rule": "repeated",
+                  "type": "Expression",
+                  "id": 1
+                },
+                "options": {
+                  "rule": "repeated",
+                  "type": "Record",
+                  "id": 2
+                }
+              },
+              "nested": {
+                "Record": {
+                  "fields": {
+                    "fields": {
+                      "rule": "repeated",
+                      "type": "Expression",
+                      "id": 1
+                    }
+                  }
+                }
+              }
+            },
+            "EmbeddedFunction": {
+              "oneofs": {
+                "kind": {
+                  "oneof": [
+                    "pythonPickleFunction",
+                    "webAssemblyFunction"
+                  ]
+                }
+              },
+              "fields": {
+                "arguments": {
+                  "rule": "repeated",
+                  "type": "Expression",
+                  "id": 1
+                },
+                "outputType": {
+                  "type": "Type",
+                  "id": 2,
+                  "protoName": "output_type"
+                },
+                "pythonPickleFunction": {
+                  "type": "PythonPickleFunction",
+                  "id": 3,
+                  "protoName": "python_pickle_function"
+                },
+                "webAssemblyFunction": {
+                  "type": "WebAssemblyFunction",
+                  "id": 4,
+                  "protoName": "web_assembly_function"
+                }
+              },
+              "nested": {
+                "PythonPickleFunction": {
+                  "fields": {
+                    "function": {
+                      "type": "bytes",
+                      "id": 1
+                    },
+                    "prerequisite": {
+                      "rule": "repeated",
+                      "type": "string",
+                      "id": 2
+                    }
+                  }
+                },
+                "WebAssemblyFunction": {
+                  "fields": {
+                    "script": {
+                      "type": "bytes",
+                      "id": 1
+                    },
+                    "prerequisite": {
+                      "rule": "repeated",
+                      "type": "string",
+                      "id": 2
+                    }
+                  }
+                }
+              }
+            },
+            "ReferenceSegment": {
+              "oneofs": {
+                "referenceType": {
+                  "oneof": [
+                    "mapKey",
+                    "structField",
+                    "listElement"
+                  ]
+                }
+              },
+              "fields": {
+                "mapKey": {
+                  "type": "MapKey",
+                  "id": 1,
+                  "protoName": "map_key"
+                },
+                "structField": {
+                  "type": "StructField",
+                  "id": 2,
+                  "protoName": "struct_field"
+                },
+                "listElement": {
+                  "type": "ListElement",
+                  "id": 3,
+                  "protoName": "list_element"
+                }
+              },
+              "nested": {
+                "MapKey": {
+                  "fields": {
+                    "mapKey": {
+                      "type": "Literal",
+                      "id": 1,
+                      "protoName": "map_key"
+                    },
+                    "child": {
+                      "type": "ReferenceSegment",
+                      "id": 2
+                    }
+                  }
+                },
+                "StructField": {
+                  "fields": {
+                    "field": {
+                      "type": "int32",
+                      "id": 1
+                    },
+                    "child": {
+                      "type": "ReferenceSegment",
+                      "id": 2
+                    }
+                  }
+                },
+                "ListElement": {
+                  "fields": {
+                    "offset": {
+                      "type": "int32",
+                      "id": 1
+                    },
+                    "child": {
+                      "type": "ReferenceSegment",
+                      "id": 2
+                    }
+                  }
+                }
+              }
+            },
+            "MaskExpression": {
+              "fields": {
+                "select": {
+                  "type": "StructSelect",
+                  "id": 1
+                },
+                "maintainSingularStruct": {
+                  "type": "bool",
+                  "id": 2,
+                  "protoName": "maintain_singular_struct"
+                }
+              },
+              "nested": {
+                "Select": {
+                  "oneofs": {
+                    "type": {
+                      "oneof": [
+                        "struct",
+                        "list",
+                        "map"
+                      ]
+                    }
+                  },
+                  "fields": {
+                    "struct": {
+                      "type": "StructSelect",
+                      "id": 1
+                    },
+                    "list": {
+                      "type": "ListSelect",
+                      "id": 2
+                    },
+                    "map": {
+                      "type": "MapSelect",
+                      "id": 3
+                    }
+                  }
+                },
+                "StructSelect": {
+                  "fields": {
+                    "structItems": {
+                      "rule": "repeated",
+                      "type": "StructItem",
+                      "id": 1,
+                      "protoName": "struct_items"
+                    }
+                  }
+                },
+                "StructItem": {
+                  "fields": {
+                    "field": {
+                      "type": "int32",
+                      "id": 1
+                    },
+                    "child": {
+                      "type": "Select",
+                      "id": 2
+                    }
+                  }
+                },
+                "ListSelect": {
+                  "fields": {
+                    "selection": {
+                      "rule": "repeated",
+                      "type": "ListSelectItem",
+                      "id": 1
+                    },
+                    "child": {
+                      "type": "Select",
+                      "id": 2
+                    }
+                  },
+                  "nested": {
+                    "ListSelectItem": {
+                      "oneofs": {
+                        "type": {
+                          "oneof": [
+                            "item",
+                            "slice"
+                          ]
+                        }
+                      },
+                      "fields": {
+                        "item": {
+                          "type": "ListElement",
+                          "id": 1
+                        },
+                        "slice": {
+                          "type": "ListSlice",
+                          "id": 2
+                        }
+                      },
+                      "nested": {
+                        "ListElement": {
+                          "fields": {
+                            "field": {
+                              "type": "int32",
+                              "id": 1
+                            }
+                          }
+                        },
+                        "ListSlice": {
+                          "fields": {
+                            "start": {
+                              "type": "int32",
+                              "id": 1
+                            },
+                            "end": {
+                              "type": "int32",
+                              "id": 2
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "MapSelect": {
+                  "oneofs": {
+                    "select": {
+                      "oneof": [
+                        "key",
+                        "expression"
+                      ]
+                    }
+                  },
+                  "fields": {
+                    "key": {
+                      "type": "MapKey",
+                      "id": 1
+                    },
+                    "expression": {
+                      "type": "MapKeyExpression",
+                      "id": 2
+                    },
+                    "child": {
+                      "type": "Select",
+                      "id": 3
+                    }
+                  },
+                  "nested": {
+                    "MapKey": {
+                      "fields": {
+                        "mapKey": {
+                          "type": "string",
+                          "id": 1,
+                          "protoName": "map_key"
+                        }
+                      }
+                    },
+                    "MapKeyExpression": {
+                      "fields": {
+                        "mapKeyExpression": {
+                          "type": "string",
+                          "id": 1,
+                          "protoName": "map_key_expression"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "FieldReference": {
+              "oneofs": {
+                "referenceType": {
+                  "oneof": [
+                    "directReference",
+                    "maskedReference"
+                  ]
+                },
+                "rootType": {
+                  "oneof": [
+                    "expression",
+                    "rootReference",
+                    "outerReference"
+                  ]
+                }
+              },
+              "fields": {
+                "directReference": {
+                  "type": "ReferenceSegment",
+                  "id": 1,
+                  "protoName": "direct_reference"
+                },
+                "maskedReference": {
+                  "type": "MaskExpression",
+                  "id": 2,
+                  "protoName": "masked_reference"
+                },
+                "expression": {
+                  "type": "Expression",
+                  "id": 3
+                },
+                "rootReference": {
+                  "type": "RootReference",
+                  "id": 4,
+                  "protoName": "root_reference"
+                },
+                "outerReference": {
+                  "type": "OuterReference",
+                  "id": 5,
+                  "protoName": "outer_reference"
+                }
+              },
+              "nested": {
+                "RootReference": {
+                  "fields": {}
+                },
+                "OuterReference": {
+                  "fields": {
+                    "stepsOut": {
+                      "type": "uint32",
+                      "id": 1,
+                      "protoName": "steps_out"
+                    }
+                  }
+                }
+              }
+            },
+            "Subquery": {
+              "oneofs": {
+                "subqueryType": {
+                  "oneof": [
+                    "scalar",
+                    "inPredicate",
+                    "setPredicate",
+                    "setComparison"
+                  ]
+                }
+              },
+              "fields": {
+                "scalar": {
+                  "type": "Scalar",
+                  "id": 1
+                },
+                "inPredicate": {
+                  "type": "InPredicate",
+                  "id": 2,
+                  "protoName": "in_predicate"
+                },
+                "setPredicate": {
+                  "type": "SetPredicate",
+                  "id": 3,
+                  "protoName": "set_predicate"
+                },
+                "setComparison": {
+                  "type": "SetComparison",
+                  "id": 4,
+                  "protoName": "set_comparison"
+                }
+              },
+              "nested": {
+                "Scalar": {
+                  "fields": {
+                    "input": {
+                      "type": "Rel",
+                      "id": 1
+                    }
+                  }
+                },
+                "InPredicate": {
+                  "fields": {
+                    "needles": {
+                      "rule": "repeated",
+                      "type": "Expression",
+                      "id": 1
+                    },
+                    "haystack": {
+                      "type": "Rel",
+                      "id": 2
+                    }
+                  }
+                },
+                "SetPredicate": {
+                  "fields": {
+                    "predicateOp": {
+                      "type": "PredicateOp",
+                      "id": 1,
+                      "protoName": "predicate_op"
+                    },
+                    "tuples": {
+                      "type": "Rel",
+                      "id": 2
+                    }
+                  },
+                  "nested": {
+                    "PredicateOp": {
+                      "values": {
+                        "PREDICATE_OP_UNSPECIFIED": 0,
+                        "PREDICATE_OP_EXISTS": 1,
+                        "PREDICATE_OP_UNIQUE": 2
+                      }
+                    }
+                  }
+                },
+                "SetComparison": {
+                  "fields": {
+                    "reductionOp": {
+                      "type": "ReductionOp",
+                      "id": 1,
+                      "protoName": "reduction_op"
+                    },
+                    "comparisonOp": {
+                      "type": "ComparisonOp",
+                      "id": 2,
+                      "protoName": "comparison_op"
+                    },
+                    "left": {
+                      "type": "Expression",
+                      "id": 3
+                    },
+                    "right": {
+                      "type": "Rel",
+                      "id": 4
+                    }
+                  },
+                  "nested": {
+                    "ComparisonOp": {
+                      "values": {
+                        "COMPARISON_OP_UNSPECIFIED": 0,
+                        "COMPARISON_OP_EQ": 1,
+                        "COMPARISON_OP_NE": 2,
+                        "COMPARISON_OP_LT": 3,
+                        "COMPARISON_OP_GT": 4,
+                        "COMPARISON_OP_LE": 5,
+                        "COMPARISON_OP_GE": 6
+                      }
+                    },
+                    "ReductionOp": {
+                      "values": {
+                        "REDUCTION_OP_UNSPECIFIED": 0,
+                        "REDUCTION_OP_ANY": 1,
+                        "REDUCTION_OP_ALL": 2
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "SortField": {
+          "oneofs": {
+            "sortKind": {
+              "oneof": [
+                "direction",
+                "comparisonFunctionReference"
+              ]
+            }
+          },
+          "fields": {
+            "expr": {
+              "type": "Expression",
+              "id": 1
+            },
+            "direction": {
+              "type": "SortDirection",
+              "id": 2
+            },
+            "comparisonFunctionReference": {
+              "type": "uint32",
+              "id": 3,
+              "protoName": "comparison_function_reference"
+            }
+          },
+          "nested": {
+            "SortDirection": {
+              "values": {
+                "SORT_DIRECTION_UNSPECIFIED": 0,
+                "SORT_DIRECTION_ASC_NULLS_FIRST": 1,
+                "SORT_DIRECTION_ASC_NULLS_LAST": 2,
+                "SORT_DIRECTION_DESC_NULLS_FIRST": 3,
+                "SORT_DIRECTION_DESC_NULLS_LAST": 4,
+                "SORT_DIRECTION_CLUSTERED": 5
+              }
+            }
+          }
+        },
+        "AggregationPhase": {
+          "values": {
+            "AGGREGATION_PHASE_UNSPECIFIED": 0,
+            "AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE": 1,
+            "AGGREGATION_PHASE_INTERMEDIATE_TO_INTERMEDIATE": 2,
+            "AGGREGATION_PHASE_INITIAL_TO_RESULT": 3,
+            "AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT": 4
+          }
+        },
+        "AggregateFunction": {
+          "fields": {
+            "functionReference": {
+              "type": "uint32",
+              "id": 1,
+              "protoName": "function_reference"
+            },
+            "arguments": {
+              "rule": "repeated",
+              "type": "FunctionArgument",
+              "id": 7
+            },
+            "options": {
+              "rule": "repeated",
+              "type": "FunctionOption",
+              "id": 8
+            },
+            "outputType": {
+              "type": "Type",
+              "id": 5,
+              "protoName": "output_type"
+            },
+            "phase": {
+              "type": "AggregationPhase",
+              "id": 4
+            },
+            "sorts": {
+              "rule": "repeated",
+              "type": "SortField",
+              "id": 3
+            },
+            "invocation": {
+              "type": "AggregationInvocation",
+              "id": 6
+            },
+            "args": {
+              "rule": "repeated",
+              "type": "Expression",
+              "id": 2,
+              "options": {
+                "deprecated": true
+              }
+            }
+          },
+          "nested": {
+            "AggregationInvocation": {
+              "values": {
+                "AGGREGATION_INVOCATION_UNSPECIFIED": 0,
+                "AGGREGATION_INVOCATION_ALL": 1,
+                "AGGREGATION_INVOCATION_DISTINCT": 2
+              }
+            }
+          }
+        },
+        "ReferenceRel": {
+          "fields": {
+            "subtreeOrdinal": {
+              "type": "int32",
+              "id": 1,
+              "protoName": "subtree_ordinal"
+            }
+          }
+        },
+        "extensions": {
+          "options": {
+            "csharp_namespace": "Substrait.Protobuf",
+            "go_package": "github.com/substrait-io/substrait-go/proto/extensions",
+            "java_multiple_files": true,
+            "java_package": "io.substrait.proto"
+          },
+          "nested": {
+            "SimpleExtensionURI": {
+              "fields": {
+                "extensionUriAnchor": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "extension_uri_anchor"
+                },
+                "uri": {
+                  "type": "string",
+                  "id": 2
+                }
+              }
+            },
+            "SimpleExtensionDeclaration": {
+              "oneofs": {
+                "mappingType": {
+                  "oneof": [
+                    "extensionType",
+                    "extensionTypeVariation",
+                    "extensionFunction"
+                  ]
+                }
+              },
+              "fields": {
+                "extensionType": {
+                  "type": "ExtensionType",
+                  "id": 1,
+                  "protoName": "extension_type"
+                },
+                "extensionTypeVariation": {
+                  "type": "ExtensionTypeVariation",
+                  "id": 2,
+                  "protoName": "extension_type_variation"
+                },
+                "extensionFunction": {
+                  "type": "ExtensionFunction",
+                  "id": 3,
+                  "protoName": "extension_function"
+                }
+              },
+              "nested": {
+                "ExtensionType": {
+                  "fields": {
+                    "extensionUriReference": {
+                      "type": "uint32",
+                      "id": 1,
+                      "protoName": "extension_uri_reference"
+                    },
+                    "typeAnchor": {
+                      "type": "uint32",
+                      "id": 2,
+                      "protoName": "type_anchor"
+                    },
+                    "name": {
+                      "type": "string",
+                      "id": 3
+                    }
+                  }
+                },
+                "ExtensionTypeVariation": {
+                  "fields": {
+                    "extensionUriReference": {
+                      "type": "uint32",
+                      "id": 1,
+                      "protoName": "extension_uri_reference"
+                    },
+                    "typeVariationAnchor": {
+                      "type": "uint32",
+                      "id": 2,
+                      "protoName": "type_variation_anchor"
+                    },
+                    "name": {
+                      "type": "string",
+                      "id": 3
+                    }
+                  }
+                },
+                "ExtensionFunction": {
+                  "fields": {
+                    "extensionUriReference": {
+                      "type": "uint32",
+                      "id": 1,
+                      "protoName": "extension_uri_reference"
+                    },
+                    "functionAnchor": {
+                      "type": "uint32",
+                      "id": 2,
+                      "protoName": "function_anchor"
+                    },
+                    "name": {
+                      "type": "string",
+                      "id": 3
+                    }
+                  }
+                }
+              }
+            },
+            "AdvancedExtension": {
+              "fields": {
+                "optimization": {
+                  "rule": "repeated",
+                  "type": "google.protobuf.Any",
+                  "id": 1
+                },
+                "enhancement": {
+                  "type": "google.protobuf.Any",
+                  "id": 2
+                }
+              }
+            }
+          }
+        },
+        "Type": {
+          "oneofs": {
+            "kind": {
+              "oneof": [
+                "bool",
+                "i8",
+                "i16",
+                "i32",
+                "i64",
+                "fp32",
+                "fp64",
+                "string",
+                "binary",
+                "timestamp",
+                "date",
+                "time",
+                "intervalYear",
+                "intervalDay",
+                "intervalCompound",
+                "timestampTz",
+                "uuid",
+                "fixedChar",
+                "varchar",
+                "fixedBinary",
+                "decimal",
+                "precisionTimestamp",
+                "precisionTimestampTz",
+                "struct",
+                "list",
+                "map",
+                "userDefined",
+                "userDefinedTypeReference"
+              ]
+            }
+          },
+          "fields": {
+            "bool": {
+              "type": "Boolean",
+              "id": 1
+            },
+            "i8": {
+              "type": "I8",
+              "id": 2
+            },
+            "i16": {
+              "type": "I16",
+              "id": 3
+            },
+            "i32": {
+              "type": "I32",
+              "id": 5
+            },
+            "i64": {
+              "type": "I64",
+              "id": 7
+            },
+            "fp32": {
+              "type": "FP32",
+              "id": 10
+            },
+            "fp64": {
+              "type": "FP64",
+              "id": 11
+            },
+            "string": {
+              "type": "String",
+              "id": 12
+            },
+            "binary": {
+              "type": "Binary",
+              "id": 13
+            },
+            "timestamp": {
+              "type": "Timestamp",
+              "id": 14,
+              "options": {
+                "deprecated": true
+              }
+            },
+            "date": {
+              "type": "Date",
+              "id": 16
+            },
+            "time": {
+              "type": "Time",
+              "id": 17
+            },
+            "intervalYear": {
+              "type": "IntervalYear",
+              "id": 19,
+              "protoName": "interval_year"
+            },
+            "intervalDay": {
+              "type": "IntervalDay",
+              "id": 20,
+              "protoName": "interval_day"
+            },
+            "intervalCompound": {
+              "type": "IntervalCompound",
+              "id": 35,
+              "protoName": "interval_compound"
+            },
+            "timestampTz": {
+              "type": "TimestampTZ",
+              "id": 29,
+              "protoName": "timestamp_tz",
+              "options": {
+                "deprecated": true
+              }
+            },
+            "uuid": {
+              "type": "UUID",
+              "id": 32
+            },
+            "fixedChar": {
+              "type": "FixedChar",
+              "id": 21,
+              "protoName": "fixed_char"
+            },
+            "varchar": {
+              "type": "VarChar",
+              "id": 22
+            },
+            "fixedBinary": {
+              "type": "FixedBinary",
+              "id": 23,
+              "protoName": "fixed_binary"
+            },
+            "decimal": {
+              "type": "Decimal",
+              "id": 24
+            },
+            "precisionTimestamp": {
+              "type": "PrecisionTimestamp",
+              "id": 33,
+              "protoName": "precision_timestamp"
+            },
+            "precisionTimestampTz": {
+              "type": "PrecisionTimestampTZ",
+              "id": 34,
+              "protoName": "precision_timestamp_tz"
+            },
+            "struct": {
+              "type": "Struct",
+              "id": 25
+            },
+            "list": {
+              "type": "List",
+              "id": 27
+            },
+            "map": {
+              "type": "Map",
+              "id": 28
+            },
+            "userDefined": {
+              "type": "UserDefined",
+              "id": 30,
+              "protoName": "user_defined"
+            },
+            "userDefinedTypeReference": {
+              "type": "uint32",
+              "id": 31,
+              "protoName": "user_defined_type_reference",
+              "options": {
+                "deprecated": true
+              }
+            }
+          },
+          "nested": {
+            "Nullability": {
+              "values": {
+                "NULLABILITY_UNSPECIFIED": 0,
+                "NULLABILITY_NULLABLE": 1,
+                "NULLABILITY_REQUIRED": 2
+              }
+            },
+            "Boolean": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "I8": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "I16": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "I32": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "I64": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "FP32": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "FP64": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "String": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "Binary": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "Timestamp": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "Date": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "Time": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "TimestampTZ": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "IntervalYear": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "IntervalDay": {
+              "oneofs": {
+                "_precision": {
+                  "oneof": [
+                    "precision"
+                  ]
+                }
+              },
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                },
+                "precision": {
+                  "type": "int32",
+                  "id": 3,
+                  "options": {
+                    "proto3_optional": true
+                  }
+                }
+              }
+            },
+            "IntervalCompound": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                },
+                "precision": {
+                  "type": "int32",
+                  "id": 3
+                }
+              }
+            },
+            "UUID": {
+              "fields": {
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 2
+                }
+              }
+            },
+            "FixedChar": {
+              "fields": {
+                "length": {
+                  "type": "int32",
+                  "id": 1
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 2,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 3
+                }
+              }
+            },
+            "VarChar": {
+              "fields": {
+                "length": {
+                  "type": "int32",
+                  "id": 1
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 2,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 3
+                }
+              }
+            },
+            "FixedBinary": {
+              "fields": {
+                "length": {
+                  "type": "int32",
+                  "id": 1
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 2,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 3
+                }
+              }
+            },
+            "Decimal": {
+              "fields": {
+                "scale": {
+                  "type": "int32",
+                  "id": 1
+                },
+                "precision": {
+                  "type": "int32",
+                  "id": 2
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 3,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 4
+                }
+              }
+            },
+            "PrecisionTimestamp": {
+              "fields": {
+                "precision": {
+                  "type": "int32",
+                  "id": 1
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 2,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 3
+                }
+              }
+            },
+            "PrecisionTimestampTZ": {
+              "fields": {
+                "precision": {
+                  "type": "int32",
+                  "id": 1
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 2,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 3
+                }
+              }
+            },
+            "Struct": {
+              "fields": {
+                "types": {
+                  "rule": "repeated",
+                  "type": "Type",
+                  "id": 1
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 2,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 3
+                }
+              }
+            },
+            "List": {
+              "fields": {
+                "type": {
+                  "type": "Type",
+                  "id": 1
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 2,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 3
+                }
+              }
+            },
+            "Map": {
+              "fields": {
+                "key": {
+                  "type": "Type",
+                  "id": 1
+                },
+                "value": {
+                  "type": "Type",
+                  "id": 2
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 3,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 4
+                }
+              }
+            },
+            "UserDefined": {
+              "fields": {
+                "typeReference": {
+                  "type": "uint32",
+                  "id": 1,
+                  "protoName": "type_reference"
+                },
+                "typeVariationReference": {
+                  "type": "uint32",
+                  "id": 2,
+                  "protoName": "type_variation_reference"
+                },
+                "nullability": {
+                  "type": "Nullability",
+                  "id": 3
+                },
+                "typeParameters": {
+                  "rule": "repeated",
+                  "type": "Parameter",
+                  "id": 4,
+                  "protoName": "type_parameters"
+                }
+              }
+            },
+            "Parameter": {
+              "oneofs": {
+                "parameter": {
+                  "oneof": [
+                    "null",
+                    "dataType",
+                    "boolean",
+                    "integer",
+                    "enum",
+                    "string"
+                  ]
+                }
+              },
+              "fields": {
+                "null": {
+                  "type": "google.protobuf.Empty",
+                  "id": 1
+                },
+                "dataType": {
+                  "type": "Type",
+                  "id": 2,
+                  "protoName": "data_type"
+                },
+                "boolean": {
+                  "type": "bool",
+                  "id": 3
+                },
+                "integer": {
+                  "type": "int64",
+                  "id": 4
+                },
+                "enum": {
+                  "type": "string",
+                  "id": 5
+                },
+                "string": {
+                  "type": "string",
+                  "id": 6
+                }
+              }
+            }
+          }
+        },
+        "NamedStruct": {
+          "fields": {
+            "names": {
+              "rule": "repeated",
+              "type": "string",
+              "id": 1
+            },
+            "struct": {
+              "type": "Type.Struct",
+              "id": 2
+            }
+          }
+        }
+      }
+    },
+    "google": {
+      "nested": {
+        "protobuf": {
+          "nested": {
+            "Any": {
+              "fields": {
+                "type_url": {
+                  "type": "string",
+                  "id": 1
+                },
+                "value": {
+                  "type": "bytes",
+                  "id": 2
+                }
+              }
+            },
+            "Empty": {
+              "fields": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}

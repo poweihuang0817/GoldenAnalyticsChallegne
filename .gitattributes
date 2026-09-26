@@ -1,0 +1,2 @@
+src/generated/* linguist-generated=true
+vendor/substrait/proto/** linguist-vendored=true

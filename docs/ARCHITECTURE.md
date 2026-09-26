@@ -1,6 +1,10 @@
 # Architecture decision: portable analytical query API
 
-Status: PROPOSED. No implementation choice has been accepted yet.
+Status: ACCEPTED on September 26, 2026: a constrained Substrait profile compiled through Kysely, selected explicitly by the user. Implementation begins with reads, projections, sorting, and fetch; the rest is incremental.
+
+![Substrait validation, Kysely compilation, and remote database execution](diagrams/architecture.png)
+
+Diagram source: [`diagrams/render-architecture.ps1`](diagrams/render-architecture.ps1). Run it on Windows to regenerate the PNG.
 
 ## Requirements
 
@@ -47,13 +51,14 @@ Sources:
 
 These are candidate capabilities, not verified compatibility with every challenge query. In particular, DataFusion's SQL unparser means a Substrait-to-SQL path is worth investigating rather than assuming an entire compiler must be written from scratch.
 
-## Recommended challenge architecture
+## Accepted challenge architecture
 
-Use a TypeScript library built on Kysely's public query-builder API. Keep query definitions separate from backend connection/execution adapters. Add a narrow layer for portable analytical operations only where dialects require different SQL. Avoid inventing a general SQL AST or exposing library internals as a persisted wire contract.
+Use a TypeScript library accepting a strict subset of Substrait v0.63.0 Protobuf JSON. Validate supported relations and resolve positional fields against a logical catalog, then lower to Kysely's public query-builder API. Keep backend connection/execution adapters separate. The Substrait profile is the public query representation; Kysely is internal compiler machinery. This is a relational translation layer, not a semantic modeling layer or local execution engine.
 
 ```text
 Driver / application
-    -> shared query definitions and analytical helpers
+    -> Substrait JSON profile
+    -> validation + catalog/positional field resolution
     -> selected backend adapter + Kysely dialect compiler
     -> SQL with bound parameters
     -> PostgreSQL or MySQL
@@ -62,7 +67,7 @@ Driver / application
 
 Each backend supplies connection configuration, compiler/dialect, capabilities, execution, and shutdown. Unsupported operations fail explicitly. Query values are bound; identifiers come from typed/validated query structure. Raw SQL, if needed inside an adapter, uses trusted templates with bound values.
 
-For a production requirement to exchange queries across languages or independent systems, reassess Substrait plus an existing compiler bridge. For a BI semantic modeling product, evaluate Malloy before building equivalent modeling behavior. These are architecture choices, not automatic later upgrades.
+Substrait was chosen to retain an established relational representation rather than invent a new IR. Kysely supplies TypeScript-native SQL construction, quoting, and parameters. DataFusion would add a Rust/Python integration boundary; DuckDB federation could move computation into the application; Malloy introduces semantic modeling beyond this task. None is required for this implementation. PostgreSQL/MySQL perform all query execution.
 
 ## Semantics to define before implementing samples
 
@@ -84,8 +89,8 @@ For a production requirement to exchange queries across languages or independent
 
 ## Decisions pending
 
-1. Is a cross-language serialized IR required now, or is a TypeScript query API sufficient?
-2. Accept Kysely, or perform a focused Malloy/Substrait compiler feasibility spike first?
+1. Extend the strict profile with filters and function anchors, followed by aggregates and joins with derived-table scopes.
+2. Broaden interoperability tests beyond the initial official-schema binary round trips. Generated types/codecs now come from the vendored v0.63.0 schemas; a separate capability validator rejects everything outside the implemented subset.
 3. Choose one extension. Candidate: portable window ranking (top products per category), separately demonstrated and tested. This remains a proposal.
 
-Acceptance should record the selected option, rejected alternatives, and the user's rationale before implementation begins.
+The initial profile and its limitations are documented in `SUBSTRAIT-PROFILE.md`. Acceptance of the architecture does not imply full Substrait support or a complete challenge submission.
