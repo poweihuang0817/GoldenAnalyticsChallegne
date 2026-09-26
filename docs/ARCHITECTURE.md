@@ -91,8 +91,8 @@ Substrait was chosen to retain an established relational representation rather t
 
 ## Decisions pending
 
-1. Build the high-level query API over the validated lower layer. Filters, function anchors, inner/left joins, aggregates, CASE, and derived-table scopes are implemented for the sample queries.
+1. The high-level Table/Expr API is implemented over the validated lower layer. Filters, function anchors, inner/left joins, aggregates, CASE, and derived-table scopes cover the sample queries.
 2. Broaden interoperability tests beyond the initial official-schema binary round trips. Generated types/codecs now come from the vendored v0.63.0 schemas; a separate capability validator rejects everything outside the implemented subset.
-3. Choose one extension. Candidate: portable window ranking (top products per category), separately demonstrated and tested. This remains a proposal.
+3. The separately demonstrated extension is portable row_number ranking for recent N orders per customer. See [implementation and tests](WINDOW-EXTENSION.md). DuckDB is an independently requested third-backend task (#12); it is not part of this window PR.
 
 The initial profile and its limitations are documented in `SUBSTRAIT-PROFILE.md`. Acceptance of the architecture does not imply full Substrait support or a complete challenge submission.

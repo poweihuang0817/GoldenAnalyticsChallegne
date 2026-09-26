@@ -24,7 +24,7 @@ This is the lower query translation layer, not the complete challenge. Official 
 | Expressions | Positional root fields, string/fp64/i32/boolean literals, registered scalar functions, CASE |
 | Types | i32, i64, bool, date, string, fp64, fixed decimal(38,10) |
 
-Read/project support direct/emit; common metadata on other relations is currently rejected. Nested/correlated field paths, arbitrary raw SQL, window-relation input, other joins, grouping sets, distinct aggregates, distributed aggregate phases, and arbitrary extensions remain unsupported.
+Read/project support direct/emit; common metadata on other relations is currently rejected. Nested/correlated field paths, arbitrary raw SQL, general windows beyond the row_number extension, other joins, grouping sets, distinct aggregates, distributed aggregate phases, and arbitrary extensions remain unsupported.
 
 The example catalogs expose selected logical fields backed by physical Northwind columns. They are not complete physical schemas. The decimal catalog view widens money columns to decimal(38,10); fp64 entries explicitly expose approximate numeric values.
 
@@ -54,4 +54,8 @@ node scripts/generate-function-spec.mjs
 
 Use docker compose up -d for a fresh database setup; avoid conflicts with the previously started manual container on the same ports. Unit tests compile without connecting. Integration tests fail when databases are unavailable. Tests use unique connection-local temporary tables for edge cases, leaving Northwind rows intact.
 
-Cross-language interoperability beyond the tested Protobuf round trips, broader type/function support, a high-level builder, and a separate advanced extension remain future work. This profile is not a complete Substrait implementation or a production authorization boundary.
+Cross-language interoperability beyond the tested Protobuf round trips and broader type/function support remain future work. The high-level builder and separate row_number extension are implemented. This profile is not a complete Substrait implementation or a production authorization boundary.
+
+## Window profile extension
+
+`Rel.window` now supports exactly one zero-argument row_number function, appending required i64 output. Partition/sort expressions are field references; sorting is mandatory. Only INITIAL_TO_RESULT and ALL are accepted. Bounds, frames, options and other window functions remain unsupported. Numeric less_than_or_equal supports matching numeric kinds or mixed i32/i64 widths. See [window extension](WINDOW-EXTENSION.md).

@@ -53,3 +53,16 @@ export const queryExamples = [
   { name: 'Customer freight/order-price ratio', query: freightQuery() },
   { name: '75th percentile of order price by customer country', query: percentileQuery() },
 ];
+
+/** Challenge extension: deterministic top-N within each customer's orders. */
+export function recentOrdersPerCustomer(n = 3) {
+  if (!Number.isInteger(n) || n < 0 || n > 2147483647) throw new Error('N must be a nonnegative i32');
+  return source.table('orders')
+    .select(t => ({ customer_id: t.col('customer_id'), order_id: t.col('order_id'), order_date: t.col('order_date') }))
+    .withRowNumber('position', { partitionBy: ['customer_id'], orderBy: [
+      { column: 'order_date', direction: 'desc', nulls: 'last' },
+      { column: 'order_id', direction: 'desc' },
+    ] })
+    .filter(t => t.col('position').lte(n))
+    .orderBy({ column: 'customer_id' }, { column: 'position' });
+}
