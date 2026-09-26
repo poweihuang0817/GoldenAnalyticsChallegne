@@ -101,8 +101,21 @@ The challenge explicitly requires a README written by the candidate. The assista
 
 - Independent PR #13 review found no blocking correctness issue. Its non-blocking note about validated-input assumptions is now explicit in compileAnalytics JSDoc and window documentation. No new validation or behavior change; local/fresh-clone results still apply to unchanged executable logic.
 
+## DuckDB third backend and PR #15 merge reconciliation
+
+- User explicitly requested DuckDB as an additional submission backend. The delegated implementation uses the pinned official Node client and a small Kysely driver; a consistent read-only PostgreSQL snapshot supplies four local Northwind tables. PostgreSQL/MySQL remain remote; no federation or Python runtime was added.
+- Real-engine regression tests first exposed DuckDB decimal division losing digits above JavaScript's safe integer range, then large-numerator division by zero overflowing despite the null contract. Bounded SQL HUGEINT quotient/remainder lowering and an explicit null guard fixed those failures; decimal AVG and arithmetic overflow explicitly reject rather than silently approximate.
+- User requested PR #15 conflicts be resolved after the window extension merged. Merged origin/main at 1ba187a without rebasing or force-pushing. Combined package scripts to retain both window and DuckDB tests; combined the driver backend switch with the window demo. The compiler merge retained both native ranking/lte and DuckDB-specific decimal handling.
+- Added three-backend window compatibility checks at N=0,1,3,1000 through Substrait binary round trips. Kept sample-query comparisons and independent hand-calculated DuckDB fixtures. Coordinated with the demo-page agent so shared-database suites run serially. This entry is supporting AI-development history, not the candidate's final README.
+- After reconciliation, local type checking, 26 local tests, 16 PostgreSQL/MySQL integration tests, and one three-backend conformance test passed (43 total). The snapshot seed and both driver commands passed, including the window example on all three engines. No CI or new fresh-clone verification is claimed for this merge.
+
 ## PR #14 merge-conflict resolution
 
 - User requested reconciliation with current main. Merged origin/main without rebasing or rewriting published commits. The only conflict was concurrent appended AI-log entries; preserved both the walkthrough review and main's window/review checkpoint. Runtime files merged cleanly.
 - Integration owner requested adding the HTTP boundary tests to the default npm test command now that package-script ownership is available. No new UI examples or backend behavior were added.
 - Merged-branch typecheck, all 22 default unit/HTTP tests and diff checks passed. Database-mutating integration was reserved for the parallel DuckDB agent, avoiding concurrent fixture work. Browser visual verification remains pending as recorded above.
+
+## PR #15 reconciliation after the walkthrough merged
+
+- User merged PR #14 and requested PR #15's remaining conflicts be resolved. Merged origin/main d1a2b32 without rebasing or force-pushing. Preserved both branches' AI-log entries and included compiler/API/window/playground/DuckDB suites together in the default test command. Runtime files merged without conflict; the playground's existing two-backend HTTP allowlist is unchanged.
+- Validation after this merge: typecheck, 28 default local/HTTP tests, 16 PostgreSQL/MySQL integration tests, one three-backend sample/window conformance test, and diff checks passed (45 tests total). No new UI browser inspection, CI, or fresh-clone claim.

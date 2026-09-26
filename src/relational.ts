@@ -1,6 +1,8 @@
 import { Kysely, MysqlAdapter, sql, type RawBuilder } from 'kysely';
 import type { Catalog, Database } from './compiler.js';
 import type { Expression, Rel, SupportedPlanJson } from './plan.js';
+import { DuckDBAdapter } from './duckdb.js';
+import { duckdbDecimalDivide } from './duckdb-decimal.js';
 
 import { FUNCTION_URI, FUNCTIONS } from './functions.js';
 export { FUNCTION_URI, FUNCTIONS } from './functions.js';
@@ -16,6 +18,7 @@ type Relation = { query: RawBuilder<unknown>; fields: Omit<Value, 'expr'>[]; ord
  */
 export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, catalog: Catalog) {
   const mysql = db.getExecutor().adapter instanceof MysqlAdapter;
+  const duckdb = db.getExecutor().adapter instanceof DuckDBAdapter;
   const float = (value: RawBuilder<unknown>) => mysql ? sql`cast(${value} as double)` : sql`cast(${value} as double precision)`;
   const decimal = (value: RawBuilder<unknown>) => sql`cast(${value} as decimal(38, 10))`;
   const functions = new Map<number, string>();
@@ -100,7 +103,8 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
         if (exact && args.some(arg => arg.kind === 'fp64')) throw new Error('Cannot mix decimal and fp64 arithmetic');
         const cast = exact ? decimal : float;
         const left = cast(a.expr), right = cast(b.expr);
-        const result = name === 'multiply' ? sql`(${left} * ${right})` : name === 'subtract' ? sql`(${left} - ${right})` : sql`(${left} / nullif(${right}, 0))`;
+        const result = name === 'multiply' ? sql`(${left} * ${right})` : name === 'subtract' ? sql`(${left} - ${right})`
+          : exact && duckdb ? duckdbDecimalDivide(left, right) : sql`(${left} / nullif(${right}, 0))`;
         value = { expr: cast(result), kind: exact ? 'decimal' : 'fp64', nullable: name === 'divide' || nullable }; break;
       }
       case 'coalesce':
@@ -223,6 +227,7 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
       if (name === 'count') value = { expr: sql`count(${args[0].expr})`, kind: 'i64', nullable: false };
       else if (name === 'sum' || name === 'avg') {
         numeric(args);
+        if (duckdb && name === 'avg' && args[0].kind === 'decimal') throw new Error('DuckDB exact decimal average is unsupported; use explicit fp64 inputs');
         const exact = args[0].kind === 'decimal', cast = exact ? decimal : float;
         value = { expr: cast(name === 'sum' ? sql`sum(${cast(args[0].expr)})` : sql`avg(${cast(args[0].expr)})`), kind: exact ? 'decimal' : 'fp64', nullable: true };
       } else throw new Error(`Unsupported aggregate: ${name}`);

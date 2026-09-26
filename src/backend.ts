@@ -2,9 +2,11 @@ import { Kysely, MysqlDialect, PostgresDialect } from 'kysely';
 import { createPool } from 'mysql2';
 import pg from 'pg';
 import type { Database } from './compiler.js';
+import { DuckDBDialect } from './duckdb.js';
 
-export type Backend = 'postgres' | 'mysql';
-export function connect(backend: Backend): Kysely<Database> {
+export type Backend = 'postgres' | 'mysql' | 'duckdb';
+export function connect(backend: Backend, options: { duckdbPath?: string } = {}): Kysely<Database> {
+  if (backend === 'duckdb') return new Kysely({ dialect: new DuckDBDialect(options.duckdbPath ?? process.env.DUCKDB_PATH ?? 'northwind.duckdb') });
   if (backend === 'postgres') return new Kysely({ dialect: new PostgresDialect({
     pool: new pg.Pool({
       connectionString: process.env.POSTGRES_URL ?? 'postgres://northwind:northwind@127.0.0.1:5432/northwind',
