@@ -38,6 +38,7 @@
 ## Architecture diagram
 
 - User requested a real architecture image in PR #2. Added a reproducible PNG diagram showing generated types/JSON/binary inputs, capability validation, Kysely compilation, and remote execution. Visually checked the rendered image before delivery.
+
 ## Agent workflow guidance
 
 - User requested worktree and agent best practices in a skill or agent instruction file, in a separate PR.
@@ -45,6 +46,15 @@
 - Created an isolated `docs/agent-workflow` worktree from `origin/main`, separate from open implementation PR #2.
 - Documented worktree ownership, explicit delegation, shared-service limitations, prerequisite PR sequencing, validation, and safe cleanup.
 
-## README authorship
+## Lower-layer coverage before the high-level API
+
+- User merged PR #3 and authorized merging PR #2. Documentation conflicts from the earlier stacked branches were resolved preserving both accepted architecture and worktree guidance; PR #2 was merged.
+- User directed the assistant to ensure the lower layer can express all challenge sample queries before building the fluent API.
+- Added function declarations, filters, CASE, inner/left joins, aggregates, and scoped SQL compilation in a new worktree from main.
+- User challenged rank/count interpolation as approximate. Clarified continuous versus discrete percentiles, then replaced floating monetary calculations with explicit decimal(38,10) arithmetic.
+- Added independent BigInt price/percentile oracles, native PostgreSQL percentile comparison, and temporary fixtures covering nulls, ties, empty inputs, endpoints, and decimals beyond JavaScript's safe integer range.
+- City matching is explicitly case-insensitive and accent-sensitive. The sample stores the accented Mexico city spelling; tests cover both spellings.
+
+## Candidate README
 
 The challenge explicitly requires a README written by the candidate. The assistant has not written that README. These notes are supporting material for the candidate's own account of the work.

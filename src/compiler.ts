@@ -1,12 +1,14 @@
 import { Kysely, sql, type SelectQueryBuilder } from 'kysely';
 import { fromPlanJson, toPlanJson, type Field, type Rel } from './plan.js';
+import { compileAnalytics } from './relational.js';
 
-export type Catalog = Record<string, readonly { name: string; type: 'i32' | 'date' | 'string'; nullable: boolean }[]>;
+export type Catalog = Record<string, readonly { name: string; type: 'i32' | 'date' | 'string' | 'fp64' | 'i64' | 'bool' | 'decimal'; nullable: boolean }[]>;
 // Dynamic database shape is confined to the compiler; the external boundary is validated.
 export type Database = Record<string, Record<string, unknown>>;
 type Query = SelectQueryBuilder<Database, string, {}>;
 export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catalog) {
   const plan = toPlanJson(fromPlanJson(input));
+  if (plan.extensions?.length || plan.extensionUris?.length) return compileAnalytics(db, plan, catalog);
   const root = plan.relations[0].root;
   let query: Query;
   let columns: string[] = [];
@@ -45,7 +47,10 @@ export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catal
     } else if ('project' in rel) {
       visit(rel.project.input, depth + 1);
       // Substrait project APPENDS expressions to its input before applying emit.
-      columns = [...columns, ...rel.project.expressions.map(resolve)];
+      columns = [...columns, ...rel.project.expressions.map(expr => {
+        if (!('selection' in expr)) throw new Error('Analytical expressions require the function profile');
+        return resolve(expr);
+      })];
       if (rel.project.common && 'emit' in rel.project.common) emit(rel.project.common.emit.outputMapping);
     } else if ('sort' in rel) {
       visit(rel.sort.input, depth + 1);
@@ -58,11 +63,13 @@ export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catal
         query = query.orderBy(sql`case when ${column} is null then ${sql.lit(nullRank)} else ${sql.lit(1 - nullRank)} end`, 'asc');
         query = query.orderBy(column, sort.direction.includes('_ASC_') ? 'asc' : 'desc');
       }
-    } else {
+    } else if ('fetch' in rel) {
       visit(rel.fetch.input, depth + 1);
       if (fetched) throw new Error('Nested fetch is not supported in this profile');
       fetched = true;
       query = query.limit(Number(rel.fetch.count)).offset(Number(rel.fetch.offset ?? '0'));
+    } else {
+      throw new Error('Analytical relations require the function profile');
     }
   }
   visit(root.input);

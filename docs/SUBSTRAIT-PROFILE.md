@@ -1,34 +1,46 @@
-# Initial Substrait profile and development commands
+# Supported Substrait profile
 
-This is the first working slice, not the complete challenge. The public input follows a restricted subset of [Substrait v0.63.0](https://github.com/substrait-io/substrait/tree/v0.63.0/proto/substrait) Protobuf JSON conventions. It is not the separate Substrait text format. Official schema files are vendored at a pinned revision with their license. `protobufjs-cli` generates the codec, TypeScript declarations, and reflection metadata; `src/plan.ts` separately restricts capabilities. See [schema provenance](../vendor/substrait/PROVENANCE.md).
+This is the lower query translation layer, not the complete challenge. Official Substrait v0.63.0 schemas are vendored at a pinned revision. protobufjs generates the codec, TypeScript declarations, and reflection metadata; application rules separately restrict capabilities. See [schema provenance](../vendor/substrait/PROVENANCE.md) and [challenge coverage](CHALLENGE-COVERAGE.md).
 
-## Supported input
+## Representation and validation
 
-- Exactly one root relation and explicit version 0.63.0.
-- Named-table read using a single logical table name and explicit flat base schema.
-- Catalog types: i32, date, string; explicit required/nullable declarations.
-- Positional root field references, not nested field paths or correlated references.
-- Project appends referenced fields to its input; optional emit maps positions over that combined output.
-- Read also supports direct/emit. Output names are supplied at the root and must be unique.
-- One sort, with explicit ASC/DESC and NULLS FIRST/LAST.
-- One fetch following sort (or an unordered fetch). Count/offset use canonical nonnegative decimal strings within JavaScript's safe integer range. These are the older, still defined v0.63 fields; expression-based fetch is unsupported.
-- Field-only projections can surround sort/fetch because they do not alter row cardinality or sort expressions.
+- One root relation, explicit v0.63.0 version, unique output names.
+- Generated IPlan and enums construct plans. toPlanJson verifies generated objects and applies the supported profile; fromPlanJson validates input before codec conversion can discard keys.
+- encodePlan/decodePlan provide binary interchange for this structural profile. A schema-derived wire scanner rejects unknown fields, bad wire shapes, and excessive nesting/size before recursive decoding.
+- JSON is the restricted Protobuf JSON representation, not Substrait's separate text format. Zero version components and field indices can be omitted. Not every valid spelling/default form is accepted.
+- Compiler validation resolves catalog fields and function declarations, checks argument/output types, and rejects unsupported semantics before database execution. Codec/structural validation alone is not sufficient for execution.
 
-The catalog binds logical schemas to physical table columns. The example exposes a two-column logical view of `orders`; it does not claim to describe every physical column in Northwind. Catalog entries are trusted application configuration and must accurately describe the remote columns.
+## Relations and expressions
 
-Unknown JSON keys, unsupported operators, mismatched schemas, invalid field positions, duplicate output names, unsafe pagination, excessive plan size/depth, repeated sorts, and repeated fetches fail before execution. Zero-valued field indices and version components may be omitted following Protobuf defaults. Other JSON spellings/default forms outside this profile may still be rejected. Valid Substrait outside this profile is rejected, not silently approximated.
+| Feature | Supported profile |
+| --- | --- |
+| Read | One-component logical table names; explicit flat schemas and trusted catalog binding |
+| Project | Append expressions to input, then optional emit mapping |
+| Filter | Boolean expressions |
+| Join | Inner and left; boolean condition over concatenated left/right fields |
+| Aggregate | One grouping set; initial-to-result; ALL invocation; no aggregate filters/options |
+| Sort | Positional field references with explicit direction and null placement |
+| Fetch | Nonnegative count/offset strings within safe integer range; older v0.63 fields |
+| Expressions | Positional root fields, string/fp64/i32/boolean literals, registered scalar functions, CASE |
+| Types | i32, i64, bool, date, string, fp64, fixed decimal(38,10) |
 
-`Plan` is the generated upstream interface. The example constructs that type with generated enums. `toPlanJson` applies the supported profile after checking generated messages; `fromPlanJson` rejects unsupported JSON before codec conversion can discard keys. `encodePlan` and `decodePlan` expose binary round trips for supported plans. A schema-derived wire scanner rejects unknown tags and excessive nesting before decoding. This is deliberately stricter than Protobuf's usual unknown-field tolerance.
+Read/project support direct/emit; common metadata on other relations is currently rejected. Nested/correlated field paths, arbitrary raw SQL, window-relation input, other joins, grouping sets, distinct aggregates, distributed aggregate phases, and arbitrary extensions remain unsupported.
 
-## Compilation and execution
+The example catalogs expose selected logical fields backed by physical Northwind columns. They are not complete physical schemas. The decimal catalog view widens money columns to decimal(38,10); fp64 entries explicitly expose approximate numeric values.
 
-`compilePlan(db, plan, catalog)` returns Kysely's compiled SQL and bound parameters. The caller executes it through the selected adapter. Kysely quotes identifiers and binds pagination values. A CASE sort key implements identical explicit null placement in MySQL and PostgreSQL.
+## Function extensions
 
-No local optimizer, joins, aggregation, or data movement engine is involved. PostgreSQL/MySQL execute the SQL remotely. DATE results remain calendar-date strings on both adapters. Decimal and count normalization are deferred until those types/operators are added; precision must not be silently discarded.
+The analytical examples declare functions through Substrait's standard extension URI and anchor mechanism. The allowlisted library is [golden-functions.yaml](../spec/golden-functions.yaml), an application-defined extension, not an upstream standard function library. Its generation source is [generate-function-spec.mjs](../scripts/generate-function-spec.mjs). The compiler never fetches arbitrary URIs.
 
-## Run locally
+Scalar functions: equal, lower, is_null, is_not_null, and, multiply, subtract, divide, coalesce. Aggregate functions: sum, avg, count, percentile_cont. The compiler enforces supported types/arity/output declarations. Decimal/fp64 arithmetic mixing is rejected. Division by zero returns null.
 
-Requires Node.js 22+ and the challenge databases on localhost (or `POSTGRES_URL` / `MYSQL_URL` overrides).
+The original extension-free compiler supports the small field-only read/project/sort/fetch path with one sort before one fetch. Plans declaring the analytical function library use a scoped compiler that preserves nested relation boundaries. Percentile is the sole measure in its aggregate. Projects after a sort must retain the sorting fields or fail explicitly.
+
+All SQL operators come from trusted compiler templates; Kysely quotes identifiers and binds literal values. PostgreSQL/MySQL execute the query remotely. DATE returns calendar-date strings; i64 counts and decimal outputs return strings to preserve precision. See the coverage document for decimal scale/overflow limits and exact percentile semantics.
+
+## Commands
+
+Requires Node.js 22+ and the sample databases (localhost or POSTGRES_URL/MYSQL_URL).
 
 ```powershell
 npm ci
@@ -36,18 +48,10 @@ npm run check
 npm test
 npm run test:integration
 npm run demo
+npm run generate:substrait
+node scripts/generate-function-spec.mjs
 ```
 
-Use `docker compose up -d` for fresh database setup. If the previously created manual container is running, use it directly or stop it before starting Compose to avoid port conflicts. See `PROGRESS.md`.
+Use docker compose up -d for a fresh database setup; avoid conflicts with the previously started manual container on the same ports. Unit tests compile without connecting. Integration tests fail when databases are unavailable. Tests use unique connection-local temporary tables for edge cases, leaving Northwind rows intact.
 
-Unit tests compile without connecting to databases. Integration tests execute the same plan against both backends and compare to independent reference SQL; missing databases fail rather than silently skipping tests.
-
-## Next increments
-
-1. Function extension anchors and typed literals, then filtering with explicit case semantics.
-2. Aggregate and join relations, with subquery scopes preserving relation boundaries and aggregate grain.
-3. Nested analytical queries and the remaining examples.
-4. Broader cross-implementation interoperability and malformed-plan tests.
-5. A separately selected advanced extension.
-
-The capability validator deliberately limits the first implementation. Its narrowed types are inferred from validation rules; the public standard types come from generated definitions. Neither structural validation nor codec compatibility proves complete Substrait semantics or provides a production authorization boundary.
+Cross-language interoperability beyond the tested Protobuf round trips, broader type/function support, a high-level builder, and a separate advanced extension remain future work. This profile is not a complete Substrait implementation or a production authorization boundary.

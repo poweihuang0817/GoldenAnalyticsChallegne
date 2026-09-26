@@ -33,7 +33,7 @@ $linePen = New-Object System.Drawing.Pen ([System.Drawing.ColorTranslator]::From
 function Arrow([int]$x1,[int]$y1,[int]$x2,[int]$y2) { $graphics.DrawLine($arrowPen,$x1,$y1,$x2,$y2) }
 
 Label 'Golden Query | Substrait to remote SQL' 60 35 1480 65 44
-Label 'Initial implementation: read / project / sort / fetch' 60 107 1480 42 22 '#455773'
+Label 'Lower layer: all six sample query families' 60 107 1480 42 22 '#455773'
 Label 'NODE / TYPESCRIPT APPLICATION' 60 170 1480 34 18 '#586E91'
 
 Box 60 230 450 140 'Generated Substrait types' "IPlan + generated enums`ntoPlanJson validates capabilities" '#E8F0FF'
@@ -47,7 +47,7 @@ Arrow 800 370 800 475
 Box 250 480 1100 160 'Supported-plan boundary' "Official v0.63.0 schemas generate the types + codec`nCapability rules reject unsupported operators, extensions and malformed input`nCatalog checks schemas and resolves positional fields / emit mappings" '#E8F0FF'
 Arrow 800 640 800 705
 
-Box 250 710 1100 140 'Kysely query construction' "Compiler lowers the supported relations; Kysely quotes identifiers and binds values`nCASE sort keys preserve explicit null ordering across both backends" '#FFFFFF'
+Box 250 710 1100 140 'Kysely SQL construction' "Scoped subqueries preserve joins and aggregate grain; literals are bound parameters`nDecimal arithmetic and rank-based continuous percentiles execute remotely" '#FFFFFF'
 Arrow 800 850 800 890
 $graphics.DrawLine($linePen,400,890,1200,890)
 Arrow 400 890 400 930
@@ -67,7 +67,7 @@ Arrow 1200 1065 1200 1170
 Box 100 1175 600 145 'PostgreSQL 17' "Executes the generated SQL`nNorthwind data stays in the remote database" '#E4F4EB'
 Box 900 1175 600 145 'MySQL 8' "Executes the generated SQL`nNorthwind data stays in the remote database" '#E4F4EB'
 Label 'Results return through the adapters to the caller | DATE values are calendar-date strings' 80 1345 1440 50 22
-Label 'Planned: filters, joins, aggregates and nested analytics. No local execution engine.' 80 1400 1440 44 18 '#586E91'
+Label 'Next: high-level query API and a separate advanced extension. No local execution engine.' 80 1400 1440 44 18 '#586E91'
 
 $outputPath = Join-Path $PSScriptRoot 'architecture.png'
 $canvas.Save($outputPath,[System.Drawing.Imaging.ImageFormat]::Png)

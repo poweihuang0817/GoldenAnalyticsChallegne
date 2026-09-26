@@ -22,7 +22,7 @@ test('reject unsupported fields, relations, schema errors and invalid limits', a
     const bad = recentOrders();
     bad.relations[0].root.names = ['wrong'];
     assert.throws(() => compilePlan(db, bad, catalog), /width/);
-    assert.throws(() => compilePlan(db, { ...recentOrders(), extensions: [] }, catalog));
+    assert.throws(() => compilePlan(db, { ...recentOrders(), advancedExtensions: {} }, catalog));
     assert.throws(() => compilePlan(db, recentOrders(-1), catalog));
     assert.throws(() => compilePlan(db, recentOrders(), {}), /Unknown table/);
     const plan = recentOrders();
