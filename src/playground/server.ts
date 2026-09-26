@@ -1,0 +1,84 @@
+import { createServer, type IncomingMessage } from 'node:http';
+import { readFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
+import { connect, type Backend } from '../backend.js';
+import { compilePlan } from '../compiler.js';
+import { challengeCatalog } from '../challenge.js';
+import { cityQuery, averageUnitsQuery, percentileQuery } from '../queries.js';
+
+const source = readFileSync(new URL('../queries.ts', import.meta.url), 'utf8');
+function definition(name: string) {
+  const start = source.search(new RegExp(`(?:export )?(?:const|function) ${name}\\b`));
+  if (start < 0) throw new Error('Missing example source');
+  const rest = source.slice(start), next = rest.slice(1).search(/\n(?:export |function )/);
+  return (next < 0 ? rest : rest.slice(0, next + 1)).trim();
+}
+const examples = [
+  { id: 'city', title: 'Customers in London', description: 'Filter with a bound value, then count. Case-insensitive matching is explicit.', code: `${definition('cityQuery')}\n\ncityQuery('london')`, build: () => cityQuery('london') },
+  { id: 'units', title: 'Average units per order', description: 'Aggregate order lines, join back to orders, then aggregate again. Orders without lines contribute zero.', code: `${definition('averageUnitsQuery')}\n\naverageUnitsQuery()`, build: averageUnitsQuery },
+  { id: 'percentile', title: '75th percentile by country', description: 'Exact continuous percentile of discounted order prices, rounded to decimal scale 10. Each country is a separate group.', code: `${definition('pricedOrders')}\n\n${definition('percentileQuery')}\n\npercentileQuery(0.75)`, build: percentileQuery },
+];
+export type Request = { query: string; backend: Backend; action: 'compile' | 'run' };
+export async function executeExample(request: Request) {
+  const example = examples.find(e => e.id === request.query);
+  if (!example) throw new Error('Unknown example');
+  const plan = example.build().toSubstrait(), db = connect(request.backend), start = performance.now();
+  try {
+    const compiled = compilePlan(db, plan, challengeCatalog);
+    const rows = request.action === 'run' ? (await db.executeQuery(compiled)).rows : undefined;
+    return { sql: compiled.sql, parameterCount: compiled.parameters.length, plan,
+      rows: rows?.slice(0, 100), rowCount: rows?.length, elapsedMs: Math.round((performance.now() - start) * 10) / 10 };
+  } finally { await db.destroy(); }
+}
+const assets: Record<string, [string, string]> = {
+  '/': ['index.html', 'text/html; charset=utf-8'],
+  '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
+  '/style.css': ['style.css', 'text/css; charset=utf-8'],
+};
+async function body(request: IncomingMessage) {
+  const chunks: Buffer[] = []; let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > 1024) throw new Error('Body too large');
+    chunks.push(Buffer.from(chunk));
+  }
+  return JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown;
+}
+export function createDemoServer(execute: (request: Request) => Promise<unknown> = executeExample) {
+  let busy = false;
+  return createServer({ requestTimeout: 5000, headersTimeout: 5000 }, async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+    const send = (status: number, value: unknown) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(value)); };
+    const port = req.socket.localPort, host = `127.0.0.1:${port}`;
+    if (req.headers.host !== host || (req.headers.origin && req.headers.origin !== `http://${host}`)
+      || (req.headers['sec-fetch-site'] && !['same-origin', 'none'].includes(String(req.headers['sec-fetch-site'])))) {
+      send(403, { error: 'Only the local demo page may access this server.' }); return;
+    }
+    if (req.method === 'GET' && Object.hasOwn(assets, req.url ?? '')) {
+      const [file, contentType] = assets[req.url!];
+      res.writeHead(200, { 'Content-Type': contentType }); res.end(readFileSync(new URL(file, import.meta.url))); return;
+    }
+    if (req.method === 'GET' && req.url === '/examples') {
+      send(200, examples.map(({ build, ...example }) => example)); return;
+    }
+    if (req.url !== '/query') { send(404, { error: 'Not found.' }); return; }
+    if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); send(405, { error: 'Use POST.' }); return; }
+    if (req.headers['content-type'] !== 'application/json') { send(415, { error: 'Use application/json.' }); return; }
+    let input: any;
+    try { input = await body(req); } catch { send(400, { error: 'Expected a JSON request of at most 1024 bytes.' }); return; }
+    if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).length !== 3
+      || !['query', 'backend', 'action'].every(k => Object.hasOwn(input, k))
+      || !examples.some(e => e.id === input.query) || !['postgres', 'mysql'].includes(input.backend)
+      || !['compile', 'run'].includes(input.action)) { send(400, { error: 'Choose a listed example, backend and action.' }); return; }
+    if (busy) { send(429, { error: 'A query is running. Try again when it finishes.' }); return; }
+    busy = true;
+    try { send(200, await execute(input)); }
+    catch { send(500, { error: 'Query failed. Check that the sample database is running and configured.' }); }
+    finally { busy = false; }
+  });
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  createDemoServer().listen(4317, '127.0.0.1', () => console.log('Demo: http://127.0.0.1:4317'));
+}

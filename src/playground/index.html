@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Golden · Query walkthrough</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body><main>
+<header><span class="brand">GOLDEN / QUERY ENGINEERING</span><span class="badge">Executable walkthrough</span><h1>One query. Two databases.</h1><p class="intro">Describe the computation in TypeScript. Inspect the plan, compile SQL, and run it on Northwind.</p></header>
+<div class="architecture" aria-label="Query architecture"><span>Table / Expression API</span><b>→</b><span>Substrait subset</span><b>→</b><span>Kysely SQL</span><b>→</b><span>Remote database</span></div>
+<section class="controls"><label>EXAMPLE<select id="example"></select></label><label>EXECUTE ON<select id="backend"><option value="postgres">PostgreSQL 17</option><option value="mysql">MySQL 8</option></select></label><button id="compile" type="button">Compile only</button><button id="run" type="button" class="primary">Run query →</button></section>
+<div class="columns"><section class="panel"><div class="section-label">01 / APPLICATION CODE</div><h2 id="title">Loading examples…</h2><p id="description"></p><pre id="code" tabindex="0"></pre><p class="footnote">Source read directly from src/queries.ts. Shared imports and catalog setup are omitted.</p></section>
+<section class="panel results"><div class="section-label">02 / DATABASE RESULT</div><h2>Live results</h2><p id="status" role="status" aria-live="polite">Choose an example, then run it.</p><div id="results" class="table-wrap"></div><p class="footnote">Values come from the selected database. Counts and exact decimals remain strings to preserve precision.</p></section></div>
+<section class="inspection"><details><summary>Generated SQL <span id="parameters"></span></summary><pre id="sql">Compile or run a query to inspect SQL.</pre></details><details><summary>Substrait plan</summary><pre id="plan">Compile or run a query to inspect the supported plan.</pre></details></section>
+<footer>Local demonstration · Fixed examples · Analytical work executes in PostgreSQL or MySQL</footer>
+</main></body></html>
