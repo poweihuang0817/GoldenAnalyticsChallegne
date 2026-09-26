@@ -80,6 +80,13 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Verified the risk before changing behavior: deleting declarations from a function-free nested-limit plan causes the old visitor to reject it. The existing API integration suite relies on this supported composition.
 - Chose the review's explicitly permitted option 2: preserve behavior, document the dependency, defer metadata/dispatch cleanup to #7. Added a focused characterization test; no compiler refactor or schema-validation expansion.
 
+## PR #14 local walkthrough review
+
+- User requested fixes for the independent demo-page review. Read the latest comment; it found no blocking P0/P1 issue and asked for two explicit boundary clarifications.
+- Clarified in server comments and supporting documentation that HTTP receive timeouts do not bound or cancel database execution, and Host/Origin checks are not authentication. Preserved loopback binding, the fixed query allowlist and the warning against public proxies.
+- No timeout/authentication framework or runtime behavior changed. Validation for this follow-up is staged diff inspection and `git diff --check`; the prior type check, 17 existing unit tests, two HTTP tests and six real database smoke runs were not rerun for comments/docs only.
+- Browser visual verification remains pending: the prior attempt reported no available IAB and an empty enabled-browser inventory. No visual inspection is claimed.
+
 ## Window extension and delegated review checkpoint
 
 - User approved a separate top-N-per-customer extension and later clarified it should continue independently while agents investigate issues and local architecture instructions.
@@ -93,3 +100,9 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Fresh clone of window code 603accf passed fresh install, separate fresh Docker instance, typecheck, all 36 tests and driver; isolated container/network cleaned up. See CHECKPOINT.md. User explicitly requested capabilities, authentication/authorization and useful errors be recorded as essential cross-database production work outside MVP; FUTURE-WORK.md captures these plus researched follow-ups without writing the final README.
 
 - Independent PR #13 review found no blocking correctness issue. Its non-blocking note about validated-input assumptions is now explicit in compileAnalytics JSDoc and window documentation. No new validation or behavior change; local/fresh-clone results still apply to unchanged executable logic.
+
+## PR #14 merge-conflict resolution
+
+- User requested reconciliation with current main. Merged origin/main without rebasing or rewriting published commits. The only conflict was concurrent appended AI-log entries; preserved both the walkthrough review and main's window/review checkpoint. Runtime files merged cleanly.
+- Integration owner requested adding the HTTP boundary tests to the default npm test command now that package-script ownership is available. No new UI examples or backend behavior were added.
+- Merged-branch typecheck, all 22 default unit/HTTP tests and diff checks passed. Database-mutating integration was reserved for the parallel DuckDB agent, avoiding concurrent fixture work. Browser visual verification remains pending as recorded above.
