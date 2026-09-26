@@ -66,3 +66,10 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Re-expressed all six query families through callback-scoped named columns; explicit join outputs handle duplicate names/self-joins and left-join nullability.
 - Added isolated API checks, direct cross-backend comparisons, and finite relational equivalence/empty-input cases. No randomized fuzzing or full conformance claim. No candidate README was written.
 - Limits: runtime schema/type validation rather than inferred TypeScript row types; no arbitrary new operators, decimal literals, or full Ibis support. Backend adapter expansion and the separate extension remain later work.
+
+## PR #5 self-review
+
+- Found a join-scope leak: a column captured in `on` could be reused in `select` with pre-join nullability, despite left-join null extension. This could give later expressions misleading metadata and cause compiler rejection.
+- Added a minimal regression test and confirmed it failed before the fix. Separated predicate and output scope identities; the stale reference now fails immediately.
+- Re-ran type checking, 16 unit tests and 11 integration tests successfully. All six challenge query families remain covered on both databases.
+- Remaining MVP gaps are the separately demonstrated extension, fresh-clone setup verification, candidate README/video, and reviewer access. Capabilities/errors/logging are useful future improvements, not prerequisites to demonstrating the current core.

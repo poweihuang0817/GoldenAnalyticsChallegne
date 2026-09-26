@@ -153,11 +153,16 @@ export class Table {
     const scope = new Map([[leftId, 0], [rightId, this.fields.length]]);
     const condition = options.on(left, r);
     if (condition.kind !== 'bool') throw new Error('Join condition requires bool');
-    const rightOutput = new Columns(right.fields.map(f => ({ ...f, nullable: f.nullable || options.how === 'left' })), rightId);
-    const entries = Object.entries(options.select(left, rightOutput)); names(entries.map(([n]) => n));
+    // Predicate fields describe inputs; output fields describe the nullable join result.
+    // Do not allow captured predicate expressions to bypass that boundary.
+    const outputLeftId = Symbol(), outputRightId = Symbol();
+    const outputScope = new Map([[outputLeftId, 0], [outputRightId, this.fields.length]]);
+    const leftOutput = new Columns(this.fields, outputLeftId);
+    const rightOutput = new Columns(right.fields.map(f => ({ ...f, nullable: f.nullable || options.how === 'left' })), outputRightId);
+    const entries = Object.entries(options.select(leftOutput, rightOutput)); names(entries.map(([n]) => n));
     const joined: S.IRel = { join: { left: this.relation, right: right.relation, expression: condition.resolve(scope),
       type: options.how === 'left' ? s.JoinRel.JoinType.JOIN_TYPE_LEFT : s.JoinRel.JoinType.JOIN_TYPE_INNER } };
-    return new Table({ project: { input: joined, expressions: entries.map(([, e]) => e.resolve(scope)),
+    return new Table({ project: { input: joined, expressions: entries.map(([, e]) => e.resolve(outputScope)),
       common: { emit: { outputMapping: entries.map((_, i) => this.fields.length + right.fields.length + i) } } } },
     entries.map(([name, e]) => ({ name, type: e.kind, nullable: e.nullable })), this.source);
   }

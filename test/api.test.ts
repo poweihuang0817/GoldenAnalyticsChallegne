@@ -86,3 +86,13 @@ test('both dialects bind literals and preserve nested aggregate boundaries offli
     } finally { await db.destroy(); }
   }
 });
+
+test('join predicate columns cannot escape into output with pre-join nullability', () => {
+  const employees = source.table('employees');
+  let predicateColumn!: Expr;
+  assert.throws(() => employees.join(employees, {
+    how: 'left',
+    on: (l,r) => { predicateColumn = r.col('employee_id'); return l.col('employee_id').eq(predicateColumn); },
+    select: () => ({ employee_id: predicateColumn }),
+  }), /scope/);
+});
