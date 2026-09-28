@@ -58,6 +58,8 @@
 ## Candidate README
 
 The challenge explicitly requires a README written by the candidate. The assistant has not written that final submission README. On September 28 the candidate explicitly requested an AI draft as supporting material; it is separately labeled in `README.AI-DRAFT.md`. The candidate then directed all examples to use Northwind. The draft now explains the actual catalog and uses read-only verified orders 10248/10249/10250 (27/49/60 units) to explain aggregation grain instead of hypothetical quantities. These notes support the candidate's own account of the work.
+
+The candidate also requested API documentation. Expanded `docs/PUBLIC-API.md` into a method/argument/return/default reference with Northwind recipes, lifecycle, type rules, scope ownership, errors and limitations; corrected stale descriptions of window/DuckDB support. Extracted all four TypeScript example blocks from the Markdown: London count executed on PostgreSQL with result 6, and all four query plans compiled for PostgreSQL/MySQL/DuckDB against the unchanged implementation. Local links and diff checks passed; no new runtime features or full-suite rerun claimed.
 # Public API iteration — September 26, 2026
 
 - User supplied a full architecture/verification brief, then explicitly prioritized: Ibis-inspired public API, unit/case coverage, more verification, and only afterward capabilities/errors/logging.
