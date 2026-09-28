@@ -1,9 +1,10 @@
 # Public relational API
 
-The application builds immutable, lazy tables and expressions in TypeScript. This is inspired by [Ibis](https://ibis-project.org/reference/expression-tables); it does not depend on Python or Ibis. Operations construct generated Substrait relations, not SQL. The existing compiler validates the supported profile and executes SQL remotely through PostgreSQL/MySQL.
+The application builds immutable, lazy tables and expressions in TypeScript. The Table/Expression model references [Ibis](https://ibis-project.org/reference/expression-tables); it does not depend on Python or Ibis. Operations construct generated Substrait relations. The compiler validates the supported profile and produces SQL; the client executes it through the selected backend.
 
 ```ts
 import { createSource, count, literal } from '../src/api.js';
+import { createClient } from '../src/client.js';
 import { challengeCatalog } from '../src/challenge.js';
 
 const source = createSource(challengeCatalog);
@@ -11,12 +12,16 @@ const query = source.table('customers')
   .filter(t => t.col('city').lower().eq(literal('london').lower()))
   .aggregate(() => ({ customer_count: count() }));
 
-const plan = query.toSubstrait();
-// Existing compilePlan(db, plan, challengeCatalog) and db.executeQuery(compiled)
-// remain separate. A backend-facing client is a later change.
+const client = createClient('postgres', challengeCatalog);
+try {
+  const result = await client.execute(query);
+  console.table(result.rows);
+} finally { await client.destroy(); }
 ```
 
 See [queries.ts](../src/queries.ts) for all six challenge families, including nested aggregation and exact decimal percentile. The driver now uses these queries. Existing handwritten plans remain as lower-layer test fixtures; they are not the recommended application interface.
+
+Import `createClient` from `src/client.ts`. See [execution and callback guide](QUERY-CLIENT.md) for SQL previews, lifecycle, and readable callback examples.
 
 ## Supported surface
 
