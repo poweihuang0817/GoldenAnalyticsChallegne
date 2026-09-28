@@ -58,6 +58,7 @@
 ## Candidate README
 
 The challenge explicitly requires a README written by the candidate. The assistant has not written that README. These notes are supporting material for the candidate's own account of the work.
+
 # Public API iteration — September 26, 2026
 
 - User supplied a full architecture/verification brief, then explicitly prioritized: Ibis-inspired public API, unit/case coverage, more verification, and only afterward capabilities/errors/logging.
@@ -118,4 +119,14 @@ The challenge explicitly requires a README written by the candidate. The assista
 ## PR #15 reconciliation after the walkthrough merged
 
 - User merged PR #14 and requested PR #15's remaining conflicts be resolved. Merged origin/main d1a2b32 without rebasing or force-pushing. Preserved both branches' AI-log entries and included compiler/API/window/playground/DuckDB suites together in the default test command. Runtime files merged without conflict; the playground's existing two-backend HTTP allowlist is unchanged.
-- Validation after this merge: typecheck, 28 default local/HTTP tests, 16 PostgreSQL/MySQL integration tests, one three-backend sample/window conformance test, and diff checks passed (45 tests total). No new UI browser inspection, CI, or fresh-clone claim.
+- Validation after this merge: typecheck, 28 default local/HTTP tests, 16 PostgreSQL/MySQL integration tests, one three-backend sample/window conformance test, and diff checks passed (45 total). No new UI browser inspection, CI, or fresh-clone claim.
+
+
+
+## Kysely migration plan PR — September 28, 2026
+
+- User correction: do not begin test additions or migration yet; first submit a plan PR for review.
+- Drafted a plan-only proposal to replace the public Golden Table/Expr + Substrait boundary with direct Kysely query builders. No DataFusion/federation is proposed for current scope.
+- Proposed sequencing: review plan; merge behavior-characterization tests that pass on the current code; migrate query definitions/driver while preserving those tests; then remove unused Substrait code and dependencies.
+- Found open PR #18 adds a client wrapper around the current API. The plan records it as a disposition to resolve before migration and explicitly forbids stacking migration work on it.
+- No source or test implementation changes were made. No checks or test claims are made by the plan PR.
