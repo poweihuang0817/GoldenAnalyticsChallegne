@@ -63,7 +63,7 @@ An order belongs to a customer and an employee; its detail rows describe purchas
 
 ## Public API: count Northwind customers in London
 
-For method signatures, defaults, expression rules, return types and failure boundaries, see the separate [API reference and Northwind recipes](docs/PUBLIC-API.md).
+See the [API documentation entry point](docs/PUBLIC-API.md) for usage details. Expanded API documentation is maintained in a separate PR from this README draft.
 
 The API takes inspiration from Ibis's Table/Expression model, with no Ibis or Python runtime dependency. This example can be placed in a TypeScript file at the repository root:
 
