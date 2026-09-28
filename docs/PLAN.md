@@ -37,6 +37,19 @@ September 26 update: PR #4 merged the lower-layer implementation of all six quer
 - Tag the verified final commit `submission-v1`; include its hash with the submission.
 - Verify reviewer access to the private repository and video. Do not make the repository public by default.
 
+## Proposed API evolution (awaiting review)
+
+The user has redirected the next architecture decision toward a direct TypeScript/Kysely public API, with no Substrait IR and no DataFusion/federation for the current scope. This is not yet accepted. See [the test-first migration proposal](KYSELY-MIGRATION-PLAN.md).
+
+Required order if the proposal is approved:
+
+1. Merge a plan-only PR after user review.
+2. Add and merge behavior-characterization tests that pass against the current implementation.
+3. Migrate query definitions and the driver to direct Kysely, then rerun the same behavior corpus.
+4. Remove the unused Substrait API/compiler path after confirming no production imports remain.
+
+Do not start tests or migration implementation before the plan PR is reviewed. Resolve the disposition of open PR #18 before starting the migration; do not stack migration work on it.
+
 ## Time record
 
 Not yet recorded. Candidate should enter actual session durations; calendar checkpoints do not imply time spent.
