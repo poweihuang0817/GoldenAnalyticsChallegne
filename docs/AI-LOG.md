@@ -119,3 +119,11 @@ The challenge explicitly requires a README written by the candidate. The assista
 
 - User merged PR #14 and requested PR #15's remaining conflicts be resolved. Merged origin/main d1a2b32 without rebasing or force-pushing. Preserved both branches' AI-log entries and included compiler/API/window/playground/DuckDB suites together in the default test command. Runtime files merged without conflict; the playground's existing two-backend HTTP allowlist is unchanged.
 - Validation after this merge: typecheck, 28 default local/HTTP tests, 16 PostgreSQL/MySQL integration tests, one three-backend sample/window conformance test, and diff checks passed (45 tests total). No new UI browser inspection, CI, or fresh-clone claim.
+
+## Dedicated API documentation — September 28, 2026
+
+- Candidate requested a separate comprehensive API-doc PR and an explicit explanation of why the API follows Ibis's design. Moved reference work out of README PR #16 without force-pushing; this branch starts independently from main d8a5fb0.
+- Organized docs/api into tutorial, Table/Expr reference, execution, Northwind recipes, semantics, design and maintenance pages. The design compares Ibis-style composition with direct Kysely and raw Substrait and states there is no Ibis runtime dependency.
+- Added source documentation comments and a runnable/type-checkable Northwind companion. No query behavior changed and no documentation-site dependency was introduced. TypeDoc/API Extractor are documented as possible later tooling, not installed capabilities.
+- Documentation remains supporting material; the candidate-authored submission README is separate. The code MVP stays frozen while its interface is explained.
+- Validation: npm run check and npm run check:docs passed; seven Northwind analyses compiled through binary round trips for each of three backends (21 combinations), then all 21 executed successfully after seeding this worktree's dedicated DuckDB file. Verified 10 Markdown pages / 58 local links and diff checks. Source-only comment edits preserve identical emitted runtime output, checked with the already-installed esbuild transpiler. An initial auxiliary check using the TypeScript compiler API could not use ScriptTarget from the installed package; the actual tsc checks passed and no new tool dependency was added. No full-suite rerun or hosted CI claim.
