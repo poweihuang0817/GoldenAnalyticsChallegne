@@ -57,7 +57,7 @@
 
 ## Candidate README
 
-The challenge explicitly requires a README written by the candidate. The assistant has not written that final submission README. On September 28 the candidate explicitly requested an AI draft as supporting material; it is separately labeled in `README.AI-DRAFT.md`. These notes support the candidate's own account of the work.
+The challenge explicitly requires a README written by the candidate. The assistant has not written that final submission README. On September 28 the candidate explicitly requested an AI draft as supporting material; it is separately labeled in `README.AI-DRAFT.md`. The candidate then directed all examples to use Northwind. The draft now explains the actual catalog and uses read-only verified orders 10248/10249/10250 (27/49/60 units) to explain aggregation grain instead of hypothetical quantities. These notes support the candidate's own account of the work.
 # Public API iteration — September 26, 2026
 
 - User supplied a full architecture/verification brief, then explicitly prioritized: Ibis-inspired public API, unit/case coverage, more verification, and only afterward capabilities/errors/logging.

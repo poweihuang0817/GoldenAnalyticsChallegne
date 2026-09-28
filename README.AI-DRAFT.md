@@ -48,7 +48,20 @@ node --import tsx src/playground/server.ts
 
 Open `http://127.0.0.1:4317`. It shows three fixed API examples, compiled SQL, Substrait and real results for PostgreSQL/MySQL. The driver demonstrates the wider query set, including DuckDB and window ranking. The page is localhost-only; its HTTP input timeouts do not cancel database queries. See [demo-page notes](docs/DEMO-PAGE.md).
 
-## Public API: describe a relation, then execute it
+## Northwind data used throughout the examples
+
+All application examples use the Northwind data from the supplied challenge image. The logical catalog exposes the columns needed for these queries:
+
+| Table | Role in the examples |
+| --- | --- |
+| `customers` | Customer ID, city and country for customer counts and grouping |
+| `orders` | Order ID/date, customer, employee, shipped date and freight |
+| `order_details` | Order ID, unit price, quantity and discount for order totals |
+| `employees` | Employee ID for shipped/unshipped order counts |
+
+An order belongs to a customer and an employee; its detail rows describe purchased products and quantities. The catalog is a selected view of Northwind, not the complete physical schema. All six challenge families are implemented in [src/queries.ts](src/queries.ts).
+
+## Public API: count Northwind customers in London
 
 The API takes inspiration from Ibis's Table/Expression model, with no Ibis or Python runtime dependency. This example can be placed in a TypeScript file at the repository root:
 
@@ -79,7 +92,7 @@ The callback's `t` exposes columns from the current relation. It is not one row 
 
 Supported operations include projection, filters, inner/left joins, grouping and aggregation, ordering, pagination and a narrow `withRowNumber` window operation. Joins explicitly name their outputs and make the right side nullable for a left join. `count()` counts rows; `column.count()` counts non-null values. Runtime names/types are checked, but TypeScript result-row inference is not implemented.
 
-## Why query composition matters
+## Query composition: average units per Northwind order
 
 Average units per order requires two aggregation levels:
 
@@ -95,7 +108,17 @@ const query = source.table('orders').join(units, {
 }).aggregate(t => ({ average_units: t.col('units').avg() }));
 ```
 
-Orders with quantities `[2, 3]`, `[9]` and no details contribute totals `5`, `9` and `0`. Their average is `14/3`. Averaging the detail quantities directly answers a different question. The compiler preserves the intermediate aggregation as a derived query and keeps orders without details through the left join.
+For a concrete example, these three orders were read from the supplied Northwind PostgreSQL database:
+
+| Northwind order ID | Detail quantities | Total units |
+| --- | --- | ---: |
+| 10248 | 12, 10, 5 | 27 |
+| 10249 | 9, 40 | 49 |
+| 10250 | 10, 35, 15 | 60 |
+
+For this three-order subset, average units per order is `(27 + 49 + 60) / 3`, about 45.33. Averaging the eight detail quantities instead gives `136 / 8 = 17`, which answers a different question. These numbers illustrate the subset only; the API query above computes over all orders.
+
+The compiler preserves the intermediate aggregation as a derived query. The left join also defines behavior for any order without details: it contributes zero units through `coalesce(0)`.
 
 ## Architecture and tradeoffs
 
