@@ -6,59 +6,64 @@
 
 | Object | Responsibility |
 | --- | --- |
-| Source, returned by `createSource(catalog)` | Snapshots the logical schema and creates table descriptions; does not connect to a database |
-| `Table` | A relation and its output schema; transformations return new tables |
-| `Columns` | Callback-scoped access to the current input fields using `col(name)` |
-| `Expr` | A typed scalar expression, such as a column, literal, comparison or arithmetic operation |
-| `Measure` | An aggregate description, accepted by `aggregate`, not by `select` |
+| Source from `createSource(catalog)` | Snapshots the schema and creates table descriptions; does not connect |
+| `Table` | A relation with an inferred output schema; transformations return new tables |
+| `table.columns`, `table.col(name)` | Typed expressions for fields in that relation |
+| `Expr` | Scalar expression with a kind and nullability |
+| `Measure` | Aggregate accepted by `aggregate`, not `select` |
 
-Callbacks execute immediately to build descriptions. They do not run once per fetched row. Data operations are lazy until `client.execute(query)` (or the lower-level `db.executeQuery(...)`). A base table can be reused to build independent query branches.
+Construct predicates and projection objects directly. Callback overloads are not supported. No data is fetched until `client.execute(query)` or the lower-level execution call. A base relation can be reused for independent query branches.
 
 ## Source and catalog
 
-`createSource(catalog: Catalog)` returns an object with `table(name: string): Table`. The catalog maps table names to ordered fields `{ name, type, nullable }`. Supported kinds are `i32`, `i64`, `bool`, `string`, `date`, `fp64` and `decimal` (fixed precision 38, scale 10). The type is exported from `src/compiler.ts`.
+The catalog maps table names to ordered `{ name, type, nullable }` fields. Kinds are `i32`, `i64`, `bool`, `string`, `date`, `fp64` and `decimal` (38,10). Preserve literal types with `as const satisfies Catalog` for an authored catalog; the Northwind `challengeCatalog` already preserves them. Avoid annotating it broadly as `Catalog` if you want schema-specific inference.
 
-The Northwind catalog is exported as `challengeCatalog` from `src/challenge.ts`. Unknown tables/columns fail; schema discovery is not performed. Reuse one source object for tables that will be joined: two separately created sources have different identities even when their catalogs contain identical fields. The compiler also receives the trusted catalog, which must match the plan's logical field definitions.
+A dynamically loaded `Catalog` remains supported but cannot supply compile-time knowledge of its field names and kinds. Runtime validation remains mandatory. No schema discovery occurs. Reuse one source for joined tables: separate `createSource` calls have separate identities, even with identical schemas. The compiler's trusted catalog must match the plan.
 
 ## Table methods
 
-`Record<string, Expr>` means an object mapping output column names to expressions. `Record<string, Measure>` maps aggregate output names to aggregate descriptions. Names must be nonempty and unique; group keys and measure names cannot collide.
+| Method | Returns | Contract |
+| --- | --- | --- |
+| `col(name)` / `columns.name` | `Expr` | Existing field, inferred kind and nullability |
+| `select(projection)` | `Table` | Nonempty object of output names to Expr values; omitted fields disappear |
+| `filter(predicate)` | `Table` | Boolean Expr; only true rows pass, not false or NULL |
+| `groupBy(...keys)` | Grouping builder | Unique existing field names; follow with `.aggregate(measures)` |
+| `aggregate(measures)` | `Table` | Nonempty object of output names to Measure values; global aggregation. Use groupBy for grouped aggregation, whose keys also appear in output |
+| `join(right, { how })` | Join builder | Same-source table, `how: 'inner'` or `'left'`; then `.on(predicate).select(projection)` |
+| `orderBy(...sorts)` | `Table` | Nonempty `{ column, direction?, nulls? }` list; defaults ascending, NULLs last |
+| `limit(count, offset = 0)` | `Table` | Nonnegative safe integers; use total ordering for deterministic pagination |
+| `withRowNumber(name, options)` | `Table` | Appends a required i64 rank column |
+| `toSubstrait()` | `SupportedPlanJson` | Fresh normalized profile-validated plan; compiler semantic checks still apply |
 
-The callback parameter and return types appear below; their exact TypeScript signatures are defined in [src/api.ts](../../src/api.ts). Ordering uses:
+Field names in grouping/sorting/window options are checked against the current schema. Projection aliases become the new field names. Group keys and measure aliases cannot collide. Exact generic signatures live in [src/api.ts](../../src/api.ts).
+
+## Joins and nullability
 
 ```ts
-type Sort = {
-  column: string;
-  direction?: 'asc' | 'desc';
-  nulls?: 'first' | 'last';
-};
+const customers = source.table('customers');
+const orders = source.table('orders');
+const join = customers.join(orders, { how: 'left' });
+const matched = join.on(join.left.customer_id.eq(join.right.customer_id));
+const query = matched.select({
+  customerId: matched.left.customer_id,
+  orderId: matched.right.order_id,
+});
 ```
 
-| Method | Returns | Arguments and behavior |
-| --- | --- | --- |
-| `select(build)` | `Table` | `build: (t: Columns) => Record<string, Expr>`; at least one output. Object keys name the resulting columns; columns not selected are omitted. |
-| `filter(build)` | `Table` | `build: (t: Columns) => Expr`; expression must be boolean. Keeps only rows where the predicate is true; NULL does not pass. |
-| `groupBy(...keys)` | Grouping builder | Existing, unique column names. Follow with `.aggregate(build)`; keys appear automatically in the aggregate output. An empty key list is global aggregation. |
-| `aggregate(build, keys = [])` | `Table` | `build: (t: Columns) => Record<string, Measure>`; at least one measure. Without keys, produces a global aggregate. `groupBy(...).aggregate(...)` is the usual grouped form. |
-| `join(right, options)` | `Table` | Another table from the same source plus the join options below. |
-| `orderBy(...sorts)` | `Table` | At least one `{ column, direction?, nulls? }`; defaults: `direction: 'asc'`, `nulls: 'last'`. Fields must exist. |
-| `limit(count, offset = 0)` | `Table` | Both values must be nonnegative safe integers. Zero is valid. Add a total ordering for deterministic pagination. |
-| `withRowNumber(name, options)` | `Table` | Appends a required i64 rank column; details below. |
-| `toSubstrait()` | `SupportedPlanJson` | Exports a fresh normalized, profile-validated plan with root names and function declarations. Compiler semantic validation is still required. |
+`join.left/right` are input maps for the predicate. `matched.left/right` are fresh output maps: right fields are nullable for a left join. Build the output from those maps, not captured predicate expressions. Output names are explicit, avoiding duplicate names. Separate side identities also make self-joins unambiguous. After `select`, access `query.columns` for further transformations.
 
-### Join options
+## Window options
 
-- `how: 'inner' | 'left'` is required.
-- `on: (left: Columns, right: Columns) => Expr` must return a boolean expression.
-- `select: (left: Columns, right: Columns) => Record<string, Expr>` names the outputs explicitly, avoiding ambiguous duplicate field names.
-- With a left join, right-side output fields become nullable. The `on` and `select` callbacks have separate scopes; reconstruct expressions in each callback rather than capturing predicate columns for output.
-
-### Window options
-
-`withRowNumber(name, { partitionBy: string[], orderBy: Sort[] })` appends the given column name, which must not already exist. Partition keys must exist and be unique; `[]` gives one global partition. Ordering must be nonempty. Ranks start at 1 and return as strings. Include a unique tie-breaker when equal sort values are possible. This supports row_number only, with no frame options.
+`withRowNumber(name, { partitionBy: [...keys], orderBy: [...sorts] })` appends a new, noncolliding name. Partition keys must exist and be unique; `[]` gives one partition. Ordering must be nonempty; include a tie-breaker. Ranks start at 1 and return as strings. Only row_number is supported, without general frame options. Window ordering does not order the returned rows: call `orderBy` afterward.
 
 ## Scope ownership and common mistakes
 
-Callbacks resolve columns against the current relation. A captured expression from an earlier relation is rejected rather than silently reinterpreted after projection or aggregation. Build a fresh expression with the callback's columns. A source is a logical catalog identity, not a database connection; the same query can run on any of the three backends within their documented supported semantics. Cross-source joins fail explicitly; there is no federation.
+Every transformation returns a fresh Table scope, even `filter` with an unchanged schema. Use that new table's columns in its next operation. Runtime identity validation catches stale references; TypeScript's structural schema types do not prove per-instance identity.
 
-After aggregation, refer to the new aggregate column with `t.col('units')`; the original `quantity` field is no longer available. Do not write JavaScript `===`, `&&` or `/` between expressions: use `eq`, `and` or `div`. Use `aggregate` for `Measure` values, then use `select` or `filter` on the resulting Table.
+```ts
+const orders = source.table('orders');
+const shipped = orders.filter(orders.columns.shipped_date.isNotNull());
+const ids = shipped.select({ id: shipped.columns.order_id });
+```
+
+After aggregation, only group keys and measures exist; refer to `totals.columns.units`, not the removed quantity field. Use expression methods rather than JavaScript `===`, `&&` or `/`. A `Measure` belongs in `aggregate`; apply scalar operations to its output Table afterward. Cross-source joins fail explicitly: this API does not implement federation.

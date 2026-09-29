@@ -17,7 +17,7 @@ This follows the useful separation between tutorials, how-to guides, reference a
 - [TypeDoc](https://typedoc.org/documents/Overview.html) can generate API reference from TypeScript declarations and comments, including Markdown project documents. It is a sensible later option if generated navigation/search becomes useful. Verify compatibility with the repository's pinned TypeScript version before adopting a release.
 - [API Extractor](https://api-extractor.com/) supports API surface analysis, review reports and declaration rollups. Consider it when publishing/versioning a supported package API. It is not necessary for this private take-home library.
 
-This PR adds source comments, authored reference pages and checked examples without introducing a documentation dependency, generated site, hosting requirement or TypeScript upgrade. Reference signatures are maintained manually; they are not claimed to be generated. Existing low-level profile documents remain linked for deeper protocol details.
+The documentation uses source comments, authored reference pages and checked examples without introducing a documentation dependency, generated site, hosting requirement or TypeScript upgrade. Reference signatures are maintained manually; they are not claimed to be generated. Existing low-level profile documents remain linked for deeper protocol details.
 
 ## When changing the API
 
