@@ -34,7 +34,11 @@ test('demo serves actual examples and validates every request before execution',
     assert.match(html, /value="duckdb"/); assert.match(html, /id="api-page"/); assert.match(html, /id="architecture-page"/);
     const diagram = await fetch(base + '/architecture.svg');
     assert.equal(diagram.status, 200); assert.equal(diagram.headers.get('content-type'), 'image/svg+xml');
-    assert.match(await diagram.text(), /DuckDB/);
+    assert.match(new TextDecoder('utf-8', { fatal: true }).decode(await diagram.arrayBuffer()), /DuckDB/);
+    for (const route of ['/', '/app.js', '/style.css']) {
+      const asset = await fetch(base + route);
+      new TextDecoder('utf-8', { fatal: true }).decode(await asset.arrayBuffer());
+    }
   } finally { server.close(); server.closeAllConnections(); await once(server, 'close'); }
 });
 test('demo bounds concurrent execution and hides internal errors', async () => {
@@ -78,6 +82,35 @@ test('DuckDB walkthrough runs through HTTP and preserves real count results', as
       if (action === 'run') { assert.deepEqual(result.rows, [{ customer_count: '2' }]); assert.equal(result.rowCount, 1); }
       else assert.equal(result.rows, undefined);
     }
+  } finally {
+    if (server.listening) { server.close(); server.closeAllConnections(); await once(server, 'close'); }
+    await rm(directory, { recursive: true });
+  }
+});
+
+
+test('unseeded DuckDB compiles without creating a file and run gives actionable guidance', async () => {
+  const { mkdtemp, rm, access } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const directory = await mkdtemp(join(tmpdir(), 'golden-unseeded-'));
+  const options = { duckdbPath: join(directory, 'empty.duckdb') };
+  const server = createDemoServer(request => executeExample(request, options));
+  try {
+    server.listen(0, '127.0.0.1'); await once(server, 'listening');
+    const address = server.address(); if (!address || typeof address === 'string') throw new Error('address');
+    const post = (action: string) => fetch('http://127.0.0.1:' + address.port + '/query', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'city', backend: 'duckdb', action }),
+    });
+    assert.equal((await post('compile')).status, 200);
+    await assert.rejects(access(options.duckdbPath));
+    const response = await post('run');
+    assert.equal(response.status, 500);
+    const result = await response.json() as { error: string };
+    assert.match(result.error, /npm run seed:duckdb/);
+    assert.match(result.error, /DUCKDB_PATH/);
+    assert.equal(result.error.includes(directory), false);
   } finally {
     if (server.listening) { server.close(); server.closeAllConnections(); await once(server, 'close'); }
     await rm(directory, { recursive: true });

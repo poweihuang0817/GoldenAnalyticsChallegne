@@ -1,10 +1,10 @@
-# Submission finish plan — September 28 checkpoint
+# Submission finish plan â€” September 28 checkpoint
 
 Deadline: Friday October 2, 2026. Target submission: Thursday October 1. These are proposed human work sessions, not scheduled autonomous jobs or measured effort.
 
 ## Tuesday September 29: finish the walkthrough, then stop feature work
 
-1. Resume draft DuckDB/UI PR: repair SVG rendering and visually inspect Driver / API guide / Architecture at the actual recording resolution. Test three-backend switching, compile-only, run and missing DuckDB seed guidance. Use a dedicated seeded snapshot.
+1. Review DuckDB/UI PR #25: Driver / API guide / Architecture now have local visual and three-backend execution checks. Review its final hosted CI, then rehearse at the actual recording resolution with a dedicated seeded snapshot.
 2. Review the updated AI README reference (#16) and recording guide (#20), plus the small seeded/metamorphic test PR. They are supporting work; do not add a new compiler, backend or broad verification framework.
 3. Run CI on the final candidate PR heads; merge only after review and explicit approval. Reconcile shared documentation conflicts without discarding notes.
 4. Candidate writes the actual README in their own words using the AI draft/log as reference. Explain API design, major prompts/human redirects, limitations and what more time would enable.
@@ -33,7 +33,7 @@ Resolve access, upload or delivery problems. Do not schedule first recording, ne
 ## Current handoff
 
 - Typed API #22 and fresh-clone CI #23 are merged; hosted CI passed. Latest code still needs its own checks after new changes.
-- DuckDB UI draft is intentionally incomplete: SVG rendering and final visual QA remain. See [demo checkpoint](DEMO-PAGE.md#september-28-draft-checkpoint).
+- DuckDB UI #25 is ready for review after local visual QA and 37 local tests. See [demo checkpoint](DEMO-PAGE.md#verification-checkpoint); check hosted CI on the exact head before merging.
 - #16 is AI-authored reference material, never the candidate-authored final README.
 - #20 is the recording guide; its pending UI notes need reconciliation after the UI PR merges.
 - Compiler investigation #11 is nonblocking and can remain deferred. No consolidation before submission.

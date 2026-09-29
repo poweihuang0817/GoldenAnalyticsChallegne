@@ -37,7 +37,7 @@ query. Database execution cancellation/timeouts remain future work; only fixed
 small demonstration queries are accepted. A slow database query can keep the
 single execution slot busy beyond five seconds.
 
-Focused routing tests use an injected executor and do not connect to databases:
+Focused tests cover routing with an injected executor, plus real DuckDB HTTP execution against isolated temporary files (no PostgreSQL/MySQL connection required):
 
 ```powershell
 node --import tsx --test test/playground.test.ts
@@ -45,8 +45,12 @@ node --import tsx --test test/playground.test.ts
 
 Use the Live driver, API guide and Architecture buttons to structure the video. The full API reference remains in docs/api. The SVG source lives at src/playground/architecture.svg.
 
-## September 28 draft checkpoint
+## Verification checkpoint
 
-The UI work is saved for continuation, not merge-ready. Typecheck and 36 local tests pass, including real DuckDB HTTP compile/run against an isolated fixture. A one-off headless Edge check ran all three examples against PostgreSQL/MySQL/seeded DuckDB successfully (nine executions); city count was 6 on each. The API guide tab works. The Architecture tab exists and its SVG route returns 200, but the browser currently reports image naturalWidth=0. Diagnose and visually verify that image before recording or merging. The browser connector was unavailable; temporary Playwright with installed Edge was used outside repository dependencies.
+The Driver, API guide and Architecture pages are ready for review. Code/docs type checks and 37 local tests pass, including real DuckDB HTTP compile/run and unseeded-file guidance. Compile-only with an absent DuckDB file does not create it.
 
-Remaining: fix SVG rendering; inspect all three pages at recording resolution; verify compile-only and missing-DuckDB-data/error flows in browser; reconcile docs after review; run inherited CI on the final head. The default port 4317 was already in use during verification, so an isolated server was started on 4318 without stopping the existing process. Start the next session by checking processes/ports rather than assuming either server is still running.
+A one-off headless Edge check ran three compile-only paths and all three examples against PostgreSQL/MySQL/seeded DuckDB (nine executions); London count was 6 on each. It also checked the unseeded DuckDB error in the browser, navigation, successful SVG decoding, no JavaScript errors, and no horizontal page overflow at 1440px and 900px. Screenshots of all three pages were visually inspected at 1440px. This is local visual QA, not a browser test included in CI; temporary Playwright used installed Edge outside repository dependencies.
+
+An initial Windows text-encoding defect prevented SVG rendering. It was reproduced with a failing strict UTF-8 decoding test, repaired, and checked in the browser. Static assets now have a regression check. The diagram uses presentation attributes compatible with the page's Content Security Policy.
+
+Before recording, start a fresh server from the selected revision and verify its port. The default port is 4317; verification used separate ephemeral ports without stopping an existing user server. The final selected revision still requires green hosted fresh-clone CI and human review before merging.

@@ -228,3 +228,10 @@ The challenge explicitly requires a README written by the candidate. The assista
 - User completed workflow-scope authorization and merged #22. Integrated main fc5e1e4 into the independent CI clone, preserving both AI-log histories. The upcoming hosted run covers the merged typed API, not only the original #21 baseline.
 
 - Hosted run 36507131453 passed at CI head 17d61a1 after correcting the invalid runner.temp job-env reference. All fresh setup/database/driver/docs steps passed. Updated CI history to address the stale-status review comment; local independent-clone checks also passed on merged #22 code.
+
+
+## September 28 - finish DuckDB walkthrough while candidate is away
+
+User asked to continue as much as possible and save progress without waiting. Finished the dedicated PR25 worktree: repaired a Windows encoding defect that made the SVG invalid UTF-8 (first reproduced with a failing test), replaced inline SVG CSS with CSP-compatible attributes, corrected visible arrow glyphs, and formatted the displayed city query without changing semantics. Added isolated unseeded-DuckDB coverage: compile creates no file; execution reports seed guidance without exposing the internal path.
+
+Validation: code/docs type checks and 37 local tests passed. Temporary headless Edge outside repository dependencies checked three compile-only paths, nine real Northwind runs across PostgreSQL/MySQL/DuckDB, missing-seed UI feedback, navigation, diagram rendering, 1440/900px page width and absence of JavaScript errors. Visually inspected the three 1440px page screenshots. Updated the submission plan and verification notes; no PR merged or submission sent. Final candidate README and video remain human deliverables.
