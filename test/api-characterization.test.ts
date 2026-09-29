@@ -113,3 +113,98 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
     } finally { await db.destroy(); }
   });
 }
+
+type FixtureRow = { id: number; grp: number | null; qty: number | null };
+const fixtureSeed = 0x474f4c44;
+function seededFixtures() {
+  // Fixed-width LCG: deterministic across JS platforms; this is a bounded corpus,
+  // not a statistical/fuzzing claim. Explicit edge cases do not depend on luck.
+  let state = fixtureSeed;
+  const next = () => state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+  const values = [null, -2147483648, -7, 0, 1, 2147483647] as const;
+  const cases: { label: string; rows: FixtureRow[] }[] = [
+    { label: 'empty', rows: [] },
+    { label: 'all-null', rows: [{ id: 1, grp: null, qty: null }, { id: 2, grp: null, qty: null }] },
+    { label: 'duplicates-and-boundaries', rows: [
+      { id: 1, grp: 0, qty: -2147483648 }, { id: 2, grp: 0, qty: 2147483647 },
+      { id: 3, grp: 1, qty: -7 }, { id: 4, grp: 1, qty: -7 },
+      { id: 5, grp: null, qty: 0 }, { id: 6, grp: 1, qty: null },
+    ] },
+  ];
+  for (let sample = 0; sample < 3; sample++) {
+    cases.push({ label: `generated-${sample}`, rows: Array.from({ length: 8 }, (_, i) => {
+      const group = (next() >>> 16) % 3;
+      return { id: i + 1, grp: group === 2 ? null : group, qty: values[(next() >>> 16) % values.length] };
+    }) });
+  }
+  return cases;
+}
+
+// Independent bag aggregate oracle. No API/compiler helper is used here.
+// At most eight i32 values: every intermediate sum is exactly representable in JS.
+function expectedMeasures(rows: readonly FixtureRow[]) {
+  const valued = rows.filter(row => row.qty !== null);
+  return { n: String(rows.length), valued: String(valued.length),
+    total: valued.length === 0 ? null : valued.reduce((sum, row) => sum + row.qty!, 0) };
+}
+function expectedGroups(rows: readonly FixtureRow[]) {
+  const groups = new Map<number | null, FixtureRow[]>();
+  for (const row of rows) groups.set(row.grp, [...(groups.get(row.grp) ?? []), row]);
+  return [...groups].sort(([a], [b]) => a === null ? 1 : b === null ? -1 : a - b)
+    .map(([grp, members]) => ({ grp, ...expectedMeasures(members) }));
+}
+
+for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
+  test(`${backend}: bounded metamorphic corpus seed=0x${fixtureSeed.toString(16)}`, async t => {
+    const db = connect(backend, { duckdbPath: ':memory:' });
+    const name = `api_property_${randomBytes(6).toString('hex')}`;
+    const catalog = { [name]: [
+      { name: 'id', type: 'i32', nullable: false },
+      { name: 'grp', type: 'i32', nullable: true },
+      { name: 'qty', type: 'i32', nullable: true },
+    ] } as const satisfies Catalog;
+    try {
+      await db.connection().execute(async connection => {
+        await sql`create table ${sql.id(name)} (id integer not null, grp integer, qty integer)`.execute(connection);
+        try {
+          const base = createSource(catalog).table(name);
+          const run = async (q: Table) => (await connection.executeQuery(compilePlan(connection, q.toSubstrait(), catalog))).rows;
+          const grouped = base.groupBy('grp').aggregate({
+            n: count(), valued: base.columns.qty.count(), total: base.columns.qty.sum(),
+          }).orderBy({ column: 'grp', nulls: 'last' });
+          const global = base.aggregate({ n: count(), valued: base.columns.qty.count(), total: base.columns.qty.sum() });
+          for (const { label, rows } of seededFixtures()) {
+            await t.test(label, async () => {
+              await sql`delete from ${sql.id(name)}`.execute(connection);
+              const insert = async (input: readonly FixtureRow[]) => {
+                if (input.length) await sql`insert into ${sql.id(name)} (id, grp, qty) values ${sql.join(
+                  input.map(row => sql`(${row.id}, ${row.grp}, ${row.qty})`),
+                )}`.execute(connection);
+              };
+              await insert(rows);
+              // SQL WHERE keeps only TRUE. JS null <= 0 would incorrectly be true.
+              const expectedIds = rows.filter(row => row.qty !== null && row.qty <= 0 && row.grp === 1)
+                .map(row => ({ id: row.id })).sort((a, b) => a.id - b.id);
+              const compound = base.filter(base.columns.qty.lte(0).and(base.columns.grp.eq(1)));
+              const first = base.filter(base.columns.qty.lte(0));
+              // Rebind the second predicate to the first filter's output scope.
+              const sequential = first.filter(first.columns.grp.eq(1));
+              const ids = (q: Table) => q.select({ id: q.col('id') }).orderBy({ column: 'id' });
+              assert.deepEqual(await run(ids(compound)), expectedIds, 'compound filter oracle');
+              assert.deepEqual(await run(ids(sequential)), expectedIds, 'sequential filter oracle');
+              const expected = expectedGroups(rows);
+              const before = await run(grouped);
+              assert.deepEqual(before, expected, 'grouped bag oracle');
+              assert.deepEqual(await run(global), [expectedMeasures(rows)], 'global aggregate oracle');
+              await sql`delete from ${sql.id(name)}`.execute(connection);
+              await insert([...rows].reverse());
+              const after = await run(grouped);
+              assert.deepEqual(after, expected, 'reversed insertion bag oracle');
+              assert.deepEqual(after, before, 'grouping invariant under insertion order');
+            });
+          }
+        } finally { await sql`drop table ${sql.id(name)}`.execute(connection); }
+      });
+    } finally { await db.destroy(); }
+  });
+}
