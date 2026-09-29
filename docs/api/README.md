@@ -60,6 +60,6 @@ Execution needs both remote databases and the seeded DuckDB file. It runs only f
 | [src/challenge.ts](../../src/challenge.ts) | `challengeCatalog` for Northwind |
 | [src/queries.ts](../../src/queries.ts) | The six challenge query families and recent-orders-per-customer extension |
 
-Prefer builder functions to exported class constructors and internal resolution helpers. A literal catalog supplies compile-time field names, expression kinds, nullability and result-row inference. A dynamically widened `Catalog` loses that precision; runtime field/type/scope validation remains necessary. JSON/binary plans also require semantic compilation before execution.
+Use the exported builder functions; runtime constructors and expression resolution are internal plumbing. A literal catalog supplies compile-time field names, expression kinds, nullability and result-row inference. A dynamically widened `Catalog` loses that precision; runtime field/type/scope validation remains necessary. JSON/binary plans also require semantic compilation before execution.
 
 There is no general HTTP query API. The optional [demo page](../DEMO-PAGE.md) has a fixed allowlist of examples and is a localhost walkthrough. Use this library interface for application queries.

@@ -14,7 +14,10 @@ test('every public API example produces equivalent results on PostgreSQL and MyS
     for (const { name, query } of queryExamples) {
       const a = (await pg.execute(query)).rows;
       const b = (await my.execute(query)).rows;
-      if (name === 'Average units per order') assert.ok(Math.abs(Number(a[0].average_units) - Number(b[0].average_units)) < 1e-12);
+      if (name === 'Average units per order') {
+        assert.ok('average_units' in a[0] && 'average_units' in b[0]);
+        assert.ok(Math.abs(Number(a[0].average_units) - Number(b[0].average_units)) < 1e-12);
+      }
       else assert.deepEqual(a, b, name);
     }
   } finally { await Promise.all([pg.destroy(), my.destroy()]); }

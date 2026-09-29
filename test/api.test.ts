@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createSource, count, literal, integer, caseWhen, type Expr } from '../src/api.js';
+import { createSource, count, literal, integer, caseWhen, type Expr, eq, and } from '../src/api.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { connect } from '../src/backend.js';
 import { compilePlan, type Catalog } from '../src/compiler.js';
@@ -143,4 +143,19 @@ test('projection and aggregate outputs replace the available field schema', () =
   assert.throws(() => grouped.filter(grouped.col('order_id').eq(1)), /Unknown column/);
   // @ts-expect-error Aggregation removes nongrouped input fields.
   assert.throws(() => grouped.orderBy({ column: 'order_id' }), /Unknown column/);
+});
+
+
+test('predicate objects compose and old callbacks are rejected', () => {
+  const orders = source.table('orders');
+  const predicate = and(eq(orders.columns.order_id, 1), orders.columns.shipped_date.isNotNull());
+  assert.equal(predicate.kind, 'bool');
+  assert.equal(predicate.nullable, false);
+  assert.ok('filter' in orders.filter(predicate).toSubstrait().relations[0].root.input);
+  // @ts-expect-error legacy callback overload intentionally removed
+  assert.throws(() => orders.select(() => ({ id: orders.columns.order_id })), /Callbacks/);
+  // @ts-expect-error legacy callback overload intentionally removed
+  assert.throws(() => orders.aggregate(() => ({ n: count() })), /Callbacks/);
+  // @ts-expect-error legacy callback overload intentionally removed
+  assert.throws(() => orders.filter(() => literal(true)), /bool/);
 });

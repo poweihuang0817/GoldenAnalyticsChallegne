@@ -35,7 +35,7 @@ A dynamically loaded `Catalog` remains supported but cannot supply compile-time 
 | `withRowNumber(name, options)` | `Table` | Appends a required i64 rank column |
 | `toSubstrait()` | `SupportedPlanJson` | Fresh normalized profile-validated plan; compiler semantic checks still apply |
 
-Field names in grouping/sorting/window options are checked against the current schema. Projection aliases become the new field names. Group keys and measure aliases cannot collide. Exact generic signatures live in [src/api.ts](../../src/api.ts).
+Field names in grouping/sorting/window options are checked against the current schema. Projection aliases become the new field names. Group keys and measure aliases cannot collide. Structural names must be unambiguous: narrow union table/group/window names first, use fixed tuples for grouping, and use known projection/aggregate aliases. Arbitrary string output aliases are rejected because they cannot guarantee named result fields. Exact generic signatures live in [src/api.ts](../../src/api.ts).
 
 ## Joins and nullability
 

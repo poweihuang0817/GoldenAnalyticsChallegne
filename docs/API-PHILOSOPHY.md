@@ -1,12 +1,12 @@
 # API philosophy and expression-style review
 
-Status: research conclusion for user review, not implemented API. Read alongside [the typed API plan](TYPED-RELATIONAL-API-PLAN.md). Retaining Substrait is confirmed; exact public syntax remains proposed.
+Status: implemented direction, September 28. The user selected a single callback-free typed API. Read the [implementation contract](TYPED-RELATIONAL-API-PLAN.md) and [API reference](api/README.md).
 
 ## Principles
 
 - Application code describes relational computation. Database I/O occurs through client.execute; client.compile remains an optional SQL preview.
 - Substrait is the canonical supported relational IR. A future semantic frontend resolves metrics, dimensions, relationships and grain above it. It is not necessary to route that frontend through the TypeScript facade.
-- Prefer readable typed predicate expressions and named projection objects. The user finds callbacks difficult to read; callbacks should be compatibility/convenience options, not the only way to express a query.
+- Prefer readable typed predicate expressions and named projection objects. The user finds callbacks difficult to read; the public API does not retain callback overloads.
 - Infer types from one catalog definition. Logical kind, nullability, expression category and result encoding are distinct. Runtime validation remains necessary.
 - Preserve relation order: filter after limit or aggregate applies to that result. Do not turn every filter into an earlier SQL WHERE.
 - Reuse one expression/lowering implementation. Do not add a second serialized predicate AST, broad raw SQL API, or translate Kysely/Drizzle internal nodes into Substrait.
@@ -24,14 +24,14 @@ Official references: [Kysely complex predicates](https://kysely.dev/docs/example
 
 ## Recommended primary style
 
-Prefer Drizzle-inspired typed predicate helpers and projection objects, with Kysely as a type-experience reference. Learn expression composition from Polars without adopting its execution engine. This is a recommendation responding to the user's readability preference, not a decision to add dependencies.
+Prefer Drizzle-inspired typed predicate helpers and projection objects, with Kysely as a type-experience reference. Learn expression composition from Polars without adopting its execution engine. This follows the user's readability preference; no Kysely/Drizzle/Polars dependency is added to the public frontend.
 
-Proposed syntax only:
+Implemented syntax:
 
 ```ts
 const customers = source.table('customers');
 const c = customers.columns;
-const predicate = and(eq(lower(c.city), 'london'), eq(c.country, 'UK'));
+const predicate = and(eq(c.city.lower(), 'london'), eq(c.country, 'UK'));
 const filtered = customers.filter(predicate);
 const projection = {
   customerId: filtered.columns.customer_id,
@@ -41,9 +41,9 @@ const query = filtered.select(projection);
 const { rows } = await client.execute(query);
 ```
 
-Projection keys define the output schema. Use columns from the current relation; these are descriptions, not row values. Helpers such as eq/lower/and should delegate to existing supported functions. Do not expose unsupported OR/IN/LIKE merely because a reference library supports them.
+Projection keys define the output schema. Use columns from the current relation; these are descriptions, not row values. The eq/and helpers and lower expression method delegate to existing supported functions. Do not expose unsupported OR/IN/LIKE merely because a reference library supports them.
 
-A Polars-inspired alternative uses method chains such as c.city.lower().eq('london').and(c.country.eq('UK')). It is concise for sequential transformations, but long boolean chains are less scan-friendly for this user's preference. Existing expression methods can remain for compatibility; new docs should pick one primary style rather than presenting many equivalent spellings.
+A Polars-inspired alternative uses method chains such as c.city.lower().eq('london').and(c.country.eq('UK')). It is concise for sequential transformations, but long boolean chains are less scan-friendly for this user's preference. Expression methods remain useful for calculations; new docs should pick one primary style rather than presenting many equivalent spellings.
 
 Kysely-style filter('city', '=', 'London') remains a possible later shortcut. It is no longer the recommended primary interface. Plain nested filter objects such as { city: { eq: 'London' } } are another possible frontend, but calculations and column-to-column comparisons require additional conventions. Do not introduce that separate DSL now.
 
@@ -51,14 +51,10 @@ Kysely-style filter('city', '=', 'London') remains a possible later shortcut. It
 
 An aggregate result exposes only grouping keys and named measures. Tests must reject references to removed input fields. Keep scalar Expr and aggregate Measure distinct; do not borrow Polars scalar broadcasting into Golden select.
 
-Callback-free joins need a separate reviewed design. A candidate is join(right, { how, on: predicate }) followed by explicit output selection from joined.left / joined.right; right outputs of a left join must become nullable. Aliases must distinguish self-join occurrences. These are API namespaces, not a promise of nested Substrait fields. Preserve rejection of captured predicate expressions in output scopes. The existing typed callback join is the safe first increment; do not rebuild join lowering before submission.
+Callback-free joins use two stages: `const join = left.join(right, { how: "left" })`, then `const matched = join.on(predicate)`. Build the predicate from `join.left/right`; select named output expressions from `matched.left/right`. These have fresh scopes and right output fields become nullable. Separate occurrence identities support self-joins. No join compiler rewrite is needed.
 
 TypeScript cannot automatically assign a fresh nominal type to every runtime relation instance. Static schema checks must be complemented by runtime scope checks. Imported plans/dynamic schemas cannot honestly promise statically inferred fields. Boolean result normalization and exact numeric representations must be tested rather than asserted by casts.
 
-## Review completion criteria
+## Verification
 
-- Agree on typed predicate/projection as the primary style, or explicitly choose the chain alternative.
-- Review one filter/projection example and one aggregate example against actual schema types.
-- Keep left-join scope/nullability and callback-free joins explicit as separate work.
-- No additional library survey is needed before submission unless it resolves a concrete blocker.
-- Implement only after plan review, with characterization tests first and compile-time positive/negative cases alongside the type implementation.
+PR #21 captured runtime behavior before implementation. Compile-time positive/negative tests now accompany the typed surface, including union-name rejection and result representation. Runtime scope checks and cross-backend execution remain independent correctness layers. Further library surveys are deferred until a concrete requirement warrants them.
