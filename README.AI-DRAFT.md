@@ -9,7 +9,7 @@ A small Node/TypeScript library expresses analytical queries independently of a 
 
 PostgreSQL and MySQL execute queries remotely against the supplied `goldenbeers/golden-query-challenge:1.0` image. DuckDB executes the same query descriptions against a local snapshot copied from that image's PostgreSQL database. It is a separate execution target; no query is silently rerouted to DuckDB.
 
-The working implementation baseline is [`d8a5fb0`](https://github.com/poweihuang0817/GoldenAnalytics/commit/d8a5fb024f89e2a15cf3ac5a537cf48f260af7b6). CI, directory reorganization and compiler consolidation are post-MVP work and are not prerequisites for this baseline.
+This draft reflects merged [typed API #22](https://github.com/poweihuang0817/GoldenAnalytics/pull/22) and [fresh-clone CI #23](https://github.com/poweihuang0817/GoldenAnalytics/pull/23), through main `5fc0b64`. Directory reorganization and compiler consolidation remain deferred. This is not a final submission tag.
 
 ## Quick start
 
@@ -21,9 +21,11 @@ cd GoldenAnalytics
 npm ci
 docker compose up -d --wait
 npm run check
+npm run check:docs
 npm test
 npm run test:integration
 npm run test:duckdb
+npm run docs:examples
 npm run demo
 ```
 
@@ -63,51 +65,56 @@ An order belongs to a customer and an employee; its detail rows describe purchas
 
 ## Public API: count Northwind customers in London
 
-See the [API documentation entry point](docs/PUBLIC-API.md) for usage details. Expanded API documentation is maintained in a separate PR from this README draft.
+See the [API guide](docs/api/README.md) for the tutorial, reference, Northwind recipes and design tradeoffs.
 
-The API takes inspiration from Ibis's Table/Expression model, with no Ibis or Python runtime dependency. This example can be placed in a TypeScript file at the repository root:
+The API borrows relational composition ideas from Ibis/Polars, predicate and projection objects from Drizzle, and schema-aware type ergonomics from Kysely. These are design references, not runtime dependencies beyond Kysely's existing SQL layer. This example can be placed in a TypeScript file at the repository root:
 
 ```ts
 import { createSource, count, literal } from './src/api.js';
 import { challengeCatalog } from './src/challenge.js';
-import { compilePlan } from './src/compiler.js';
-import { connect } from './src/backend.js';
+import { createClient } from './src/client.js';
 
 const source = createSource(challengeCatalog);
-const query = source.table('customers')
-  .filter(t => t.col('city').lower().eq(literal('london').lower()))
-  .aggregate(() => ({ customer_count: count() }));
+const customers = source.table('customers');
+const predicate = customers.columns.city.lower().eq(literal('london').lower());
+const london = customers.filter(predicate);
+const query = london.aggregate({ customer_count: count() });
 
-const plan = query.toSubstrait();
-const db = connect('postgres'); // or 'mysql'; 'duckdb' after seeding
+const client = createClient('postgres', challengeCatalog); // or 'mysql'; 'duckdb' after seeding
 try {
-  const compiled = compilePlan(db, plan, challengeCatalog);
-  console.log((await db.executeQuery(compiled)).rows);
+  // Optional debugging; execute() also compiles the query itself.
+  const preview = client.compile(query);
+  console.log(preview.sql, { parameterCount: preview.parameters.length });
+  const { rows } = await client.execute(query);
+  console.log(rows); // Northwind: [{ customer_count: '6' }]
 } finally {
-  await db.destroy();
+  await client.destroy();
 }
 ```
 
 `source` captures a logical catalog, not a database connection. `Table` holds a relation description and output schema. `Expr` describes a column or calculation; `Measure` describes an aggregation. Transformations return new tables, allowing a base query to be reused without mutation.
 
-The callback's `t` exposes columns from the current relation. It is not one row of fetched data. Callbacks run while constructing the query; filtering, joining and aggregation run in the selected database. Column scopes reject references captured from a different relation. This avoids silently reusing a positional field after a projection or aggregation changes its meaning.
+`customers.columns.city` describes a column, not one row of fetched data. `filter` receives a predicate expression; `select` and `aggregate` receive named objects. Query-building callbacks are no longer accepted. Query construction performs no database I/O; `client.execute` performs filtering, joining and aggregation in the selected database.
 
-Supported operations include projection, filters, inner/left joins, grouping and aggregation, ordering, pagination and a narrow `withRowNumber` window operation. Joins explicitly name their outputs and make the right side nullable for a left join. `count()` counts rows; `column.count()` counts non-null values. Runtime names/types are checked, but TypeScript result-row inference is not implemented.
+Use the current relation's columns after each transformation. Runtime scope checks reject stale references even when two relations have the same TypeScript schema. A literal catalog enables compile-time field/kind checks and inferred result rows; a widened dynamic catalog cannot promise the same static precision.
+
+Supported operations include projection, filters, inner/left joins, grouping and aggregation, ordering, pagination and a narrow `withRowNumber` operation. Joins explicitly name outputs and make the right side nullable for a left join. `count()` counts rows; `column.count()` counts non-null values. Counts/ranks are inferred as strings to preserve i64 precision; computed MySQL i32 values may also be strings, so i32 result types conservatively allow `number | string`.
 
 ## Query composition: average units per Northwind order
 
 Average units per order requires two aggregation levels:
 
 ```ts
-const units = source.table('order_details')
+const details = source.table('order_details');
+const units = details
   .groupBy('order_id')
-  .aggregate(t => ({ units: t.col('quantity').sum() }));
+  .aggregate({ units: details.columns.quantity.sum() });
 
-const query = source.table('orders').join(units, {
-  how: 'left',
-  on: (o, u) => o.col('order_id').eq(u.col('order_id')),
-  select: (_o, u) => ({ units: u.col('units').coalesce(0) }),
-}).aggregate(t => ({ average_units: t.col('units').avg() }));
+const orders = source.table('orders');
+const join = orders.join(units, { how: 'left' });
+const matched = join.on(join.left.order_id.eq(join.right.order_id));
+const perOrder = matched.select({ units: matched.right.units.coalesce(0) });
+const query = perOrder.aggregate({ average_units: perOrder.columns.units.avg() });
 ```
 
 For a concrete example, these three orders were read from the supplied Northwind PostgreSQL database:
@@ -139,7 +146,9 @@ flowchart TD
 - **Validation:** structural/profile checks reject unsupported fields and relations. Compiler checks resolve fields against the catalog and verify function signatures/types. A valid protobuf message is not automatically executable by this project.
 - **Lowering:** the project handles relational semantics, subquery boundaries, explicit NULL ordering and necessary backend differences. An operator cannot always be appended to a single SQL SELECT block.
 - **Kysely:** supplies SQL construction, quoting, bound values and execution infrastructure. Database-specific behavior such as exact DuckDB decimal division still requires project code.
-- **Execution:** the same logical query is compiled for a selected connection, then executed asynchronously. Compilation is separately testable. The current execution API exposes Kysely; a fully backend-neutral execution facade is future work.
+- **Execution:** `createClient` owns the selected backend's resources. `execute(query)` compiles and executes the same logical query asynchronously; `compile(query)` provides an optional SQL preview. The application-facing client does not require calling Kysely directly.
+
+Substrait is a relational IR, not the public semantic API. A future semantic frontend could resolve metrics, dimensions and grain into this supported profile. That frontend is not implemented, and Substrait does not supply connectors, federation or semantic modeling by itself. Retaining it has a cost: profile validation, function mappings and relational-to-SQL lowering remain project responsibilities.
 
 The function registry uses Substrait's extension mechanism with an application-defined function library. It does not claim that those declarations are the upstream standard function library or that arbitrary Substrait plans are supported.
 
@@ -156,20 +165,17 @@ See [src/queries.ts](src/queries.ts) for the application code and [src/demo.ts](
 | Freight / order-price ratio per customer | Aggregate detail prices before joining freight; apply discounts; exclude freight from the price denominator |
 | Country-level 75th percentile | Continuous linear interpolation, not an approximate percentile sketch |
 
-The window extension ranks orders within each customer, then filters to the most recent N. It requires an outer relation after computing `row_number`; date ties are broken by order ID.
+The additional window feature ranks orders within each customer, then filters to the most recent N. It requires an outer relation after computing `row_number`; date ties are broken by order ID.
 
-DuckDB demonstrates adding a third execution backend while retaining the public API and plan. Its Node adapter binds parameters and preserves result representations. Snapshot provenance, exact decimal behavior and limitations are documented in [docs/DUCKDB.md](docs/DUCKDB.md).
+**DuckDB is the main submission extension:** it demonstrates adding a third execution backend while retaining the public API and plan. Its Node adapter binds parameters and preserves result representations. Snapshot provenance, exact decimal behavior and limitations are documented in [docs/DUCKDB.md](docs/DUCKDB.md).
 
 ## Verification and known limits
 
-The implementation baseline passed a fresh remote clone and `npm ci` on the existing Windows machine, with the running challenge databases:
+Verification evidence is tied to revisions, not just test counts. [Hosted run 36507131453](https://github.com/poweihuang0817/GoldenAnalytics/actions/runs/36507131453) passed at CI head `17d61a1`, incorporating typed-API main `fc5e1e4`. It used a fresh Ubuntu/Node 22 checkout and lockfile install, newly started supplied PostgreSQL/MySQL databases, and a separately seeded DuckDB file. All workflow steps passed, including driver and documentation-example execution. See [CI scope and evidence](docs/CI.md) and the [current workflow runs](https://github.com/poweihuang0817/GoldenAnalytics/actions/workflows/fresh-clone.yml).
 
-- Type checking and 28 local/HTTP/embedded DuckDB tests.
-- 16 PostgreSQL/MySQL integration tests.
-- One three-backend conformance test covering the sample families and window top-N cases.
-- Snapshot seeding and all three database driver demonstrations.
+An independent Windows clone also checked the merged typed API with `npm ci`: both code/docs typechecks, 35 local tests, 34 reported integration tests (including nested test containers), and one three-backend conformance test passed. The integration suite includes 15 fixture scenarios across PostgreSQL/MySQL/DuckDB in addition to Northwind cases. Counts are checkpoint evidence and will change as tests are added.
 
-These **45 tests are local verification, not GitHub CI results**. An earlier window checkpoint also used a separately created challenge container. No clean-OS or general cross-platform guarantee is claimed. The optional demo page has HTTP tests, but its browser visual review remains pending.
+The Windows database checks used the existing supplied database instance; the hosted run independently verified fresh database startup. Neither is evidence for future unmerged changes. The final submission commit still needs its own green workflow. The optional page has HTTP tests; this draft does not claim a new browser visual review.
 
 Tests use hand-calculated fixtures, independent raw-row/BigInt oracles, PostgreSQL's native percentile as an additional check, binary round trips and direct backend comparisons. Agreement between databases is useful but does not independently establish correctness. Regression tests caught a join-scope/nullability leak and DuckDB decimal-division precision errors before fixes.
 
@@ -178,6 +184,7 @@ Important limits:
 - Decimals use decimal(38,10) and string results; i64 counts/ranks are strings and DATE values are calendar strings. Non-decimal arithmetic/averages may use fp64. Division by zero returns NULL. Overflow and precision limits remain explicit.
 - DuckDB exact decimal AVG is rejected; the challenge's average-units query uses fp64. Exact decimal division is bounded by its HUGEINT intermediate.
 - No general casts, arbitrary windows, distinct/union, correlated queries, cross-source federation or complete type system. Percentile must be the sole measure in its aggregate.
+- Compile-time schemas do not prove SQL equivalence or replace runtime validation. Structural names must be known/narrowed for precise inferred outputs; relation-instance identity, numeric literal range and backend capability checks remain runtime concerns. Filters do not refine field nullability.
 - Two compiler paths remain. Public API function declarations currently select the analytical path. Consolidation and declaration cleanup require compatibility decisions and regression tests; see [issue #7](https://github.com/poweihuang0817/GoldenAnalytics/issues/7).
 - Production capability resolution, authentication/authorization infrastructure, normalized errors, cancellation, streaming and observability are deferred. The logical catalog is not an authorization boundary.
 
@@ -194,16 +201,19 @@ The following summarizes recorded prompts/redirections, rather than reconstructi
 | Explain whether percentile interpolation is approximate | Clarified continuous percentile semantics and added exact decimal checks/oracles |
 | Add a separate extension and then DuckDB for submission | Implemented row-number ranking and the third backend |
 | Review incrementally and fix concrete findings | Added regression coverage, preserved working behavior and deferred compiler consolidation |
-| Freeze features and submit early | Selected the verified baseline; deferred CI/refactors and focused on delivery |
+| Reconsider Kysely-only migration, then retain Substrait | Kept a relational IR boundary for a potential future semantic frontend, without claiming that frontend is implemented |
+| Prefer typed predicates/projection objects and no callbacks | Added schema-aware fields, staged joins and result inference; migrated existing queries without changing their plans |
+| Add tests before changing the API | Characterized NULLs, duplicate preservation, relation order and driver representations; fixed type-review findings with negative contracts |
+| Verify fresh setup and submit early | Added hosted fresh-clone CI; deferred compiler refactors and prioritized candidate delivery materials |
 
 AI assisted with research, implementation, tests, reviews and supporting documentation. Candidate decisions and redirects are recorded above. The candidate should write their own assessment of what was useful, what they challenged and what they would change. Actual work duration has not been recorded here and must not be inferred from the dates or original time-box expectation.
 
 ## With more time
 
-1. Broaden independent correctness cases: NULLs, duplicate preservation, outer-join predicates, nested aggregate boundaries and small generated queries with shrinking.
+1. Extend the existing NULL/duplicate/outer-join/nested-aggregate corpus with generated queries and shrinking, selected external conformance cases and independent oracles.
 2. Introduce a small capability model with native/rewrite/unsupported outcomes that account for types and semantics.
 3. Improve connection configuration, authentication/authorization boundaries and useful normalized errors, with secret redaction.
-4. Consolidate compiler paths after defining compatibility, add inferred result types, and automate clean setup/database checks in CI.
+4. Consolidate compiler paths after defining compatibility; broaden supported types and clarify result normalization beyond the current conservative inference. Typed results and fresh-clone CI already exist.
 5. Add cancellation, result limits, metadata discovery and structured diagnostics as real application requirements arise.
 
 The broader [future-work notes](docs/FUTURE-WORK.md) preserve research into formal verification, additional engines and federation. Those are potential later directions, not completed work or submission commitments.

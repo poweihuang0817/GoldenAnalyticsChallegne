@@ -224,3 +224,10 @@ The candidate subsequently requested a dedicated API documentation PR. API-refer
 - User completed workflow-scope authorization and merged #22. Integrated main fc5e1e4 into the independent CI clone, preserving both AI-log histories. The upcoming hosted run covers the merged typed API, not only the original #21 baseline.
 
 - Hosted run 36507131453 passed at CI head 17d61a1 after correcting the invalid runner.temp job-env reference. All fresh setup/database/driver/docs steps passed. Updated CI history to address the stale-status review comment; local independent-clone checks also passed on merged #22 code.
+
+## AI README draft refreshed after typed API and CI merges
+
+- User authorized parallel delivery preparation; the assigned agent resumed the existing docs/ai-readme-draft worktree and merged main 5fc0b64 without rewriting published history. The final submission README remains candidate-authored; README.AI-DRAFT.md is explicitly supporting AI material.
+- Replaced callback examples and direct compiler/execution setup with typed predicates, projection/measure objects, staged joins and createClient. Retained Northwind examples, explained inferred driver representations, and identified DuckDB as the main submission extension.
+- Updated verification claims to the recorded typed API and passing hosted CI checkpoints with exact links; removed outdated claims that result inference and CI are future work. The independent demo-page enhancement remains outside this draft's merged baseline.
+- Validation: draft links/commands checked against repository files and scripts; both draft TypeScript snippets typechecked; docs typecheck and all 21 offline documentation compilations passed; git diff --check. Offline tsx required rerunning outside the Windows user-info sandbox limitation. No database suite or new hosted-run result is claimed for this documentation update.
