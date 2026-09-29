@@ -39,16 +39,18 @@ September 26 update: PR #4 merged the lower-layer implementation of all six quer
 
 ## Proposed API evolution (awaiting review)
 
-The user has redirected the next architecture decision toward a direct TypeScript/Kysely public API, with no Substrait IR and no DataFusion/federation for the current scope. This is not yet accepted. See [the test-first migration proposal](KYSELY-MIGRATION-PLAN.md).
+The latest user direction retains Substrait and keeps Kysely as internal SQL machinery. The earlier Kysely-only migration proposal is superseded. See [the typed relational API proposal](TYPED-RELATIONAL-API-PLAN.md).
 
-Required order if the proposal is approved:
+Learn from Kysely's schema-aware column/operator/value filter API. Preserve typed expression objects and callback compatibility, infer output schemas, and keep runtime validation for dynamic plans and relation scopes. A future semantic frontend is a possible producer of relational plans, not a feature to implement now.
 
-1. Merge a plan-only PR after user review.
-2. Add and merge behavior-characterization tests that pass against the current implementation.
-3. Migrate query definitions and the driver to direct Kysely, then rerun the same behavior corpus.
-4. Remove the unused Substrait API/compiler path after confirming no production imports remain.
+Required order after design review:
 
-Do not start tests or migration implementation before the plan PR is reviewed. Resolve the disposition of open PR #18 before starting the migration; do not stack migration work on it.
+1. Merge the plan-only PR.
+2. Inventory and strengthen behavior-characterization tests on the current implementation.
+3. Add schema/type propagation with positive and negative compile-time tests.
+4. Add typed filter/select conveniences and typed execution, then reconcile API examples.
+
+No Substrait removal or compiler rewrite is planned. PR #17/#18 remain independently reviewable; this plan does not merge or close them. Do not begin implementation until the revised plan is reviewed.
 
 ## Time record
 
