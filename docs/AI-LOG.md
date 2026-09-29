@@ -192,3 +192,47 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Added a five-minute screen-by-screen walkthrough outline and final submission checklist grounded in current query/client/driver code. Retained October 1 submission, September 30 first-video/code-freeze targets from PLAN.md.
 - Distinguished implemented callback API from proposed typed predicates; selected DuckDB as the primary extension and described its separate snapshot accurately. Candidate authors the README and records the video; these are AI supporting notes only.
 - Validation: inspected package scripts and linked source/docs, checked local Markdown link targets and git diff --check. No dependencies installed, database operations performed or runtime tests claimed for this documentation-only change.
+
+## API characterization before typed API work
+
+- User approved a tests-only checkpoint and explicitly requested parallel agents in different worktrees. Root owns test/api-characterization; independent read-only review used review/api-test-review, and submission notes use docs/submission-guide in separate worktrees.
+- Inventoried existing API/decimal/window coverage; added one schema-boundary unit test and five fixture scenarios across all three backends for predicates, projection, relation order, aggregation and self-joins. No production API/compiler changes.
+- Initial run exposed MySQL's temporary-table self-join restriction and computed i32 CASE result strings. Switched to uniquely named disposable ordinary fixture tables and explicitly characterized MySQL CASE/COALESCE representation; no result normalization hid the difference. Typed-result work must address this limit before promising i32 numbers universally.
+- Independent reviewer checked hand-calculated expectations and found no blocking correctness issue. Root verified typecheck, 34 local tests, 34 reported integration tests (including nested test containers), and 1 three-backend conformance test. Supplied Northwind data remained unchanged. See API-TEST-COVERAGE.md for exact scope and limits.
+
+## Fresh-clone CI after PR #21
+
+- Human direction: complete typed API in a separate worktree while another agent verifies fresh setup; then requested hosted CI to avoid repeated manual full-suite runs.
+- Used a genuine independent clone from main cb4678d9. Added a single Linux/Node 22 workflow for lockfile installation, typechecks, unit/integration/conformance tests, drivers and documentation examples, with isolated Compose databases and bounded cleanup.
+- This does not validate the parallel typed API implementation. Hosted results and limitations are recorded in docs/CI.md; no candidate README or billing configuration changed.
+
+## Unified typed API after PR #21
+
+- User approved completing the typed API in a separate worktree and explicitly redirected the design to one typed predicate/projection surface, removing callback compatibility. A later prompt confirmed finishing this PR before additional UI/CI work.
+- Root owns feat/typed-api; authorized agents migrated tests and API docs in separate worktrees, then root integrated their commits. CI remains a separate task/branch. No compiler consolidation, Substrait replacement, dependency or backend change is included.
+- Preserved literal catalog schemas; added typed Table/Expr/Measure contracts, expression/projection objects, staged callback-free joins, and inferred client rows. Join input/output scopes remain separate and left-join right fields become nullable. Existing relation-identity checks remain runtime checks.
+- Migrated all application queries, driver examples, runnable docs and tests. Substrait remains the canonical IR and Kysely the lowering layer. A one-off comparison against pre-migration query builders confirmed structurally identical Substrait JSON for all eight driver examples, including ranking.
+- Retained the observed MySQL computed-i32 behavior: inferred i32 results are conservatively number|string. No numeric coercion or loss of decimal/i64 precision hides backend differences.
+- Independent review found union/dynamic structural names could falsely promise multiple output fields. Added failing negative type contracts (confirmed unused expect-error failures), then restricted table/group/window names and output aliases. Fixed grouping tuples and literal aliases keep the bounded type contract honest. Dynamic Catalog annotations intentionally lose precise schema inference.
+- Validation on the combined implementation: fresh worktree npm ci; normal/docs typechecks; 35 local tests; 34 reported integration tests (including nested containers); one three-backend Northwind conformance test; 21 documentation examples compiled offline and executed on PostgreSQL/MySQL/seeded DuckDB; both driver commands passed. These are local checks, not hosted CI or final-release fresh-clone proof.
+- Known limits: no static per-instance relation identity, no general dynamic-alias inference, no filter-based nullability refinement, no schema introspection or new normalization layer. Numeric literal range/decimal constraints and backend capabilities still require runtime validation. Candidate-authored README/video remain separate deliverables.
+
+## PR #22 review: nominal expression and measure types
+
+- Addressed review 5346505110: structural Expr/Measure interfaces allowed ordinary object literals to match the public shape without factory construction.
+- Added compile-only negative assignments for complete structural expression and measure objects. Both directives first failed as unused, confirming the gap; both pass after the fix. Positive factory assignments and existing inference contracts remain checked.
+- Added separate unexported unique-symbol brands to the interfaces and internal runtime classes as erased declarations. Marked resolve with @internal and documented that these are compile-time markers, not a runtime security boundary. SQL, Substrait construction and execution behavior are unchanged.
+- Validation: normal/docs typechecks, 35 local tests, 34 reported integration tests and one three-backend conformance test passed. Hosted CI remains a separate task; no hosted run is claimed.
+
+## CI publication after typed API merge
+
+- User completed workflow-scope authorization and merged #22. Integrated main fc5e1e4 into the independent CI clone, preserving both AI-log histories. The upcoming hosted run covers the merged typed API, not only the original #21 baseline.
+
+- Hosted run 36507131453 passed at CI head 17d61a1 after correcting the invalid runner.temp job-env reference. All fresh setup/database/driver/docs steps passed. Updated CI history to address the stale-status review comment; local independent-clone checks also passed on merged #22 code.
+
+## Submission guide reconciliation after #22/#23
+
+- User authorized parallel delivery preparation while root develops the UI follow-up. Merged current main 5fc0b64 into the existing submission-guide branch, preserving both AI-log histories.
+- Updated the walkthrough for implemented callback-free typed predicates/projections/staged joins and inferred results. Uses API docs, existing Playground source/SQL/live results, and the architecture image; candidate still authors the README and records the video.
+- Clearly separated current PG/MySQL Playground from pending DuckDB/API/Architecture tabs and demo:ui command on feat/demo-walkthrough. DuckDB remains a separate snapshot, not federation.
+- Updated verification instructions to use the exact-revision fresh-clone CI evidence now that #23 is merged. Checked local links, package commands and diff; no runtime/DB checks performed for this docs-only reconciliation.

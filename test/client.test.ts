@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createClient } from '../src/client.js';
-import { createSource, count, type Columns } from '../src/api.js';
+import { createSource, count, type Expr } from '../src/api.js';
+import type { Catalog } from '../src/compiler.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { cityQuery } from '../src/queries.js';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -12,7 +13,7 @@ import { connect } from '../src/backend.js';
 
 for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
   test(`${backend}: preview binds values, snapshots catalog, and validates without database access`, async () => {
-    const catalog = structuredClone(challengeCatalog);
+    const catalog: Catalog = structuredClone(challengeCatalog);
     const client = createClient(backend, catalog, { duckdbPath: ':memory:' });
     try {
       delete catalog.customers;
@@ -30,14 +31,15 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
   });
 }
 
-test('callbacks run at construction, accept helpers, and are not rerun by compile or execute', async () => {
+test('predicate helpers run at construction and are not rerun by compile or execute', async () => {
   let calls = 0;
   const source = createSource({ missing: challengeCatalog.customers });
-  const matches = (t: Columns, city: string) => t.col('city').eq(city);
-  const query = source.table('missing').filter(t => {
+  const matches = (column: Expr<'string', boolean>, city: string) => {
     calls++;
-    return matches(t, 'London');
-  }).aggregate(() => ({ n: count() }));
+    return column.eq(city);
+  };
+  const missing = source.table('missing');
+  const query = missing.filter(matches(missing.columns.city, 'London')).aggregate({ n: count() });
   assert.equal(calls, 1);
   const client = createClient('duckdb', { missing: challengeCatalog.customers }, { duckdbPath: ':memory:' });
   try {

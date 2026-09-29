@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Kysely, sql } from 'kysely';
 import { challengeCatalog } from './challenge.js';
-import type { Database } from './compiler.js';
+import type { Database, Catalog } from './compiler.js';
 
 const types = { i32: 'integer', i64: 'bigint', date: 'date', string: 'varchar', fp64: 'double', bool: 'boolean', decimal: 'decimal(38,10)' };
 
@@ -21,7 +21,7 @@ export async function seedDuckDB(source: Kysely<Database>, target: Kysely<Databa
   });
   await target.transaction().execute(async tx => {
     for (const { name, rows } of tables) {
-      const columns = challengeCatalog[name];
+      const columns = (challengeCatalog as Catalog)[name];
       await sql`create or replace table ${sql.id(name)} (${sql.join(columns.map(c => sql`${sql.id(c.name)} ${sql.raw(types[c.type])}${c.nullable ? sql`` : sql` not null`}`))})`.execute(tx);
       for (let offset = 0; offset < rows.length; offset += 100) {
         const values = rows.slice(offset, offset + 100).map(row => sql`(${sql.join(columns.map(c => sql.val(row[c.name])))})`);

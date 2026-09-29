@@ -6,37 +6,23 @@ import { type Backend } from '../../src/backend.js';
 import { shippingQuery, freightQuery, percentileQuery } from '../../src/queries.js';
 
 const source = createSource(challengeCatalog);
-const city = source.table('customers')
-  .filter(t => t.col('city').lower().eq(literal('london').lower()))
-  .aggregate(() => ({ customer_count: count() }));
-
-const recent = source.table('orders')
-  .select(t => ({ order_id: t.col('order_id'), order_date: t.col('order_date') }))
-  .orderBy(
-    { column: 'order_date', direction: 'desc', nulls: 'last' },
-    { column: 'order_id', direction: 'desc' },
-  ).limit(5);
-
-const units = source.table('order_details').groupBy('order_id')
-  .aggregate(t => ({ units: t.col('quantity').sum() }));
-const averageUnits = source.table('orders').join(units, {
-  how: 'left',
-  on: (o, u) => o.col('order_id').eq(u.col('order_id')),
-  select: (_o, u) => ({ units: u.col('units').coalesce(0) }),
-}).aggregate(t => ({ average_units: t.col('units').avg() }));
-
-const ranked = source.table('orders')
-  .select(t => ({
-    customer_id: t.col('customer_id'), order_id: t.col('order_id'), order_date: t.col('order_date'),
-  }))
-  .withRowNumber('position', {
-    partitionBy: ['customer_id'],
-    orderBy: [
-      { column: 'order_date', direction: 'desc', nulls: 'last' },
-      { column: 'order_id', direction: 'desc' },
-    ],
-  })
-  .filter(t => t.col('position').lte(3))
+const customers = source.table('customers');
+const city = customers.filter(customers.columns.city.lower().eq(literal('london').lower()))
+  .aggregate({ customer_count: count() });
+const orders = source.table('orders');
+const recent = orders.select({ order_id: orders.columns.order_id, order_date: orders.columns.order_date })
+  .orderBy({ column: 'order_date', direction: 'desc', nulls: 'last' }, { column: 'order_id', direction: 'desc' }).limit(5);
+const details = source.table('order_details');
+const units = details.groupBy('order_id').aggregate({ units: details.columns.quantity.sum() });
+const join = orders.join(units, { how: 'left' });
+const matched = join.on(join.left.order_id.eq(join.right.order_id));
+const perOrder = matched.select({ units: matched.right.units.coalesce(0) });
+const averageUnits = perOrder.aggregate({ average_units: perOrder.columns.units.avg() });
+const rankedOrders = orders.select({ customer_id: orders.columns.customer_id, order_id: orders.columns.order_id, order_date: orders.columns.order_date })
+  .withRowNumber('position', { partitionBy: ['customer_id'], orderBy: [
+    { column: 'order_date', direction: 'desc', nulls: 'last' }, { column: 'order_id', direction: 'desc' },
+  ] });
+const ranked = rankedOrders.filter(rankedOrders.columns.position.lte(3))
   .orderBy({ column: 'customer_id' }, { column: 'position' });
 
 const examples = [

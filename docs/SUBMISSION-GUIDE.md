@@ -1,45 +1,50 @@
 # Submission preparation and five-minute walkthrough
 
-AI-maintained supporting notes, not the candidate-authored README or a script to attribute to the candidate. The candidate writes the README, explains the design in their own words, records the video and submits. Follow the dates and scope cutoff in [the delivery plan](PLAN.md): first complete video/code freeze September 30, submit October 1, October 2 buffer.
+AI-maintained supporting notes, not the candidate-authored README or a script to attribute to the candidate. The candidate writes the README, explains the design in their own words, records the video and submits. Follow [the delivery plan](PLAN.md): first complete video/code freeze September 30, submit October 1, October 2 buffer.
 
 ## Prepare the walkthrough
 
-Use the editor and rendered [API tutorial](api/tutorial.md) as the main screen, with a short terminal demonstration. No new UI is needed. Before recording, open [queries.ts](../src/queries.ts), [demo.ts](../src/demo.ts), [client.ts](../src/client.ts) and the [architecture explanation](ARCHITECTURE.md). Increase the font size and rehearse once with a timer.
+Use the rendered [API tutorial](api/tutorial.md), the existing [Playground](DEMO-PAGE.md) and the [architecture image](diagrams/architecture.png) as the main screens. Keep [queries.ts](../src/queries.ts) and [client.ts](../src/client.ts) available. Increase the font size and rehearse with a timer. Playground displays actual TypeScript source, generated SQL and live results for fixed queries; it is not an editable code runner.
 
-Show the API in the chosen submission revision. Today it uses callback-scoped columns; callbacks construct expressions, not per-row execution. Typed predicate/projection objects and compile-time schema/result inference in [the API proposal](TYPED-RELATIONAL-API-PLAN.md) remain future work unless separately implemented and verified. Do not present proposal snippets as runnable functionality.
+PR #22 implemented the unified callback-free API: typed column expressions, predicate/projection objects, staged joins and inferred result rows. Use each new relation's columns; relation identity still needs runtime checks. Types describe existing driver values rather than normalizing them. Show the current tutorial, not historical callback examples or unimplemented proposal syntax.
+
+At main `5fc0b64`, Playground supports PostgreSQL/MySQL only. The separate `feat/demo-walkthrough` follow-up plans DuckDB selection, API/Architecture tabs and `npm run demo:ui`; these remain pending until its PR is merged and verified. Until then, use browser tabs for docs/image and driver output for DuckDB. Recording preparation need not wait for that follow-up.
 
 | Time | Screen / example | Point to explain in your own words |
 | --- | --- | --- |
-| 0:00-0:35 | API tutorial and task context | One relational query API, supplied PostgreSQL/MySQL databases, Northwind data. |
-| 0:35-1:30 | `cityQuery('london')`, then `recentOrdersQuery(5)` in queries.ts | Named columns, filter/count, projection/sort/limit; constructing a query does not fetch data. Values become bound parameters. |
-| 1:30-2:15 | `averageUnitsQuery()` | Aggregate detail quantities per order, left join all orders, include no-detail orders as zero, then average. Nested relational composition requires subqueries. |
-| 2:15-3:00 | demo.ts and a prepared driver output section | `client.compile(query)` previews SQL; `client.execute(query)` runs it. Same query definitions on PostgreSQL and MySQL, backend-specific SQL. `finally` releases the client. |
-| 3:00-3:35 | DuckDB output for the same recent-orders or city query | Main extension: a third backend. DuckDB uses a separately seeded Northwind snapshot, not federation or a fallback for remote queries. Row-number ranking is additional existing functionality. |
-| 3:35-4:15 | Architecture text flow / client.ts | Table/Expr -> supported Substrait IR -> validation/lowering -> Kysely -> database. Standard IR preserves a possible future frontend boundary; it adds compiler/profile complexity and does not implement semantic modeling. |
-| 4:15-5:00 | Test files, actual verification summary, future-work notes | Independent expected results plus cross-backend checks; NULL/decimal/grain boundaries. Mention one AI redirection and two prioritized improvements, then point to the candidate README. |
+| 0:00-0:35 | API tutorial and task context | One relational query API, supplied PostgreSQL/MySQL, Northwind data. |
+| 0:35-1:30 | Tutorial and Playground city-count source | Typed `customers.columns.city`, a predicate object, named count measure and inferred string count. Construction does not fetch data; values become parameters. |
+| 1:30-2:15 | Playground average-units source | Sum details per order, left join all orders, include no-detail orders as zero, then average. Staged join fields distinguish input from nullable output. Nested composition requires subqueries. |
+| 2:15-3:00 | Playground Compile/Run, switch PostgreSQL/MySQL | `client.compile(query)` previews SQL; `client.execute(query)` runs it. Same query definitions, backend-specific SQL. The client owns resource cleanup. |
+| 3:00-3:35 | DuckDB city-count output: driver now, Playground after follow-up merges | Main extension: third backend against a separately seeded snapshot, not federation or remote-query fallback. Row-number ranking is additional functionality. |
+| 3:35-4:15 | Architecture image and client.ts | Table/Expr -> supported Substrait -> validation/lowering -> Kysely -> DB. Standard IR offers a future frontend boundary; costs include compiler/profile complexity. Semantic modeling is not implemented. |
+| 4:15-5:00 | Test source, actual verification summary, future-work notes | Independent expected results plus cross-backend checks; NULL/decimal/grain boundaries. Mention an AI redirection and two prioritized improvements, then point to the candidate README. |
 
-The full driver prints more than a five-minute walkthrough needs. Execute it during rehearsal and show selected output sections; identify recorded output as such. [The runnable documentation companion](api/examples.ts) offers smaller result previews. Avoid spending recording time installing packages, starting Docker or reading every generated SQL line.
+The full driver prints more than the video needs. Rehearse first and show selected output sections; label recorded output as such. [Runnable documentation examples](api/examples.ts) offer smaller previews. Avoid installing packages, starting Docker or reading every SQL line on camera.
 
 ## Rehearsal commands
 
-From a checkout of the intended revision, install with `npm ci` and follow [database setup](RUNNING.md). Use `npm.cmd` if PowerShell blocks npm.ps1. The supplied image must be running for PostgreSQL/MySQL and initial DuckDB seeding. Keep existing database ports/worktrees isolated as described in those setup notes.
+From the intended revision, install with `npm ci` and follow [database setup](RUNNING.md). Use `npm.cmd` if PowerShell blocks npm.ps1. Both supplied databases must be running; PostgreSQL is also needed for initial DuckDB seeding. Avoid port conflicts with other worktrees.
 
 ```powershell
-npm run demo
 npm run seed:duckdb
 npm run demo:duckdb
+node --import tsx src/playground/server.ts
+# Open http://127.0.0.1:4317; stop with Ctrl+C.
 # Optional compact execution preview for all three backends:
 npm run docs:examples -- --execute
 ```
 
-Seeding replaces four tables in the destination: use a dedicated DuckDB demo file and do not refresh it while another process owns it. See [DuckDB setup and precision limits](DUCKDB.md). Driver output logs SQL and parameter counts; keep connection strings and other terminal secrets out of the recording.
+After the UI follow-up merges, use its documented `npm run demo:ui` script instead of the direct server command. Do not assume a pending branch's script exists on main.
+
+Seeding replaces four destination tables: use a dedicated DuckDB file and do not refresh it while another process owns it. See [DuckDB setup/precision limits](DUCKDB.md). Keep connection strings and terminal secrets out of recordings.
 
 ## Final submission checklist
 
-These are actions to complete, not claims that verification has already happened. Record results for the exact final commit; older [checkpoint evidence](CHECKPOINT.md) is not proof for a newer revision.
+These are actions to complete, not claims of final verification. [Fresh-clone GitHub Actions](CI.md) is merged in #23. Record a successful run for the exact selected revision plus local video rehearsal. Older [checkpoint evidence](CHECKPOINT.md) or an earlier successful workflow does not prove a newer revision.
 
-- [ ] Choose a final revision after approved fixes; record its full commit hash and actual environment versions.
-- [ ] From a fresh clone, run `npm ci`, start the provided image using [the setup instructions](RUNNING.md), and run the checks below. Record pass/fail and actual counts, with no claim of hosted CI unless it exists.
+- [ ] Select the final revision after approved fixes; record its full hash and actual environment versions.
+- [ ] Confirm that revision's fresh-clone workflow passed; retain its run link. For local reproduction or a failed hosted run, install with `npm ci`, start the provided image per [setup](RUNNING.md), then use the checks below. Record actual results.
 
   ```powershell
   npm run check
@@ -54,13 +59,13 @@ These are actions to complete, not claims that verification has already happened
   npm run docs:examples -- --execute
   ```
 
-  `test:duckdb` requires both remote databases and builds its own in-memory snapshot; it does not require the seeded demo file. Serialize checks against shared services; do not run snapshot refresh alongside a demo using that file.
+  `test:duckdb` needs both remote databases and builds its own memory snapshot, not the demo file. Serialize checks against shared services; do not refresh a snapshot alongside a demo using it.
 
-- [ ] Candidate README covers setup/driver/tests, design and tradeoffs, major prompts and human redirects, limitations and what more time would enable. Use [AI log](AI-LOG.md), [API design](api/design.md), [semantics](api/semantics.md) and [future work](FUTURE-WORK.md) as evidence, not as a substitute for the candidate's writing. Record actual time honestly if provided.
-- [ ] Five-minute video shows the actual API, remote execution evidence and DuckDB extension; play it back fully to check sound, text readability, duration and consistency with the chosen revision.
-- [ ] Review the final diff for local artifacts and secrets; ensure the documented commands match package.json. If executable code changes after verification, rerun the relevant checks before declaring that revision verified.
-- [ ] Identify the final revision using `submission-v1` per [the Git workflow](GIT-WORKFLOW.md); do not move an existing release tag silently. Record the full hash with the handoff.
-- [ ] Verify intended reviewers can access the private repository and video; preserve privacy. Confirm access through the actual sharing/invitation mechanism, not merely the candidate's logged-in session.
-- [ ] Candidate submits repository link, exact commit/tag and video link through the requested channel on October 1, then confirms the links still work. October 2 is contingency time.
+- [ ] Candidate README covers setup/driver/tests, design/tradeoffs, major prompts/human redirects, limitations and what more time would enable. Use [AI log](AI-LOG.md), [API design](api/design.md), [semantics](api/semantics.md) and [future work](FUTURE-WORK.md) as evidence, not replacement authorship. Record actual time honestly if provided.
+- [ ] Video shows the actual API, remote execution and DuckDB extension. Watch it fully for sound, readability, duration and revision consistency.
+- [ ] Review the final diff for secrets/local artifacts; match commands to package.json. Reverify relevant checks after subsequent code changes.
+- [ ] Identify the revision with `submission-v1` per [Git workflow](GIT-WORKFLOW.md); never silently move an existing tag. Include its full hash in the handoff.
+- [ ] Confirm intended reviewers can access the private repository/video through actual sharing/invitations, not just the candidate's logged-in session. Preserve privacy.
+- [ ] Candidate submits repository, exact commit/tag and video links through the requested channel on October 1 and checks they work. October 2 is contingency time.
 
-Do not block submission on the optional typed API, a new UI, federation, generalized capabilities/authentication or CI infrastructure. Keep those in future work unless a concrete submission failure requires a bounded fix.
+The typed API and fresh-clone CI are already implemented. Do not block submission on further API redesign, UI polish, federation or generalized capabilities/authentication. Defer these unless a concrete submission failure requires a bounded fix.

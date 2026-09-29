@@ -19,7 +19,7 @@ const integer = (i32: number): S.IExpression => ({ literal: { i32 } });
 const zeroMoney = (expr: S.IExpression) => money('coalesce', [expr, integer(0)]);
 const indicator = (condition: S.IExpression): S.IExpression => ({ ifThen: { ifs: [{ if: condition, then: literal(1) }], else: literal(0) } });
 
-export const challengeCatalog: Catalog = {
+export const challengeCatalog = {
   orders: [
     { name: 'order_id', type: 'i32', nullable: false }, { name: 'order_date', type: 'date', nullable: true },
     { name: 'customer_id', type: 'string', nullable: true }, { name: 'employee_id', type: 'i32', nullable: true },
@@ -34,9 +34,9 @@ export const challengeCatalog: Catalog = {
     { name: 'order_id', type: 'i32', nullable: false }, { name: 'unit_price', type: 'decimal', nullable: false },
     { name: 'quantity', type: 'i32', nullable: false }, { name: 'discount', type: 'decimal', nullable: false },
   ],
-};
+} as const satisfies Catalog;
 function read(table: string): S.IRel {
-  const fields = challengeCatalog[table];
+  const fields = (challengeCatalog as Catalog)[table];
   return { read: { namedTable: { names: [table] }, baseSchema: { names: fields.map(f => f.name),
     struct: { nullability: N.NULLABILITY_REQUIRED, types: fields.map(f => type(f.type, f.nullable)) } } } };
 }

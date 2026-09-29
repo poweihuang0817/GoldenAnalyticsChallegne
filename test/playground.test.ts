@@ -15,7 +15,7 @@ test('demo serves actual examples and validates every request before execution',
   try {
     const home = await fetch(base); assert.equal(home.status, 200); assert.match(home.headers.get('content-security-policy')!, /frame-ancestors 'none'/);
     const examples = await (await fetch(`${base}/examples`)).json() as any[];
-    assert.equal(examples.length, 3); assert.match(examples[0].code, /export const cityQuery/); assert.match(examples[2].code, /function pricedOrders/);
+    assert.equal(examples.length, 3); assert.match(examples[0].code, /export function cityQuery/); assert.match(examples[2].code, /function pricedOrders/);
     assert.equal((await fetch(`${base}/query`)).status, 405);
     assert.equal((await fetch(`${base}/other`)).status, 404);
     assert.equal((await fetch(`${base}/query`, { method: 'POST', body: '{}' })).status, 415);

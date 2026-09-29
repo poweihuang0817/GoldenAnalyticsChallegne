@@ -8,59 +8,43 @@ import { challengeCatalog } from '../src/challenge.js';
 const client = createClient('postgres', challengeCatalog);
 try {
   const query = cityQuery('London');
-  // Optional: validation and SQL generation, with no database query.
-  const preview = client.compile(query);
+  const preview = client.compile(query); // Optional; no SQL execution.
   console.log(preview.sql, preview.parameters.length);
   const { rows } = await client.execute(query);
-  console.table(rows);
+  console.table(rows); // Inferred customer_count: string.
 } finally {
   await client.destroy();
 }
 ```
 
-`createClient(backend, catalog, options?)` supports `postgres`, `mysql`, and `duckdb`.
-Connection settings remain the environment variables described in [RUNNING.md](RUNNING.md).
-DuckDB optionally accepts `{ duckdbPath: 'northwind.duckdb' }` as the third argument.
-The catalog is copied at construction; subsequent caller mutations do not alter compilation.
+`createClient(backend, catalog, options?)` supports `postgres`, `mysql`, and `duckdb`. Connection environment variables are described in [RUNNING.md](RUNNING.md). DuckDB optionally accepts `{ duckdbPath: 'northwind.duckdb' }`. The catalog is copied at construction.
 
-`compile(query)` returns `{ sql, parameters }`. Parameters contain actual bound values and may be sensitive; do not log them by default. Preview does not execute SQL or test connectivity. `execute(query)` compiles internally and returns `{ rows }`; no prior preview is required. It recompiles the query rather than executing a mutable preview object. The low-level `compilePlan` and Kysely connection APIs remain available for internal/compiler work.
+`compile(query)` returns SQL and bound parameters; parameter values may be sensitive. Preview neither executes SQL nor checks connectivity. `execute(query)` compiles internally, returning inferred `{ rows }`; it does not execute a mutable preview object. Reuse the client and wait for queries before destroying it. Compile/execute reject after destruction; vendor errors propagate unchanged.
 
-Reuse a client across queries. Wait for in-flight queries before `destroy()`; a long-running service normally destroys its pool at shutdown. Compile/execute reject after destruction. Driver errors propagate unchanged. Results retain existing driver representations (including decimal/i64 strings); schema-inferred TypeScript row types are future work.
+## Predicates and projection objects
 
-## What callbacks can contain
-
-Callbacks are ordinary synchronous TypeScript functions invoked during query construction. They receive column builders, not data rows. Golden does not parse callback source code or translate arbitrary JavaScript into SQL.
-
-| Callback | Receives | Must return |
-| --- | --- | --- |
-| `filter` | `Columns` | Boolean `Expr` |
-| `select` | `Columns` | Object mapping output names to `Expr` |
-| `aggregate` / grouped `aggregate` | `Columns` | Object mapping names to `Measure` |
-| join `on` | Left and right `Columns` | Boolean `Expr` |
-| join `select` | Left and right `Columns` | Object mapping names to `Expr` |
-
-Supported expression methods currently include `eq`, `lte`, `and`, `lower`, `isNull`, `isNotNull`, `coalesce`, `mul`, `sub`, and `div`. Measures are `sum`, `avg`, column `count`, row `count()`, and `percentile`. Helpers include `literal`, `integer`, and `caseWhen`. Each retains the type/combination restrictions described in [the expression reference](api/expressions.md); this is not arbitrary SQL/function support.
-
-Use local variables and helpers for readability:
+Use this after creating `customers` from a typed source:
 
 ```ts
-customers.filter(t => {
-  const inLondon = t.col('city').lower().eq('london');
-  const inUK = t.col('country').eq('UK');
-  return inLondon.and(inUK);
+const inLondon = customers.columns.city.lower().eq('london');
+const inUK = customers.columns.country.eq('UK');
+const londonUK = customers.filter(inLondon.and(inUK));
+const query = londonUK.select({
+  customerId: londonUK.columns.customer_id,
+  city: londonUK.columns.city,
 });
 ```
 
-An application setting may choose which expression to build:
+Expressions describe computation, not row values. `filter` takes an Expr, `select` an object of Expr values, and `aggregate` an object of Measures. The API does not accept the old callback forms or parse arbitrary JavaScript. [Staged joins](api/tables.md#joins-and-nullability) expose separate input/output column maps.
 
-```ts
-customers.filter(t => includeAll ? literal(true) : t.col('city').eq(city));
-```
+A JavaScript setting can choose which predicate to construct: `customers.filter(includeAll ? literal(true) : inLondon)`. In contrast, `if (inLondon)` tests object truthiness, not database rows. Use `caseWhen` for per-row conditions, expression methods for comparisons/arithmetic, and fetch any external configuration before construction.
 
-Here `includeAll` is an actual JavaScript boolean known before querying. Conversely, `if (t.col('city').eq(city))` checks the truthiness of an expression object; it does not inspect database values. Use `caseWhen(condition, yes, no)` for a per-row conditional expression.
+Every transformation returns a new relation scope. Rebuild later expressions from that relation's columns; runtime checks reject stale references. Schema-aware TypeScript checks do not prove relation-instance identity.
 
-Do not use JavaScript `===`, `&&`, `+`, or `Math.*` to compute over column objects. Use supported expression methods. `async` callbacks/Promises are not supported. Database calls or other side effects placed inside callbacks would be normal JavaScript side effects during construction, not part of the relational plan; keep callbacks pure. Fetch external settings first, then build the query synchronously.
+## Types without changing driver values
 
-Keep simple callbacks inline. Name intermediate expressions or extract a helper accepting `Columns` when logic repeats. Do not capture a column expression from another relation and reuse it: scope validation rejects mismatched relation identities. A different callback over the same relation is not automatically a different scope.
+Literal catalogs preserve column names/kinds/nullability through filtering, projection, aggregation and joins. `execute` infers result aliases and nullable fields. i64/decimal/date/string values are strings, fp64 values are numbers, i32 is conservatively number|string, and boolean is boolean|number. This describes existing drivers; it does not add normalization. See [semantics](api/semantics.md).
 
-Ibis is a design reference for Table/Expression composition, not a runtime dependency or the origin of callbacks/lazy queries. Our reasons for separating construction, compilation, and execution are query composition, backend-independent intent, offline compiler tests, and optional SQL inspection.
+A broadly typed dynamic Catalog cannot provide exact field inference. Runtime checks remain for dynamic inputs, scopes and the supported profile. SQL preview, lower-level `compilePlan`, and optional Substrait serialization remain available for debugging and advanced consumers.
+
+Ibis, Drizzle, Polars and Kysely are design references for different aspects of [the public API](api/design.md). Substrait remains the relational IR; Kysely remains below lowering, and PostgreSQL/MySQL still execute remotely.
