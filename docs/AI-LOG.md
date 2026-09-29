@@ -210,3 +210,9 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Added compile-only negative assignments for complete structural expression and measure objects. Both directives first failed as unused, confirming the gap; both pass after the fix. Positive factory assignments and existing inference contracts remain checked.
 - Added separate unexported unique-symbol brands to the interfaces and internal runtime classes as erased declarations. Marked resolve with @internal and documented that these are compile-time markers, not a runtime security boundary. SQL, Substrait construction and execution behavior are unchanged.
 - Validation: normal/docs typechecks, 35 local tests, 34 reported integration tests and one three-backend conformance test passed. Hosted CI remains a separate task; no hosted run is claimed.
+
+## Video UI draft checkpoint, September 28
+
+- User requested a visual driver/API/architecture walkthrough, explicitly including DuckDB. Added DuckDB to the fixed HTTP/UI backend allowlist, explanatory API/Architecture pages, an SVG diagram, and demo:ui script. No compiler or query semantics changed.
+- Typecheck and 36 local tests passed, including a real DuckDB HTTP fixture. Headless Edge exercised nine sample/backend combinations successfully. Architecture image route succeeds but browser rendering still fails; this is an open item, not a completed visual check.
+- User asked to save a PR and continue tomorrow. Open as draft, preserve incomplete work and record remaining verification. Parallel docs and bounded methodology work have independent branches/PRs. No merge or submission is authorized.

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { request as httpRequest } from 'node:http';
-import { createDemoServer } from '../src/playground/server.js';
+import { createDemoServer, executeExample } from '../src/playground/server.js';
 
 test('demo serves actual examples and validates every request before execution', async () => {
   let calls = 0;
@@ -28,6 +28,13 @@ test('demo serves actual examples and validates every request before execution',
     assert.equal(wrongHost, 403);
     assert.equal(calls, 0);
     assert.equal((await post(valid)).status, 200); assert.equal(calls, 1);
+    assert.equal((await post({ ...valid, backend: 'duckdb' })).status, 200);
+    assert.equal(calls, 2);
+    const html = await home.text();
+    assert.match(html, /value="duckdb"/); assert.match(html, /id="api-page"/); assert.match(html, /id="architecture-page"/);
+    const diagram = await fetch(base + '/architecture.svg');
+    assert.equal(diagram.status, 200); assert.equal(diagram.headers.get('content-type'), 'image/svg+xml');
+    assert.match(await diagram.text(), /DuckDB/);
   } finally { server.close(); server.closeAllConnections(); await once(server, 'close'); }
 });
 test('demo bounds concurrent execution and hides internal errors', async () => {
@@ -42,4 +49,37 @@ test('demo bounds concurrent execution and hides internal errors', async () => {
     const first = post(); await ready; assert.equal((await post()).status, 429); release();
     const result = await first; assert.equal(result.status, 500); assert.doesNotMatch(await result.text(), /password|secret|stack/);
   } finally { release(); server.close(); server.closeAllConnections(); await once(server, 'close'); }
+});
+
+
+test('DuckDB walkthrough runs through HTTP and preserves real count results', async () => {
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { connect } = await import('../src/backend.js');
+  const { sql } = await import('kysely');
+  const directory = await mkdtemp(join(tmpdir(), 'golden-playground-'));
+  const options = { duckdbPath: join(directory, 'fixture.duckdb') };
+  const setup = connect('duckdb', options);
+  const server = createDemoServer(request => executeExample(request, options));
+  try {
+    try {
+      await sql.raw('create table customers(customer_id varchar, city varchar, country varchar)').execute(setup);
+      await sql.raw("insert into customers values ('a','London','UK'),('b','LONDON','UK'),('c','Paris','France')").execute(setup);
+    } finally { await setup.destroy(); }
+    server.listen(0, '127.0.0.1'); await once(server, 'listening');
+    const address = server.address(); if (!address || typeof address === 'string') throw new Error('address');
+    for (const action of ['compile', 'run']) {
+      const response: Response = await fetch('http://127.0.0.1:' + address.port + '/query', { method: 'POST',
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: 'city', backend: 'duckdb', action }) });
+      assert.equal(response.status, 200);
+      const result = await response.json() as { rows?: unknown[]; rowCount?: number; sql: string; parameterCount: number };
+      assert.match(result.sql, /count/); assert.equal(result.parameterCount, 2);
+      if (action === 'run') { assert.deepEqual(result.rows, [{ customer_count: '2' }]); assert.equal(result.rowCount, 1); }
+      else assert.equal(result.rows, undefined);
+    }
+  } finally {
+    if (server.listening) { server.close(); server.closeAllConnections(); await once(server, 'close'); }
+    await rm(directory, { recursive: true });
+  }
 });

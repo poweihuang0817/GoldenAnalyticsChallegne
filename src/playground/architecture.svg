@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="680" viewBox="0 0 1440 680" role="img" aria-labelledby="title desc">
+<title id="title">Golden analytical query architecture</title><desc id="desc">The typed TypeScript API builds a constrained Substrait plan. Validation and relational lowering use Kysely to generate SQL for PostgreSQL, MySQL or DuckDB. The database executes the query and returns rows.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#678779"/></marker><style>text{font-family:Segoe UI,Arial,sans-serif;fill:#172c39}.title{font-size:26px;font-weight:600}.detail{font-size:19px;fill:#53676b}.label{font-size:16px;letter-spacing:2px;fill:#587465}.box{fill:#f0f5f1;stroke:#cddbd1;stroke-width:2}.arrow{stroke:#678779;stroke-width:3;fill:none;marker-end:url(#arrow)}</style></defs>
+<rect width="1440" height="680" rx="14" fill="#fff"/>
+<text x="50" y="47" class="label">NODE / TYPESCRIPT · QUERY CONSTRUCTION AND COMPILATION</text>
+<rect x="50" y="80" width="365" height="150" rx="12" class="box"/><text x="75" y="124" class="title">Typed Table / Expr API</text><text x="75" y="163" class="detail">Filter · project · join · aggregate</text><text x="75" y="196" class="detail">Schema and result inference</text>
+<path d="M420 155H505" class="arrow"/>
+<rect x="515" y="80" width="365" height="150" rx="12" class="box"/><text x="540" y="124" class="title">Constrained Substrait</text><text x="540" y="163" class="detail">Backend-independent intent</text><text x="540" y="196" class="detail">Supported relational profile</text>
+<path d="M885 155H970" class="arrow"/>
+<rect x="980" y="80" width="410" height="150" rx="12" class="box"/><text x="1005" y="124" class="title">Validation + SQL lowering</text><text x="1005" y="163" class="detail">Scopes, types and query boundaries</text><text x="1005" y="196" class="detail">Kysely builds SQL + parameters</text>
+<path d="M1185 235V290H250V353" class="arrow"/><path d="M720 290V353" class="arrow"/><path d="M1185 290V353" class="arrow"/>
+<text x="50" y="330" class="label">EXECUTE ON THE SELECTED BACKEND</text>
+<rect x="50" y="365" width="400" height="150" rx="12" class="box"/><text x="75" y="413" class="title">PostgreSQL 17</text><text x="75" y="452" class="detail">Remote Northwind database</text><text x="75" y="485" class="detail">PostgreSQL SQL · pg driver</text>
+<rect x="520" y="365" width="400" height="150" rx="12" class="box"/><text x="545" y="413" class="title">MySQL 8</text><text x="545" y="452" class="detail">Remote Northwind database</text><text x="545" y="485" class="detail">MySQL SQL · mysql2 driver</text>
+<rect x="990" y="365" width="400" height="150" rx="12" fill="#fff5df" stroke="#dac79c" stroke-width="2"/><text x="1015" y="413" class="title">DuckDB · extension</text><text x="1015" y="452" class="detail">Separately seeded local snapshot</text><text x="1015" y="485" class="detail">Embedded execution · native driver</text>
+<path d="M250 520V564H720V590" class="arrow"/><path d="M720 520V564" stroke="#678779" stroke-width="3"/><path d="M1190 520V564H720" stroke="#678779" stroke-width="3" fill="none"/>
+<text x="720" y="624" text-anchor="middle" class="title">Rows return to the client</text><text x="720" y="656" text-anchor="middle" class="detail">Exact decimal / i64 strings preserved · compile() is an optional SQL preview · no federation</text>
+</svg>
