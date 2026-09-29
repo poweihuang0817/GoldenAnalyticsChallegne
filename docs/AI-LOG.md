@@ -179,3 +179,9 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Compared official Kysely, Drizzle and Polars expression/schema documentation. Recommended Drizzle-inspired typed helpers/projection objects, Polars composition ideas, and Kysely type experience; no new runtime dependency or alternate IR. Exact syntax remains for review.
 - Replaced the stale delivery schedule with Sep 28 design, Sep 29 bounded optional type work plus README preparation, Sep 30 freeze/fresh-clone verification/first video, Oct 1 submission, Oct 2 buffer. Existing tests are evidence, not final-version fresh-clone proof.
 - Recorded a fallback to the verified existing API if optional redesign threatens packaging. Candidate-authored README/video/access remain unconfirmed. No implementation, merge or submission was performed.
+
+## PR #19 review: application API versus relational IR
+
+- Addressed review comment 5881414944: removed stale wording that called the Substrait profile the public query representation. The accepted-architecture section now identifies Table/Expr as the application frontend and Substrait as the relational contract consumed by backend compilation.
+- Updated the adjacent text flow to include the frontend and all three existing backends. No implementation change; merging the plan is not authorization to implement the optional typed API.
+- Validation: reviewed the documentation diff, checked local links and git diff --check. No runtime tests required or claimed.
