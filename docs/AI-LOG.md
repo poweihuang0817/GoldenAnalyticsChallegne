@@ -236,3 +236,8 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Updated the walkthrough for implemented callback-free typed predicates/projections/staged joins and inferred results. Uses API docs, existing Playground source/SQL/live results, and the architecture image; candidate still authors the README and records the video.
 - Clearly separated current PG/MySQL Playground from pending DuckDB/API/Architecture tabs and demo:ui command on feat/demo-walkthrough. DuckDB remains a separate snapshot, not federation.
 - Updated verification instructions to use the exact-revision fresh-clone CI evidence now that #23 is merged. Checked local links, package commands and diff; no runtime/DB checks performed for this docs-only reconciliation.
+
+## Submission guide review for pending PR #25
+
+- Replaced the stale architecture PNG recommendation with the updated SVG on the pending UI branch; explicitly labeled PR #25's Driver/API/Architecture tabs, DuckDB selector and demo:ui command as pending until merged/verified.
+- Clarified seeding before UI startup and kept the current-main driver fallback. Documentation diff/link checks only; no new execution claims or merge.

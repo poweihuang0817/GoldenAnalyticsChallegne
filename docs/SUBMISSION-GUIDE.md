@@ -4,11 +4,11 @@ AI-maintained supporting notes, not the candidate-authored README or a script to
 
 ## Prepare the walkthrough
 
-Use the rendered [API tutorial](api/tutorial.md), the existing [Playground](DEMO-PAGE.md) and the [architecture image](diagrams/architecture.png) as the main screens. Keep [queries.ts](../src/queries.ts) and [client.ts](../src/client.ts) available. Increase the font size and rehearse with a timer. Playground displays actual TypeScript source, generated SQL and live results for fixed queries; it is not an editable code runner.
+Use the rendered [API tutorial](api/tutorial.md), the existing [Playground](DEMO-PAGE.md) and the updated [architecture SVG in pending PR #25](https://github.com/poweihuang0817/GoldenAnalytics/blob/feat/demo-walkthrough/src/playground/architecture.svg) as the main screens. Keep [queries.ts](../src/queries.ts) and [client.ts](../src/client.ts) available. Increase the font size and rehearse with a timer. Playground displays actual TypeScript source, generated SQL and live results for fixed queries; it is not an editable code runner.
 
 PR #22 implemented the unified callback-free API: typed column expressions, predicate/projection objects, staged joins and inferred result rows. Use each new relation's columns; relation identity still needs runtime checks. Types describe existing driver values rather than normalizing them. Show the current tutorial, not historical callback examples or unimplemented proposal syntax.
 
-At main `5fc0b64`, Playground supports PostgreSQL/MySQL only. The separate `feat/demo-walkthrough` follow-up plans DuckDB selection, API/Architecture tabs and `npm run demo:ui`; these remain pending until its PR is merged and verified. Until then, use browser tabs for docs/image and driver output for DuckDB. Recording preparation need not wait for that follow-up.
+At main `5fc0b64`, Playground supports PostgreSQL/MySQL only. [PR #25](https://github.com/poweihuang0817/GoldenAnalytics/pull/25) adds Driver/API/Architecture tabs, DuckDB selection and `npm run demo:ui`; these remain pending until merged and verified. Seed DuckDB before starting the UI, then switch its backend selector. Until merge, use browser tabs for docs/the pending SVG and driver output for DuckDB. The older `docs/diagrams/architecture.png` is stale (public API marked future; no DuckDB), so do not use it in the recording.
 
 | Time | Screen / example | Point to explain in your own words |
 | --- | --- | --- |
@@ -17,7 +17,7 @@ At main `5fc0b64`, Playground supports PostgreSQL/MySQL only. The separate `feat
 | 1:30-2:15 | Playground average-units source | Sum details per order, left join all orders, include no-detail orders as zero, then average. Staged join fields distinguish input from nullable output. Nested composition requires subqueries. |
 | 2:15-3:00 | Playground Compile/Run, switch PostgreSQL/MySQL | `client.compile(query)` previews SQL; `client.execute(query)` runs it. Same query definitions, backend-specific SQL. The client owns resource cleanup. |
 | 3:00-3:35 | DuckDB city-count output: driver now, Playground after follow-up merges | Main extension: third backend against a separately seeded snapshot, not federation or remote-query fallback. Row-number ranking is additional functionality. |
-| 3:35-4:15 | Architecture image and client.ts | Table/Expr -> supported Substrait -> validation/lowering -> Kysely -> DB. Standard IR offers a future frontend boundary; costs include compiler/profile complexity. Semantic modeling is not implemented. |
+| 3:35-4:15 | Updated SVG from PR #25 / Architecture tab after merge, and client.ts | Table/Expr -> supported Substrait -> validation/lowering -> Kysely -> DB. Standard IR offers a future frontend boundary; costs include compiler/profile complexity. Semantic modeling is not implemented. |
 | 4:15-5:00 | Test source, actual verification summary, future-work notes | Independent expected results plus cross-backend checks; NULL/decimal/grain boundaries. Mention an AI redirection and two prioritized improvements, then point to the candidate README. |
 
 The full driver prints more than the video needs. Rehearse first and show selected output sections; label recorded output as such. [Runnable documentation examples](api/examples.ts) offer smaller previews. Avoid installing packages, starting Docker or reading every SQL line on camera.
@@ -35,7 +35,7 @@ node --import tsx src/playground/server.ts
 npm run docs:examples -- --execute
 ```
 
-After the UI follow-up merges, use its documented `npm run demo:ui` script instead of the direct server command. Do not assume a pending branch's script exists on main.
+After PR #25 merges, use its documented `npm run demo:ui` script instead of the direct server command. Do not assume a pending branch's script exists on main.
 
 Seeding replaces four destination tables: use a dedicated DuckDB file and do not refresh it while another process owns it. See [DuckDB setup/precision limits](DUCKDB.md). Keep connection strings and terminal secrets out of recordings.
 
