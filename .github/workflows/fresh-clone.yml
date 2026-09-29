@@ -1,0 +1,63 @@
+name: Fresh clone
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fresh-clone-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Node 22 / PostgreSQL / MySQL / DuckDB
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      COMPOSE_PROJECT_NAME: golden-ci
+      POSTGRES_URL: postgres://northwind:northwind@127.0.0.1:5432/northwind
+      MYSQL_URL: mysql://northwind:northwind@127.0.0.1:3306/northwind
+      DUCKDB_PATH: ${{ runner.temp }}/northwind.duckdb
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Install from lockfile
+        run: npm ci
+      - name: Typecheck code and documentation
+        run: |
+          npm run check
+          npm run check:docs
+      - name: Unit tests
+        run: npm test
+      - name: Compile documentation examples
+        run: npm run docs:examples
+      - name: Start supplied databases
+        run: docker compose up -d --wait --wait-timeout 180
+      - name: Provided-database integration tests
+        run: npm run test:integration
+      - name: Three-backend conformance
+        run: npm run test:duckdb
+      - name: Driver and documentation execution smoke
+        run: |
+          npm run demo
+          npm run seed:duckdb
+          npm run demo:duckdb
+          npm run docs:examples -- --execute
+      - name: Database diagnostics on failure
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --no-color --tail 100
+      - name: Stop verification databases
+        if: always()
+        run: docker compose down --volumes --remove-orphans

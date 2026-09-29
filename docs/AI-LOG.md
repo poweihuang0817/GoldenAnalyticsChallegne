@@ -192,3 +192,9 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Inventoried existing API/decimal/window coverage; added one schema-boundary unit test and five fixture scenarios across all three backends for predicates, projection, relation order, aggregation and self-joins. No production API/compiler changes.
 - Initial run exposed MySQL's temporary-table self-join restriction and computed i32 CASE result strings. Switched to uniquely named disposable ordinary fixture tables and explicitly characterized MySQL CASE/COALESCE representation; no result normalization hid the difference. Typed-result work must address this limit before promising i32 numbers universally.
 - Independent reviewer checked hand-calculated expectations and found no blocking correctness issue. Root verified typecheck, 34 local tests, 34 reported integration tests (including nested test containers), and 1 three-backend conformance test. Supplied Northwind data remained unchanged. See API-TEST-COVERAGE.md for exact scope and limits.
+
+## Fresh-clone CI after PR #21
+
+- Human direction: complete typed API in a separate worktree while another agent verifies fresh setup; then requested hosted CI to avoid repeated manual full-suite runs.
+- Used a genuine independent clone from main cb4678d9. Added a single Linux/Node 22 workflow for lockfile installation, typechecks, unit/integration/conformance tests, drivers and documentation examples, with isolated Compose databases and bounded cleanup.
+- This does not validate the parallel typed API implementation. Hosted results and limitations are recorded in docs/CI.md; no candidate README or billing configuration changed.
