@@ -135,3 +135,9 @@ The challenge explicitly requires a README written by the candidate. The assista
 - User reiterated compile-time schema checks and redirected the API design to learn from Kysely, especially typed filters. Proposed schema-correlated column/operator/value arguments, typed select/output inference, expression objects, and typed callback compatibility.
 - Kept runtime scope/profile validation, exact result semantics, and test-first sequencing. No new serialized IR, Kysely AST translation, semantic layer, or compiler replacement is proposed.
 - Updated only planning documents and PR metadata. API examples are proposals, not implemented or typechecked features. PR #17/#18 were neither merged nor closed.
+
+## Persistent context checkpoint
+
+- User requested durable architecture/scope/correctness guidance for shorter task-specific sessions. Extended the existing AGENTS.md rather than replacing its worktree and review rules.
+- Recorded the retained Substrait/Kysely boundary, current three backends, deferred semantic/federation work, and the distinction between proposed typed filters and implemented behavior.
+- User subsequently merged #17. PR #18 was reconciled with main and pushed at 6901985; 50 tests and 21 three-backend example executions passed locally. Verify live PR status when resuming; this is historical evidence, not an automatic merge authorization.
