@@ -57,7 +57,9 @@
 
 ## Candidate README
 
-The challenge explicitly requires a README written by the candidate. The assistant has not written that README. These notes are supporting material for the candidate's own account of the work.
+The challenge explicitly requires a README written by the candidate. The assistant has not written that final submission README. On September 28 the candidate explicitly requested an AI draft as supporting material; it is separately labeled in `README.AI-DRAFT.md`. The candidate then directed all examples to use Northwind. The draft now explains the actual catalog and uses read-only verified orders 10248/10249/10250 (27/49/60 units) to explain aggregation grain instead of hypothetical quantities. These notes support the candidate's own account of the work.
+
+The candidate subsequently requested a dedicated API documentation PR. API-reference changes were separated from the README draft branch without rewriting published history; this PR retains the AI draft and its authorship/provenance notes only.
 # Public API iteration — September 26, 2026
 
 - User supplied a full architecture/verification brief, then explicitly prioritized: Ibis-inspired public API, unit/case coverage, more verification, and only afterward capabilities/errors/logging.
@@ -222,3 +224,10 @@ The challenge explicitly requires a README written by the candidate. The assista
 - User completed workflow-scope authorization and merged #22. Integrated main fc5e1e4 into the independent CI clone, preserving both AI-log histories. The upcoming hosted run covers the merged typed API, not only the original #21 baseline.
 
 - Hosted run 36507131453 passed at CI head 17d61a1 after correcting the invalid runner.temp job-env reference. All fresh setup/database/driver/docs steps passed. Updated CI history to address the stale-status review comment; local independent-clone checks also passed on merged #22 code.
+
+## AI README draft refreshed after typed API and CI merges
+
+- User authorized parallel delivery preparation; the assigned agent resumed the existing docs/ai-readme-draft worktree and merged main 5fc0b64 without rewriting published history. The final submission README remains candidate-authored; README.AI-DRAFT.md is explicitly supporting AI material.
+- Replaced callback examples and direct compiler/execution setup with typed predicates, projection/measure objects, staged joins and createClient. Retained Northwind examples, explained inferred driver representations, and identified DuckDB as the main submission extension.
+- Updated verification claims to the recorded typed API and passing hosted CI checkpoints with exact links; removed outdated claims that result inference and CI are future work. The independent demo-page enhancement remains outside this draft's merged baseline.
+- Validation: draft links/commands checked against repository files and scripts; both draft TypeScript snippets typechecked; docs typecheck and all 21 offline documentation compilations passed; git diff --check. Offline tsx required rerunning outside the Windows user-info sandbox limitation. No database suite or new hosted-run result is claimed for this documentation update.
