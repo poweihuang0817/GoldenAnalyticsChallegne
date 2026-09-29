@@ -120,7 +120,6 @@ The challenge explicitly requires a README written by the candidate. The assista
 - User merged PR #14 and requested PR #15's remaining conflicts be resolved. Merged origin/main d1a2b32 without rebasing or force-pushing. Preserved both branches' AI-log entries and included compiler/API/window/playground/DuckDB suites together in the default test command. Runtime files merged without conflict; the playground's existing two-backend HTTP allowlist is unchanged.
 - Validation after this merge: typecheck, 28 default local/HTTP tests, 16 PostgreSQL/MySQL integration tests, one three-backend sample/window conformance test, and diff checks passed (45 tests total). No new UI browser inspection, CI, or fresh-clone claim.
 
-
 ## Kysely migration plan PR — September 28, 2026
 
 - User correction: do not begin test additions or migration yet; first submit a plan PR for review.
