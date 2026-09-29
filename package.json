@@ -9,6 +9,8 @@
   "scripts": {
     "generate:substrait": "node scripts/generate-substrait.mjs",
     "check": "tsc --noEmit",
+    "check:docs": "tsc --project tsconfig.docs.json",
+    "docs:examples": "tsx docs/api/examples.ts",
     "test": "tsx --test test/client.test.ts test/compiler.test.ts test/substrait.test.ts test/analytics-compiler.test.ts test/api.test.ts test/window.test.ts test/playground.test.ts test/duckdb.test.ts",
     "test:integration": "tsx --test test/integration.test.ts test/challenge.test.ts test/percentile.test.ts test/api-integration.test.ts test/window-integration.test.ts",
     "demo": "tsx src/demo.ts",

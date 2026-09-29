@@ -39,7 +39,7 @@ Callbacks are ordinary synchronous TypeScript functions invoked during query con
 | join `on` | Left and right `Columns` | Boolean `Expr` |
 | join `select` | Left and right `Columns` | Object mapping names to `Expr` |
 
-Supported expression methods currently include `eq`, `lte`, `and`, `lower`, `isNull`, `isNotNull`, `coalesce`, `mul`, `sub`, and `div`. Measures are `sum`, `avg`, column `count`, row `count()`, and `percentile`. Helpers include `literal`, `integer`, and `caseWhen`. Each retains the type/combination restrictions described in [PUBLIC-API.md](PUBLIC-API.md); this is not arbitrary SQL/function support.
+Supported expression methods currently include `eq`, `lte`, `and`, `lower`, `isNull`, `isNotNull`, `coalesce`, `mul`, `sub`, and `div`. Measures are `sum`, `avg`, column `count`, row `count()`, and `percentile`. Helpers include `literal`, `integer`, and `caseWhen`. Each retains the type/combination restrictions described in [the expression reference](api/expressions.md); this is not arbitrary SQL/function support.
 
 Use local variables and helpers for readability:
 

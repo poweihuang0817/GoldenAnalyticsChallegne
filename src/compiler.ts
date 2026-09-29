@@ -2,10 +2,16 @@ import { Kysely, sql, type SelectQueryBuilder } from 'kysely';
 import { fromPlanJson, toPlanJson, type Field, type Rel } from './plan.js';
 import { compileAnalytics } from './relational.js';
 
+/** Trusted logical table schemas, with ordered fields; decimal means precision 38 and scale 10. */
 export type Catalog = Record<string, readonly { name: string; type: 'i32' | 'date' | 'string' | 'fp64' | 'i64' | 'bool' | 'decimal'; nullable: boolean }[]>;
 // Dynamic database shape is confined to the compiler; the external boundary is validated.
 export type Database = Record<string, Record<string, unknown>>;
 type Query = SelectQueryBuilder<Database, string, {}>;
+/**
+ * Validate a supported JSON plan and compile it for db without executing a database query.
+ * @returns A Kysely compiled query containing SQL and bound parameters.
+ * @remarks Compile separately for each backend; catalog validation does not inspect live metadata.
+ */
 export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catalog) {
   const plan = toPlanJson(fromPlanJson(input));
   if (plan.extensions?.length || plan.extensionUris?.length) return compileAnalytics(db, plan, catalog);
