@@ -4,7 +4,14 @@ import pg from 'pg';
 import type { Database } from './compiler.js';
 import { DuckDBDialect } from './duckdb.js';
 
+/** Supported execution targets; DuckDB uses an independently seeded local snapshot. */
 export type Backend = 'postgres' | 'mysql' | 'duckdb';
+/**
+ * Create a Kysely handle configured for the selected backend.
+ * @param backend - PostgreSQL, MySQL or DuckDB.
+ * @param options - Optional DuckDB path; otherwise DUCKDB_PATH or northwind.duckdb is used.
+ * @remarks PG/MySQL read environment URLs or local sample defaults. Always await destroy in finally.
+ */
 export function connect(backend: Backend, options: { duckdbPath?: string } = {}): Kysely<Database> {
   if (backend === 'duckdb') return new Kysely({ dialect: new DuckDBDialect(options.duckdbPath ?? process.env.DUCKDB_PATH ?? 'northwind.duckdb') });
   if (backend === 'postgres') return new Kysely({ dialect: new PostgresDialect({
