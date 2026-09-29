@@ -16,10 +16,16 @@ The separate typed API branch is not covered until this workflow runs on that br
 
 On the fresh clone, Node 24.19.0 on Windows completed `npm ci`, `npm run check`, `npm run check:docs`, all 34 unit tests, and all 21 offline documentation compilations. The initial sandboxed tsx process could not read Windows user information; rerunning outside the sandbox passed. This is not verification of the workflow's Node 22/Linux environment.
 
-GitHub rejected the initial workflow push because the CLI OAuth token lacks the `workflow` scope. Therefore no hosted run or CI PR has been created yet, and no PostgreSQL/MySQL integration, DuckDB conformance, or executing driver/docs result is claimed for this fresh clone. The account owner can grant the required scope with `gh auth refresh -h github.com -s workflow`, then push this branch and open its PR. Do not treat the workflow as active until a hosted run is observed.
+The initial workflow push was blocked because the CLI OAuth token lacked workflow scope. The user later granted that scope, and PR #23 published the workflow. See the observed hosted result below; the earlier Windows checks alone were not hosted evidence.
 
 ### Typed API merge checkpoint
 
-The user granted workflow scope after merging PR #22. The CI branch now includes main `fc5e1e4` (typed API and nominal-brand review fix). The earlier permission blocker is resolved; hosted verification is pending publication and execution. Original local results above remain attributed to their original revision.
+The user granted workflow scope after merging PR #22. The CI branch now includes main `fc5e1e4` (typed API and nominal-brand review fix). The earlier permission blocker is resolved; hosted verification completed as recorded below. Original local results above remain attributed to their original revision.
 
-The initial hosted attempt was rejected before starting any job. The workflow incorrectly referenced `runner.temp` in job-level env, where the runner context is unavailable. It now uses `github.workspace`; see [GitHub context availability](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability). A new hosted run is required to verify execution.
+The initial hosted attempt was rejected before starting any job. The workflow incorrectly referenced `runner.temp` in job-level env, where the runner context is unavailable. It now uses `github.workspace`; see [GitHub context availability](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability). The corrected run below verified execution.
+
+### Passing hosted run
+
+[Run 36507131453](https://github.com/poweihuang0817/GoldenAnalytics/actions/runs/36507131453) passed on CI head `17d61a1`, incorporating main `fc5e1e4` (#22). GitHub used a disposable Ubuntu/Node 22 runner, fresh checkout/install, newly started supplied databases, and a separately seeded DuckDB file. All workflow steps passed: typechecks, unit/integration/conformance tests, offline docs, driver execution and executing docs. This evidence covers that tested revision; later changes require their own run.
+
+The independent Windows clone was also updated to that code and reinstalled using npm ci: both typechecks, 35 local tests, 34 reported integration tests and one three-backend conformance test passed. These local database tests used the existing supplied PostgreSQL/MySQL instance, so only the hosted run proves fresh database startup.
