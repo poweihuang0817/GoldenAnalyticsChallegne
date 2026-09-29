@@ -10,7 +10,7 @@ Diagram source: [`diagrams/render-architecture.ps1`](diagrams/render-architectur
 
 The user has reaffirmed Substrait as the canonical relational IR, including as a target for a future semantic-query frontend. The current Table/Expr frontend and a future semantic frontend may both produce the supported relational profile; metrics, dimensions, grain and relationship resolution belong above this boundary. Substrait itself is not a semantic layer, connector system or execution engine.
 
-Kysely remains internal SQL construction machinery. The earlier Kysely-only migration proposal is superseded. PR #17 API documentation and PR #18 createClient are merged; compile-time schema propagation and Kysely-inspired typed filters are still a [proposal for review](TYPED-RELATIONAL-API-PLAN.md). No semantic frontend, federation or compiler replacement is part of that work.
+Kysely remains internal SQL construction machinery. The earlier Kysely-only migration proposal is superseded. PR #17 API documentation and PR #18 createClient are merged; compile-time schema propagation and callback-free predicates are described in the [typed API contract](TYPED-RELATIONAL-API-PLAN.md). No semantic frontend, federation or compiler replacement is part of that work.
 
 ## Requirements
 
@@ -59,7 +59,7 @@ These are candidate capabilities, not verified compatibility with every challeng
 
 ## Accepted challenge architecture
 
-Application-facing refinement accepted September 26: a small Ibis-inspired immutable Table/Expression API produces the supported Substrait profile. Application code uses named, callback-scoped columns rather than raw protobuf structures. Substrait remains the interchange contract; Kysely remains internal SQL machinery. See [public API and current limits](PUBLIC-API.md). Backend capabilities/errors/logging follow API coverage and further verification in separate work.
+Application-facing refinement accepted September 26: a small Ibis-inspired immutable Table/Expression API produces the supported Substrait profile. Application code uses typed relation-scoped column expressions and projection objects rather than raw protobuf structures. Substrait remains the interchange contract; Kysely remains internal SQL machinery. See [public API and current limits](PUBLIC-API.md). Backend capabilities/errors/logging follow API coverage and further verification in separate work.
 
 The current Table/Expr API is the application-facing frontend and lowers into the supported Substrait v0.63.0 profile. Substrait is the canonical relational contract between frontends and backend compilation, not the semantic model or required application-facing API. The compiler accepts the constrained Protobuf JSON representation, validates supported relations and resolves positional fields against a logical catalog, then lowers through Kysely for SQL construction. Keep backend connection/execution adapters separate. This is a relational translation layer, not a semantic modeling layer or local execution engine.
 

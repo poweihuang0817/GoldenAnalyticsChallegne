@@ -1,6 +1,6 @@
 # API behavior characterization before typed API changes
 
-Base: main 1603551 (merged plan #19). This change adds tests only; the callback API, compiler and driver behavior are unchanged. Use these cases as a behavior gate when adding typed predicate/projection APIs.
+Original characterization base: main 1603551 (merged plan #19), delivered in PR #21 before API changes. Those expected results are preserved by the typed API migration. The new API uses predicate/projection objects; compiler and driver representations remain unchanged.
 
 ## Coverage inventory
 
@@ -22,7 +22,7 @@ MySQL cannot reference a temporary table twice in a self-join. Fixtures therefor
 
 The first run revealed that MySQL returns the tested computed i32 CASE/COALESCE outputs as strings because CAST AS SIGNED is reported through mysql2 as BIGINT. PostgreSQL/DuckDB return numbers for these cases. The test asserts that existing behavior explicitly in the expected values; it does not coerce actual rows or claim a uniform representation contract.
 
-This is a follow-up requirement for typed client results: do not promise every logical i32 expression returns a JS number without a deliberate normalization decision and regression tests. This PR does not fix the driver/compiler or establish that the divergence is desirable. Existing raw i32 column outputs remain numbers in the fixture.
+The typed client now uses `number | string` for i32: do not promise every logical i32 expression returns a JS number without a deliberate normalization decision and regression tests. The API migration does not change the driver/compiler or establish that the divergence is desirable. Existing raw i32 column outputs remain numbers in the fixture.
 
 ## Verification
 
@@ -34,4 +34,4 @@ This is a follow-up requirement for typed client results: do not promise every l
 - npm run test:duckdb: 1 passed.
 - Independent agent reviewed fixture oracles and scope; root executed all database suites serially across commands.
 
-These are local results, not hosted CI, full SQL equivalence, fuzzing, or final-release fresh-clone evidence. No schema-inferred TypeScript API exists yet; compile-time negative cases belong with its eventual implementation.
+These are local results, not hosted CI, full SQL equivalence, fuzzing, or final-release fresh-clone evidence. The typed API adds `test/api-types.ts`, compiled by `npm run check`: it covers names, expression kinds, scalar/measure separation, nullable joins, inferred results, callback rejection and dynamic/union structural-name rejection. The evidence above records the original #21 checkpoint; see the typed API PR for its own validation.

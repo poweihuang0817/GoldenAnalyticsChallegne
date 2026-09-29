@@ -2,9 +2,7 @@
 
 [API guide](README.md)
 
-This complete example assumes a TypeScript file in `docs/api/`. From the repository root, run it with `node --import tsx docs/api/<filename>.ts` after [installing dependencies and starting the databases](../RUNNING.md). The checked companion is [examples.ts](examples.ts), which compiles offline by default.
-
-## Start here: one complete query
+This complete example assumes a TypeScript file in `docs/api/`. Run it with `node --import tsx docs/api/<filename>.ts` after [setup](../RUNNING.md). The checked companion is [examples.ts](examples.ts), compiling offline by default.
 
 ```ts
 import { createSource, count, literal } from '../../src/api.js';
@@ -12,30 +10,46 @@ import { challengeCatalog } from '../../src/challenge.js';
 import { createClient } from '../../src/client.js';
 
 const source = createSource(challengeCatalog);
-const query = source.table('customers')
-  .filter(t => t.col('city').lower().eq(literal('london').lower()))
-  .aggregate(() => ({ customer_count: count() }));
+const customers = source.table('customers');
+const predicate = customers.columns.city.lower().eq(literal('london').lower());
+const london = customers.filter(predicate);
+const query = london.aggregate({ customer_count: count() });
 
-const client = createClient('postgres', challengeCatalog); // 'mysql', or 'duckdb' after seeding
+const client = createClient('postgres', challengeCatalog);
 try {
   const { rows } = await client.execute(query);
-  console.log(rows); // Supplied Northwind data: [{ customer_count: '6' }]
+  console.log(rows); // Northwind: [{ customer_count: '6' }]
 } finally {
   await client.destroy();
 }
 ```
 
-See [queries.ts](../../src/queries.ts) for all six challenge families, including nested aggregation and exact decimal percentile. The driver now uses these queries. Existing handwritten plans remain as lower-layer test fixtures; they are not the recommended application interface.
-
 ## What each step means
 
-1. `createSource` captures the Northwind logical schema, without opening a database connection.
-2. `table`, `filter` and `aggregate` create a relation description. The callback's `t` describes columns; it is not one customer row.
-3. `createClient` selects the backend and owns its connection resources.
-4. `client.execute(query)` exports, validates and compiles the plan internally, then queries the database. The count is returned as a string to preserve i64 precision.
-5. Optionally call `client.compile(query)` to inspect SQL and parameters without executing a database query.
-6. `client.destroy()` releases resources even if execution fails.
+1. `createSource` snapshots the logical schema without opening a database connection.
+2. `customers.columns.city` describes a column, not one customer's value. `filter` takes a boolean expression; `aggregate` takes a named measure object. No callback is needed.
+3. These methods construct a query; they do not fetch data.
+4. `createClient` selects the backend and owns its connection resources. Use `'mysql'`, or `'duckdb'` after seeding, with the same query.
+5. `client.execute(query)` exports, validates and compiles the plan, then executes it. `rows` is inferred as objects with `customer_count: string`, preserving i64 precision.
+6. Optional `client.compile(query)` previews SQL and parameters without executing a database query. A preview is not required before execution.
+7. `client.destroy()` releases resources, including when execution fails.
 
-The same plan can be compiled separately for another backend. It is the compiled SQL, not the logical plan, that changes with the dialect. The query must still remain within that backend's supported semantic limits.
+## Named expressions and projections
 
-Continue with [Northwind recipes](northwind.md) for joins/nested aggregates and [the Ibis-style design rationale](design.md#why-take-inspiration-from-ibis) for the reasoning behind these boundaries.
+`customers.col('city')` is the typed lookup equivalent of `customers.columns.city`. Name predicates and projections for readability:
+
+```ts
+const inUK = customers.columns.country.eq('UK');
+const ukCustomers = customers.filter(inUK);
+const projection = {
+  id: ukCustomers.columns.customer_id,
+  city: ukCustomers.columns.city,
+};
+const selected = ukCustomers.select(projection);
+```
+
+Every new relation has its own column scope; use `ukCustomers.columns` after filtering. Runtime checks reject stale references even when two relations have the same TypeScript schema. With a literal catalog, nonexistent fields and incompatible expression kinds are also compile-time errors. A dynamically widened Catalog loses that static precision.
+
+The former callback signatures are removed. Migrate `filter(t => ...)` to `filter(predicate)`, and `select`/`aggregate` callbacks to named objects. Joins have a [staged interface](tables.md#joins-and-nullability) that distinguishes predicate fields from nullable output fields.
+
+Continue with [Northwind recipes](northwind.md), [design tradeoffs](design.md) and [the complete query functions](../../src/queries.ts). SQL changes by backend; logical intent remains the same within supported semantic limits.

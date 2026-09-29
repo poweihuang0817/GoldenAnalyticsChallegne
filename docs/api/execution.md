@@ -4,9 +4,9 @@
 
 ## Normal application execution
 
-Use `createClient(backend, catalog, options?)` from `src/client.ts`. `await client.execute(query)` returns `{ rows }`; `client.compile(query)` returns `{ sql, parameters }` without querying the database. Reuse the client and call `await client.destroy()` after in-flight queries finish. Preview parameter values may be sensitive; do not log them by default. Results remain runtime-typed, and vendor errors propagate unchanged.
+Use `createClient(backend, catalog, options?)` from `src/client.ts`. `await client.execute(query)` returns `{ rows }`; `client.compile(query)` returns `{ sql, parameters }` without querying the database. Reuse the client and call `await client.destroy()` after in-flight queries finish. Preview parameter values may be sensitive; do not log them by default. Result rows are inferred from the query schema with conservative driver value types; no new result normalization occurs. Vendor errors propagate unchanged.
 
-See the [tutorial](tutorial.md) and [client/callback guide](../QUERY-CLIENT.md). The lower-level interfaces below remain available for compiler tests and serialized-plan consumers.
+See the [tutorial](tutorial.md) and [client/expression guide](../QUERY-CLIENT.md). The lower-level interfaces below remain available for compiler tests and serialized-plan consumers.
 
 ## Advanced: compile, execute and serialize
 
@@ -19,7 +19,7 @@ See the [tutorial](tutorial.md) and [client/callback guide](../QUERY-CLIENT.md).
 | `encodePlan(input)` from `plan.ts` | Profile-validates a JSON plan and returns protobuf `Uint8Array`. |
 | `decodePlan(bytes)` from `plan.ts` | Checks the wire/profile boundary and returns normalized `SupportedPlanJson`; input has a 1 MB limit. |
 
-Values are bound parameters. Use trusted catalogs/connection selection; parameterization does not implement authorization. Exported `Table`, `Expr`, `Measure`, `Columns` constructors and `Expr.resolve` expose implementation plumbing; use the documented builders rather than constructing internal relations manually.
+Values are bound parameters. Use trusted catalogs/connection selection; parameterization does not implement authorization. `Table`, `Expr` and `Measure` are public TypeScript interfaces. `Expr.resolve` is implementation plumbing; use the documented factories rather than constructing internal relations manually.
 
 ## Optional binary interchange
 

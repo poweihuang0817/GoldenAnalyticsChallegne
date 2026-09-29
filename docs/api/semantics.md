@@ -17,13 +17,13 @@
 
 | Kind | Contract |
 | --- | --- |
-| i32 | JavaScript number; integer literals have signed 32-bit bounds |
+| i32 | number or string across driver/query paths; integer literals have signed 32-bit bounds |
 | i64 | Counts/ranks return strings to avoid JavaScript precision loss |
 | fp64 | JavaScript number; approximate arithmetic, not exact monetary math |
 | decimal | Fixed decimal(38,10), returned as a string; bounded precision and overflow behavior |
 | date | Calendar-date string, not a JavaScript Date instant |
 | string | String value; comparisons remain subject to supported backend behavior |
-| bool | Boolean logical expression; a universal PG/MySQL driver-result conversion is not implemented |
+| bool | boolean or number; a universal PG/MySQL driver-result conversion is not implemented |
 
 Nullable output fields may return null. Numeric literals default to fp64; `integer()` explicitly selects i32. Decimal/fp64 mixing fails rather than silently dropping precision. Non-decimal sum/average/arithmetic return fp64. Division by zero returns NULL.
 
