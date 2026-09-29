@@ -22,7 +22,7 @@ jobs:
       COMPOSE_PROJECT_NAME: golden-ci
       POSTGRES_URL: postgres://northwind:northwind@127.0.0.1:5432/northwind
       MYSQL_URL: mysql://northwind:northwind@127.0.0.1:3306/northwind
-      DUCKDB_PATH: ${{ runner.temp }}/northwind.duckdb
+      DUCKDB_PATH: ${{ github.workspace }}/northwind.duckdb
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
