@@ -185,3 +185,10 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Addressed review comment 5881414944: removed stale wording that called the Substrait profile the public query representation. The accepted-architecture section now identifies Table/Expr as the application frontend and Substrait as the relational contract consumed by backend compilation.
 - Updated the adjacent text flow to include the frontend and all three existing backends. No implementation change; merging the plan is not authorization to implement the optional typed API.
 - Validation: reviewed the documentation diff, checked local links and git diff --check. No runtime tests required or claimed.
+
+## API characterization before typed API work
+
+- User approved a tests-only checkpoint and explicitly requested parallel agents in different worktrees. Root owns test/api-characterization; independent read-only review used review/api-test-review, and submission notes use docs/submission-guide in separate worktrees.
+- Inventoried existing API/decimal/window coverage; added one schema-boundary unit test and five fixture scenarios across all three backends for predicates, projection, relation order, aggregation and self-joins. No production API/compiler changes.
+- Initial run exposed MySQL's temporary-table self-join restriction and computed i32 CASE result strings. Switched to uniquely named disposable ordinary fixture tables and explicitly characterized MySQL CASE/COALESCE representation; no result normalization hid the difference. Typed-result work must address this limit before promising i32 numbers universally.
+- Independent reviewer checked hand-calculated expectations and found no blocking correctness issue. Root verified typecheck, 34 local tests, 34 reported integration tests (including nested test containers), and 1 three-backend conformance test. Supplied Northwind data remained unchanged. See API-TEST-COVERAGE.md for exact scope and limits.

@@ -121,3 +121,15 @@ test('function-free API plans currently require scoped compiler dispatch for com
     } finally { await db.destroy(); }
   }
 });
+
+test('projection and aggregate outputs replace the available field schema', () => {
+  const orders = source.table('orders');
+  const projected = orders.select(c => ({ renamed: c.col('order_id') }));
+  assert.deepEqual(projected.toSubstrait().relations[0].root.names, ['renamed']);
+  assert.throws(() => projected.select(c => ({ old: c.col('order_id') })), /Unknown column/);
+  assert.throws(() => projected.groupBy('customer_id'), /Unknown column/);
+  const grouped = orders.groupBy('customer_id').aggregate(() => ({ n: count() }));
+  assert.deepEqual(grouped.toSubstrait().relations[0].root.names, ['customer_id', 'n']);
+  assert.throws(() => grouped.filter(c => c.col('order_id').eq(1)), /Unknown column/);
+  assert.throws(() => grouped.orderBy({ column: 'order_id' }), /Unknown column/);
+});
