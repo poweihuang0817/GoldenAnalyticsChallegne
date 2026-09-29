@@ -244,6 +244,13 @@ User asked to continue as much as possible and save progress without waiting. Fi
 
 Validation: code/docs type checks and 37 local tests passed. Temporary headless Edge outside repository dependencies checked three compile-only paths, nine real Northwind runs across PostgreSQL/MySQL/DuckDB, missing-seed UI feedback, navigation, diagram rendering, 1440/900px page width and absence of JavaScript errors. Visually inspected the three 1440px page screenshots. Updated the submission plan and verification notes; no PR merged or submission sent. Final candidate README and video remain human deliverables.
 
+## September 29: bounded metadata inspection (issue #27)
+
+- User requested parallel agents for capabilities/errors, long-running-query controls, and metadata inspection. This branch owns metadata only; runtime execution controls remain separate.
+- Added explicit-schema/table discovery with preserved physical type information and strict conversion to the existing catalog, including default-schema validation and unsigned/decimal rejection.
+- Checked the installed Kysely introspector: no bounded table filter, precision/scale, or unsigned metadata. Used parameterized information-schema queries instead of broad introspection plus guessed types.
+- Integration found that dotted table keys are quoted as a single identifier in current relational lowering. Kept the compiler unchanged and restricted catalog conversion to confirmed default-schema names. Also corrected MySQL metadata aliases and serialized independent DuckDB file handles after real database failures.
+- Decimal conversion remains exact (38,10); no claim that all Northwind physical types are automatically supported. Discovery does not synthesize compile-time schema types or replace manual catalogs.
 ## September 29: bounded capabilities and compiler errors (#26)
 
 - User requested agents implement capability/error codes alongside long-query controls and metadata inspection, after the original MVP checkpoint. This explicitly expands the prior post-submission plan.
