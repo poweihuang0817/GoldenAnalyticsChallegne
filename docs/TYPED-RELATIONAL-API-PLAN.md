@@ -138,7 +138,7 @@ Do not infer non-null fields merely from a general filter, or assume that joinin
 
 Keep logical kinds separate from JavaScript representations. A plain string type cannot distinguish a date, decimal, i64, and text column for operation checking.
 
-Result mapping must preserve the established contract: i32/fp64 as numbers, i64/decimal as strings, dates as calendar strings, bool as boolean, and nullable columns as unions with null. Confirm these mappings against the existing backend result handling before exposing typed execution; do not use a cast as evidence.
+Result mapping must preserve the established contract: i32/fp64 as numbers, i64/decimal as strings, dates as calendar strings, and nullable columns as unions with null. Boolean driver results are not normalized across PostgreSQL/MySQL today: keep their output type conservative until a separately tested normalization contract exists; do not promise boolean through a cast. Confirm every mapping against the existing backend result handling before exposing typed execution.
 
 For the first increment, preserve currently accepted literal and aggregate semantics. Do not add arbitrary decimal-string literals or silently map decimals to JS numbers. Count and row-number stay non-null i64; nullable sum/avg and division retain their existing behavior. Mixed numeric operations follow the current explicit promotion rules, not TypeScript's generic number type.
 
@@ -149,7 +149,7 @@ An imported/untyped Substrait plan cannot safely return caller-asserted `Row[]`.
 Proposed convenience surface:
 
 ```ts
-const rows = await client.execute(query); // inferred output rows
+const { rows } = await client.execute(query); // inferred output rows; preserve PR #18's envelope
 const preview = client.compile(query);   // SQL and bound parameters; no DB execution
 ```
 
