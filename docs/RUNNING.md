@@ -35,4 +35,4 @@ services:
 
 Pass `-p golden-check -f compose.yaml -f <override-file>` to `docker compose` for both `up -d --wait` and `down`. Point the application URLs at 15432/13306. This avoids interfering with the development database. Use the same project/override when stopping only that verification instance.
 
-No CI workflow is included yet. The checkpoint is local verification, not a claim of GitHub CI status. Third-backend and demo-page setup will be documented in their own changes.
+The [Fresh clone workflow](CI.md) runs the setup and verification commands on GitHub Actions. Check the run for the exact commit being reviewed; earlier local results do not establish its hosted status. See [DuckDB setup](DUCKDB.md) for the third-backend snapshot and demo.

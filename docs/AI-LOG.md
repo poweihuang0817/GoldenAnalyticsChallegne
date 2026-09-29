@@ -121,3 +121,106 @@ The candidate subsequently requested a dedicated API documentation PR. API-refer
 
 - User merged PR #14 and requested PR #15's remaining conflicts be resolved. Merged origin/main d1a2b32 without rebasing or force-pushing. Preserved both branches' AI-log entries and included compiler/API/window/playground/DuckDB suites together in the default test command. Runtime files merged without conflict; the playground's existing two-backend HTTP allowlist is unchanged.
 - Validation after this merge: typecheck, 28 default local/HTTP tests, 16 PostgreSQL/MySQL integration tests, one three-backend sample/window conformance test, and diff checks passed (45 tests total). No new UI browser inspection, CI, or fresh-clone claim.
+
+## Kysely migration plan PR — September 28, 2026
+
+- User correction: do not begin test additions or migration yet; first submit a plan PR for review.
+- Drafted a plan-only proposal to replace the public Golden Table/Expr + Substrait boundary with direct Kysely query builders. No DataFusion/federation is proposed for current scope.
+- Proposed sequencing: review plan; merge behavior-characterization tests that pass on the current code; migrate query definitions/driver while preserving those tests; then remove unused Substrait code and dependencies.
+- Found open PR #18 adds a client wrapper around the current API. The plan records it as a disposition to resolve before migration and explicitly forbids stacking migration work on it.
+- No source or test implementation changes were made. No checks or test claims are made by the plan PR.
+
+## PR #19 direction revision — September 28, 2026
+
+- User chose to retain Substrait as a relational contract, potentially useful beneath a future semantic-query frontend, and requested these findings be saved in the PR.
+- Clarified that Substrait does not supply a semantic layer and relational algebra is not universally more expressive than SQL. No concrete external consumer is claimed; compiler/interchange costs remain.
+- User reiterated compile-time schema checks and redirected the API design to learn from Kysely, especially typed filters. Proposed schema-correlated column/operator/value arguments, typed select/output inference, expression objects, and typed callback compatibility.
+- Kept runtime scope/profile validation, exact result semantics, and test-first sequencing. No new serialized IR, Kysely AST translation, semantic layer, or compiler replacement is proposed.
+- Updated only planning documents and PR metadata. API examples are proposals, not implemented or typechecked features. PR #17/#18 were neither merged nor closed.
+
+## Persistent context checkpoint
+
+- User requested durable architecture/scope/correctness guidance for shorter task-specific sessions. Extended the existing AGENTS.md rather than replacing its worktree and review rules.
+- Recorded the retained Substrait/Kysely boundary, current three backends, deferred semantic/federation work, and the distinction between proposed typed filters and implemented behavior.
+- User subsequently merged #17. PR #18 was reconciled with main and pushed at 6901985; 50 tests and 21 three-backend example executions passed locally. Verify live PR status when resuming; this is historical evidence, not an automatic merge authorization.
+
+## September 28: simple client and explicit callback semantics
+
+- Human redirect: ordinary application callers should execute a Table directly, while retaining an optional SQL preview. Explain what callbacks can contain and improve readability without adding another query language.
+- Added createClient with execute(Table), compile(Table), and destroy(); kept the existing Substrait/compiler/driver boundaries internally. Driver demonstration now uses this client. Catalogs are snapshotted and previews are detached from execution.
+- Documented callback return contracts, named expressions/helpers, configuration-time branching versus SQL CASE, unsupported async/arbitrary JavaScript translation, and relation scope limits. Ibis is a design reference, not justification for common lazy/callback patterns.
+- Tests cover all three dialect previews, parameter binding, invalid plans, closed clients, catalog mutation, real DuckDB results/error propagation, and callbacks running once at construction. Existing PostgreSQL/MySQL challenge conformance now exercises the client.
+- Initial test incorrectly assumed DuckDB uses question-mark placeholders; actual existing dialect uses numbered dollar placeholders. Corrected the test expectation, with no compiler change.
+- Validation passed: npm run check, npm test, npm run test:integration (16 tests), npm run test:duckdb (1 three-backend conformance test), PostgreSQL/MySQL demo, git diff --check. These are local checks, not CI. Existing supplied database container was used.
+- API documentation PR #17 and AI README draft #16 remain separate and unmerged; their examples will need reconciliation when merging this API addition. No candidate-authored README was written.
+
+## Dedicated API documentation — September 28, 2026
+
+- Candidate requested a separate comprehensive API-doc PR and an explicit explanation of why the API follows Ibis's design. Moved reference work out of README PR #16 without force-pushing; this branch starts independently from main d8a5fb0.
+- Organized docs/api into tutorial, Table/Expr reference, execution, Northwind recipes, semantics, design and maintenance pages. The design compares Ibis-style composition with direct Kysely and raw Substrait and states there is no Ibis runtime dependency.
+- Added source documentation comments and a runnable/type-checkable Northwind companion. No query behavior changed and no documentation-site dependency was introduced. TypeDoc/API Extractor are documented as possible later tooling, not installed capabilities.
+- Documentation remains supporting material; the candidate-authored submission README is separate. The code MVP stays frozen while its interface is explained.
+- Validation: npm run check and npm run check:docs passed; seven Northwind analyses compiled through binary round trips for each of three backends (21 combinations), then all 21 executed successfully after seeding this worktree's dedicated DuckDB file. Verified 10 Markdown pages / 58 local links and diff checks. Source-only comment edits preserve identical emitted runtime output, checked with the already-installed esbuild transpiler. An initial auxiliary check using the TypeScript compiler API could not use ScriptTarget from the installed package; the actual tsc checks passed and no new tool dependency was added. No full-suite rerun or hosted CI claim.
+
+## PR #18 reconciliation after #17 merged
+
+- User merged #17 and requested resolution of #18 conflicts. Merged current main without rebasing or force-pushing; retained both AI histories, documentation scripts and client tests.
+- Preserved the docs/api directory and updated the tutorial, execution reference and runnable examples to use createClient. Low-level compilation and serialization remain documented for advanced use.
+- No compiler, result semantics or client runtime changes were needed. Compile-time schema inference remains follow-up design work in #19.
+- Reconciliation validation passed: fresh npm ci in the isolated worktree, normal/docs typechecks, 33 local tests, 16 PostgreSQL/MySQL integration tests, one three-backend conformance test, 21 offline example compilations and 21 real example executions with a dedicated DuckDB snapshot. These are local checks, not CI.
+
+## PR #19 reconciliation and retained IR confirmation
+
+- User merged #18 and requested #19 conflicts be fixed, explicitly confirming retained Substrait IR for a future semantic-query frontend. Merged main 7b806e2 without rebase/force-push; preserved all AI-log histories.
+- Clarified the shared IR boundary: the current relational API and a future semantic frontend can both produce the supported Substrait profile. Metrics, dimensions, grain and relationship resolution belong above it; no semantic engine is implemented by this plan.
+- Updated references to merged #17/#18 and the architecture checkpoint. Typed filters/schema inference remain proposed follow-up work. Documentation-only; no source/test changes or new runtime test claims.
+
+## API philosophy and early submission schedule
+
+- User prefers readable predicate/projection objects to callbacks and requested the design research be finished today, with submission planned before Friday Oct 2.
+- Compared official Kysely, Drizzle and Polars expression/schema documentation. Recommended Drizzle-inspired typed helpers/projection objects, Polars composition ideas, and Kysely type experience; no new runtime dependency or alternate IR. Exact syntax remains for review.
+- Replaced the stale delivery schedule with Sep 28 design, Sep 29 bounded optional type work plus README preparation, Sep 30 freeze/fresh-clone verification/first video, Oct 1 submission, Oct 2 buffer. Existing tests are evidence, not final-version fresh-clone proof.
+- Recorded a fallback to the verified existing API if optional redesign threatens packaging. Candidate-authored README/video/access remain unconfirmed. No implementation, merge or submission was performed.
+
+## PR #19 review: application API versus relational IR
+
+- Addressed review comment 5881414944: removed stale wording that called the Substrait profile the public query representation. The accepted-architecture section now identifies Table/Expr as the application frontend and Substrait as the relational contract consumed by backend compilation.
+- Updated the adjacent text flow to include the frontend and all three existing backends. No implementation change; merging the plan is not authorization to implement the optional typed API.
+- Validation: reviewed the documentation diff, checked local links and git diff --check. No runtime tests required or claimed.
+
+## API characterization before typed API work
+
+- User approved a tests-only checkpoint and explicitly requested parallel agents in different worktrees. Root owns test/api-characterization; independent read-only review used review/api-test-review, and submission notes use docs/submission-guide in separate worktrees.
+- Inventoried existing API/decimal/window coverage; added one schema-boundary unit test and five fixture scenarios across all three backends for predicates, projection, relation order, aggregation and self-joins. No production API/compiler changes.
+- Initial run exposed MySQL's temporary-table self-join restriction and computed i32 CASE result strings. Switched to uniquely named disposable ordinary fixture tables and explicitly characterized MySQL CASE/COALESCE representation; no result normalization hid the difference. Typed-result work must address this limit before promising i32 numbers universally.
+- Independent reviewer checked hand-calculated expectations and found no blocking correctness issue. Root verified typecheck, 34 local tests, 34 reported integration tests (including nested test containers), and 1 three-backend conformance test. Supplied Northwind data remained unchanged. See API-TEST-COVERAGE.md for exact scope and limits.
+
+## Fresh-clone CI after PR #21
+
+- Human direction: complete typed API in a separate worktree while another agent verifies fresh setup; then requested hosted CI to avoid repeated manual full-suite runs.
+- Used a genuine independent clone from main cb4678d9. Added a single Linux/Node 22 workflow for lockfile installation, typechecks, unit/integration/conformance tests, drivers and documentation examples, with isolated Compose databases and bounded cleanup.
+- This does not validate the parallel typed API implementation. Hosted results and limitations are recorded in docs/CI.md; no candidate README or billing configuration changed.
+
+## Unified typed API after PR #21
+
+- User approved completing the typed API in a separate worktree and explicitly redirected the design to one typed predicate/projection surface, removing callback compatibility. A later prompt confirmed finishing this PR before additional UI/CI work.
+- Root owns feat/typed-api; authorized agents migrated tests and API docs in separate worktrees, then root integrated their commits. CI remains a separate task/branch. No compiler consolidation, Substrait replacement, dependency or backend change is included.
+- Preserved literal catalog schemas; added typed Table/Expr/Measure contracts, expression/projection objects, staged callback-free joins, and inferred client rows. Join input/output scopes remain separate and left-join right fields become nullable. Existing relation-identity checks remain runtime checks.
+- Migrated all application queries, driver examples, runnable docs and tests. Substrait remains the canonical IR and Kysely the lowering layer. A one-off comparison against pre-migration query builders confirmed structurally identical Substrait JSON for all eight driver examples, including ranking.
+- Retained the observed MySQL computed-i32 behavior: inferred i32 results are conservatively number|string. No numeric coercion or loss of decimal/i64 precision hides backend differences.
+- Independent review found union/dynamic structural names could falsely promise multiple output fields. Added failing negative type contracts (confirmed unused expect-error failures), then restricted table/group/window names and output aliases. Fixed grouping tuples and literal aliases keep the bounded type contract honest. Dynamic Catalog annotations intentionally lose precise schema inference.
+- Validation on the combined implementation: fresh worktree npm ci; normal/docs typechecks; 35 local tests; 34 reported integration tests (including nested containers); one three-backend Northwind conformance test; 21 documentation examples compiled offline and executed on PostgreSQL/MySQL/seeded DuckDB; both driver commands passed. These are local checks, not hosted CI or final-release fresh-clone proof.
+- Known limits: no static per-instance relation identity, no general dynamic-alias inference, no filter-based nullability refinement, no schema introspection or new normalization layer. Numeric literal range/decimal constraints and backend capabilities still require runtime validation. Candidate-authored README/video remain separate deliverables.
+
+## PR #22 review: nominal expression and measure types
+
+- Addressed review 5346505110: structural Expr/Measure interfaces allowed ordinary object literals to match the public shape without factory construction.
+- Added compile-only negative assignments for complete structural expression and measure objects. Both directives first failed as unused, confirming the gap; both pass after the fix. Positive factory assignments and existing inference contracts remain checked.
+- Added separate unexported unique-symbol brands to the interfaces and internal runtime classes as erased declarations. Marked resolve with @internal and documented that these are compile-time markers, not a runtime security boundary. SQL, Substrait construction and execution behavior are unchanged.
+- Validation: normal/docs typechecks, 35 local tests, 34 reported integration tests and one three-backend conformance test passed. Hosted CI remains a separate task; no hosted run is claimed.
+
+## CI publication after typed API merge
+
+- User completed workflow-scope authorization and merged #22. Integrated main fc5e1e4 into the independent CI clone, preserving both AI-log histories. The upcoming hosted run covers the merged typed API, not only the original #21 baseline.
+
+- Hosted run 36507131453 passed at CI head 17d61a1 after correcting the invalid runner.temp job-env reference. All fresh setup/database/driver/docs steps passed. Updated CI history to address the stale-status review comment; local independent-clone checks also passed on merged #22 code.

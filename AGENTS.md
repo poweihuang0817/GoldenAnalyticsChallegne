@@ -7,6 +7,24 @@
 - Keep the primary checkout on `main`. Prefer a separate worktree for a new coding or documentation task; a branch in the existing checkout is acceptable for a single sequential task if it is clean and no other process owns it.
 - Start independent work from freshly fetched `origin/main`, not another open PR branch. Do not create dependent work before its prerequisite PR is merged unless the user explicitly requests stacked work.
 
+## Architecture and scope checkpoint
+
+- Table/Expr is the current application-facing frontend. A constrained Substrait profile is the canonical relational contract; Substrait is not the public semantic API.
+- Kysely constructs backend SQL below Golden's relational lowering. PostgreSQL, MySQL and DuckDB are current backends; DuckDB uses a separately seeded local snapshot.
+- Retain Substrait unless the user explicitly accepts a new architecture decision. The earlier Kysely-only migration proposal is superseded.
+- Learn from Kysely's schema-aware API without translating its AST back into Substrait. Compile-time schema propagation and typed filters are proposed in [the API plan](docs/TYPED-RELATIONAL-API-PLAN.md), not implemented features. Review that plan before implementation.
+- A future semantic frontend could be Malloy-like, but no semantic-layer product or dependency has been selected. It would resolve business concepts before producing relational operations.
+- Before submission, do not add a full Substrait engine, federation, schema/authentication frameworks, or new duplicate compiler paths. Existing compiler duplication is known; do not consolidate it without characterization tests and explicit scope.
+- Prioritize correctness, reviewer experience, candidate-authored README/docs, and a clear demo. Keep changes small and defer speculative architecture work.
+
+## Correctness and continuity
+
+- Every behavioral component change needs focused unit/type tests appropriate to that boundary. Documentation-only changes need documentation checks, not artificial runtime tests.
+- For compiler/semantic bugs, first add a failing regression test; preserve independent oracles and cross-backend checks for NULLs, decimals, duplicates, empty inputs and boundaries. Reject unsupported capabilities explicitly.
+- Compile-time types do not replace runtime profile/catalog/scope validation or prove driver result representations.
+- Use GitHub issues/PRs and repository decision documents as persistent context. At a new session, read these instructions and relevant plans, then verify current PR status; historical chat summaries are not live status.
+- Keep accepted decisions, pending proposals, test evidence and deferred work distinct. Record major user redirects in docs/AI-LOG.md. A new task-specific thread should not need the full prior conversation.
+
 ## Worktree and branch ownership
 
 - Use one branch and one worktree per independently edited task. Suggested paths: `.worktrees/<task>` and branches `feat/<task>`, `fix/<task>`, or `docs/<task>`.
