@@ -185,3 +185,10 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Addressed review comment 5881414944: removed stale wording that called the Substrait profile the public query representation. The accepted-architecture section now identifies Table/Expr as the application frontend and Substrait as the relational contract consumed by backend compilation.
 - Updated the adjacent text flow to include the frontend and all three existing backends. No implementation change; merging the plan is not authorization to implement the optional typed API.
 - Validation: reviewed the documentation diff, checked local links and git diff --check. No runtime tests required or claimed.
+
+## Submission walkthrough preparation after #19
+
+- User requested parallel work in separate worktrees after merging the retained-IR/API plan. This documentation task uses docs/submission-guide independently from test-characterization work.
+- Added a five-minute screen-by-screen walkthrough outline and final submission checklist grounded in current query/client/driver code. Retained October 1 submission, September 30 first-video/code-freeze targets from PLAN.md.
+- Distinguished implemented callback API from proposed typed predicates; selected DuckDB as the primary extension and described its separate snapshot accurately. Candidate authors the README and records the video; these are AI supporting notes only.
+- Validation: inspected package scripts and linked source/docs, checked local Markdown link targets and git diff --check. No dependencies installed, database operations performed or runtime tests claimed for this documentation-only change.
