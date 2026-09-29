@@ -8,7 +8,8 @@ export function recentOrdersQuery(n = 5) {
 }
 export function cityQuery(city: string) {
   const customers = source.table('customers');
-  return customers.filter(customers.columns.city.lower().eq(literal(city).lower()))
+  return customers
+    .filter(customers.columns.city.lower().eq(literal(city).lower()))
     .aggregate({ customer_count: count() });
 }
 export function averageUnitsQuery() {

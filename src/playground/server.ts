@@ -19,10 +19,10 @@ const examples = [
   { id: 'percentile', title: '75th percentile by country', description: 'Exact continuous percentile of discounted order prices, rounded to decimal scale 10. Each country is a separate group.', code: `${definition('pricedOrders')}\n\n${definition('percentileQuery')}\n\npercentileQuery(0.75)`, build: percentileQuery },
 ];
 export type Request = { query: string; backend: Backend; action: 'compile' | 'run' };
-export async function executeExample(request: Request) {
+export async function executeExample(request: Request, options: { duckdbPath?: string } = {}) {
   const example = examples.find(e => e.id === request.query);
   if (!example) throw new Error('Unknown example');
-  const plan = example.build().toSubstrait(), db = connect(request.backend), start = performance.now();
+  const plan = example.build().toSubstrait(), db = connect(request.backend, options), start = performance.now();
   try {
     const compiled = compilePlan(db, plan, challengeCatalog);
     const rows = request.action === 'run' ? (await db.executeQuery(compiled)).rows : undefined;
@@ -34,6 +34,7 @@ const assets: Record<string, [string, string]> = {
   '/': ['index.html', 'text/html; charset=utf-8'],
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
+  '/architecture.svg': ['architecture.svg', 'image/svg+xml'],
 };
 async function body(request: IncomingMessage) {
   const chunks: Buffer[] = []; let size = 0;
@@ -73,12 +74,12 @@ export function createDemoServer(execute: (request: Request) => Promise<unknown>
     try { input = await body(req); } catch { send(400, { error: 'Expected a JSON request of at most 1024 bytes.' }); return; }
     if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).length !== 3
       || !['query', 'backend', 'action'].every(k => Object.hasOwn(input, k))
-      || !examples.some(e => e.id === input.query) || !['postgres', 'mysql'].includes(input.backend)
+      || !examples.some(e => e.id === input.query) || !['postgres', 'mysql', 'duckdb'].includes(input.backend)
       || !['compile', 'run'].includes(input.action)) { send(400, { error: 'Choose a listed example, backend and action.' }); return; }
     if (busy) { send(429, { error: 'A query is running. Try again when it finishes.' }); return; }
     busy = true;
     try { send(200, await execute(input)); }
-    catch { send(500, { error: 'Query failed. Check that the sample database is running and configured.' }); }
+    catch { send(500, { error: 'Query failed. Check the sample databases. For DuckDB, run npm run seed:duckdb with the same DUCKDB_PATH before starting the demo.' }); }
     finally { busy = false; }
   });
 }

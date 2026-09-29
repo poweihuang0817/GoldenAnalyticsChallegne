@@ -217,6 +217,12 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Added separate unexported unique-symbol brands to the interfaces and internal runtime classes as erased declarations. Marked resolve with @internal and documented that these are compile-time markers, not a runtime security boundary. SQL, Substrait construction and execution behavior are unchanged.
 - Validation: normal/docs typechecks, 35 local tests, 34 reported integration tests and one three-backend conformance test passed. Hosted CI remains a separate task; no hosted run is claimed.
 
+## Video UI draft checkpoint, September 28
+
+- User requested a visual driver/API/architecture walkthrough, explicitly including DuckDB. Added DuckDB to the fixed HTTP/UI backend allowlist, explanatory API/Architecture pages, an SVG diagram, and demo:ui script. No compiler or query semantics changed.
+- Typecheck and 36 local tests passed, including a real DuckDB HTTP fixture. Headless Edge exercised nine sample/backend combinations successfully. Architecture image route succeeds but browser rendering still fails; this is an open item, not a completed visual check.
+- User asked to save a PR and continue tomorrow. Open as draft, preserve incomplete work and record remaining verification. Parallel docs and bounded methodology work have independent branches/PRs. No merge or submission is authorized.
+
 ## CI publication after typed API merge
 
 - User completed workflow-scope authorization and merged #22. Integrated main fc5e1e4 into the independent CI clone, preserving both AI-log histories. The upcoming hosted run covers the merged typed API, not only the original #21 baseline.
@@ -231,3 +237,9 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Documented replay seed, independent oracle boundaries, fixture cleanup, SQL bag/NULL semantics and deferred verification directions in TEST-METHODOLOGY.md. This is a small reproducible corpus, not full property/fuzz/formal verification.
 
 - Validation in the isolated worktree: fresh npm ci, typecheck, 35 local tests, 55 reported integration tests (including parent tests and 18 new dataset subtests), and one three-backend Northwind conformance test passed. These are local results; the PR CI run remains separate evidence.
+
+## September 28 - finish DuckDB walkthrough while candidate is away
+
+User asked to continue as much as possible and save progress without waiting. Finished the dedicated PR25 worktree: repaired a Windows encoding defect that made the SVG invalid UTF-8 (first reproduced with a failing test), replaced inline SVG CSS with CSP-compatible attributes, corrected visible arrow glyphs, and formatted the displayed city query without changing semantics. Added isolated unseeded-DuckDB coverage: compile creates no file; execution reports seed guidance without exposing the internal path.
+
+Validation: code/docs type checks and 37 local tests passed. Temporary headless Edge outside repository dependencies checked three compile-only paths, nine real Northwind runs across PostgreSQL/MySQL/DuckDB, missing-seed UI feedback, navigation, diagram rendering, 1440/900px page width and absence of JavaScript errors. Visually inspected the three 1440px page screenshots. Updated the submission plan and verification notes; no PR merged or submission sent. Final candidate README and video remain human deliverables.
