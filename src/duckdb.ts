@@ -21,6 +21,7 @@ function normalize(value: DuckDBValue): unknown {
 }
 class Connection implements DatabaseConnection {
   constructor(readonly native: NativeConnection) {}
+  async cancelQuery(): Promise<void> { this.native.interrupt(); }
   async executeQuery<R>(query: CompiledQuery): Promise<QueryResult<R>> {
     const result = await this.native.runAndReadAll(query.sql, query.parameters.map(parameter));
     const names = result.columnNames();
