@@ -193,6 +193,12 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Initial run exposed MySQL's temporary-table self-join restriction and computed i32 CASE result strings. Switched to uniquely named disposable ordinary fixture tables and explicitly characterized MySQL CASE/COALESCE representation; no result normalization hid the difference. Typed-result work must address this limit before promising i32 numbers universally.
 - Independent reviewer checked hand-calculated expectations and found no blocking correctness issue. Root verified typecheck, 34 local tests, 34 reported integration tests (including nested test containers), and 1 three-backend conformance test. Supplied Northwind data remained unchanged. See API-TEST-COVERAGE.md for exact scope and limits.
 
+## Fresh-clone CI after PR #21
+
+- Human direction: complete typed API in a separate worktree while another agent verifies fresh setup; then requested hosted CI to avoid repeated manual full-suite runs.
+- Used a genuine independent clone from main cb4678d9. Added a single Linux/Node 22 workflow for lockfile installation, typechecks, unit/integration/conformance tests, drivers and documentation examples, with isolated Compose databases and bounded cleanup.
+- This does not validate the parallel typed API implementation. Hosted results and limitations are recorded in docs/CI.md; no candidate README or billing configuration changed.
+
 ## Unified typed API after PR #21
 
 - User approved completing the typed API in a separate worktree and explicitly redirected the design to one typed predicate/projection surface, removing callback compatibility. A later prompt confirmed finishing this PR before additional UI/CI work.
@@ -216,3 +222,9 @@ The challenge explicitly requires a README written by the candidate. The assista
 - User requested a visual driver/API/architecture walkthrough, explicitly including DuckDB. Added DuckDB to the fixed HTTP/UI backend allowlist, explanatory API/Architecture pages, an SVG diagram, and demo:ui script. No compiler or query semantics changed.
 - Typecheck and 36 local tests passed, including a real DuckDB HTTP fixture. Headless Edge exercised nine sample/backend combinations successfully. Architecture image route succeeds but browser rendering still fails; this is an open item, not a completed visual check.
 - User asked to save a PR and continue tomorrow. Open as draft, preserve incomplete work and record remaining verification. Parallel docs and bounded methodology work have independent branches/PRs. No merge or submission is authorized.
+
+## CI publication after typed API merge
+
+- User completed workflow-scope authorization and merged #22. Integrated main fc5e1e4 into the independent CI clone, preserving both AI-log histories. The upcoming hosted run covers the merged typed API, not only the original #21 baseline.
+
+- Hosted run 36507131453 passed at CI head 17d61a1 after correcting the invalid runner.temp job-env reference. All fresh setup/database/driver/docs steps passed. Updated CI history to address the stale-status review comment; local independent-clone checks also passed on merged #22 code.
