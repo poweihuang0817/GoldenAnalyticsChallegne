@@ -127,3 +127,11 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Proposed sequencing: review plan; merge behavior-characterization tests that pass on the current code; migrate query definitions/driver while preserving those tests; then remove unused Substrait code and dependencies.
 - Found open PR #18 adds a client wrapper around the current API. The plan records it as a disposition to resolve before migration and explicitly forbids stacking migration work on it.
 - No source or test implementation changes were made. No checks or test claims are made by the plan PR.
+
+## PR #19 direction revision — September 28, 2026
+
+- User chose to retain Substrait as a relational contract, potentially useful beneath a future semantic-query frontend, and requested these findings be saved in the PR.
+- Clarified that Substrait does not supply a semantic layer and relational algebra is not universally more expressive than SQL. No concrete external consumer is claimed; compiler/interchange costs remain.
+- User reiterated compile-time schema checks and redirected the API design to learn from Kysely, especially typed filters. Proposed schema-correlated column/operator/value arguments, typed select/output inference, expression objects, and typed callback compatibility.
+- Kept runtime scope/profile validation, exact result semantics, and test-first sequencing. No new serialized IR, Kysely AST translation, semantic layer, or compiler replacement is proposed.
+- Updated only planning documents and PR metadata. API examples are proposals, not implemented or typechecked features. PR #17/#18 were neither merged nor closed.
