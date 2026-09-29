@@ -1,3 +1,6 @@
+import { ZodError } from 'zod';
+import { CompileQueryError } from './errors.js';
+import { compilerBackend } from './capabilities.js';
 import { Kysely, sql, type SelectQueryBuilder } from 'kysely';
 import { fromPlanJson, toPlanJson, type Field, type Rel } from './plan.js';
 import { compileAnalytics } from './relational.js';
@@ -13,7 +16,18 @@ type Query = SelectQueryBuilder<Database, string, {}>;
  * @remarks Compile separately for each backend; catalog validation does not inspect live metadata.
  */
 export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catalog) {
-  const plan = toPlanJson(fromPlanJson(input));
+  const backend = compilerBackend(db);
+  const invalid = (message: string) => new CompileQueryError(message, { code: 'INVALID_QUERY', stage: 'compile', backend });
+  const unsupported = (message: string) => new CompileQueryError(message, { code: 'UNSUPPORTED_CAPABILITY', stage: 'compile', backend });
+  let plan;
+  try { plan = toPlanJson(fromPlanJson(input)); }
+  catch (cause) {
+    // Only known input-validation failures are normalized; programming/driver errors propagate.
+    if (cause instanceof ZodError || cause instanceof CompileQueryError) throw new CompileQueryError(cause.message, {
+      code: 'INVALID_QUERY', stage: 'validation', backend, cause,
+    });
+    throw cause;
+  }
   if (plan.extensions?.length || plan.extensionUris?.length) return compileAnalytics(db, plan, catalog);
   const root = plan.relations[0].root;
   let query: Query;
@@ -22,30 +36,30 @@ export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catal
   let fetched = false;
   function resolve(expr: Field) {
     const position = expr.selection.directReference.structField.field;
-    if (position >= columns.length) throw new Error(`Field index ${position} out of range`);
+    if (position >= columns.length) throw invalid(`Field index ${position} out of range`);
     return columns[position];
   }
   function emit(mapping?: number[]) {
     if (mapping) columns = mapping.map(position => {
-      if (position >= columns.length) throw new Error(`Emit index ${position} out of range`);
+      if (position >= columns.length) throw invalid(`Emit index ${position} out of range`);
       return columns[position];
     });
   }
   function visit(rel: Rel, depth = 0): void {
-    if (depth > 32) throw new Error('Plan depth exceeds 32');
+    if (depth > 32) throw invalid('Plan depth exceeds 32');
     if ('read' in rel) {
       const read = rel.read;
       const table = read.namedTable.names[0];
       const expected = Object.hasOwn(catalog, table) ? catalog[table] : undefined;
-      if (!expected) throw new Error(`Unknown table: ${table}`);
+      if (!expected) throw invalid(`Unknown table: ${table}`);
       const schema = read.baseSchema;
       if (schema.names.length !== expected.length || schema.struct.types.length !== expected.length)
-        throw new Error('Read schema width mismatch');
+        throw invalid('Read schema width mismatch');
       expected.forEach((column, i) => {
         const declared = schema.struct.types[i];
         const value = (declared as Record<string, { nullability: string }>)[column.type];
         if (schema.names[i] !== column.name || !value || value.nullability !== (column.nullable ? 'NULLABILITY_NULLABLE' : 'NULLABILITY_REQUIRED'))
-          throw new Error(`Read schema mismatch at field ${i}`);
+          throw invalid(`Read schema mismatch at field ${i}`);
       });
       columns = expected.map(column => `${table}.${column.name}`);
       query = db.selectFrom(table);
@@ -54,13 +68,13 @@ export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catal
       visit(rel.project.input, depth + 1);
       // Substrait project APPENDS expressions to its input before applying emit.
       columns = [...columns, ...rel.project.expressions.map(expr => {
-        if (!('selection' in expr)) throw new Error('Analytical expressions require the function profile');
+        if (!('selection' in expr)) throw unsupported('Analytical expressions require the function profile');
         return resolve(expr);
       })];
       if (rel.project.common && 'emit' in rel.project.common) emit(rel.project.common.emit.outputMapping);
     } else if ('sort' in rel) {
       visit(rel.sort.input, depth + 1);
-      if (fetched || sorted) throw new Error('This profile requires a single sort before fetch');
+      if (fetched || sorted) throw unsupported('This profile requires a single sort before fetch');
       sorted = true;
       for (const sort of rel.sort.sorts) {
         const column = sql.ref(resolve(sort.expr));
@@ -71,15 +85,15 @@ export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catal
       }
     } else if ('fetch' in rel) {
       visit(rel.fetch.input, depth + 1);
-      if (fetched) throw new Error('Nested fetch is not supported in this profile');
+      if (fetched) throw unsupported('Nested fetch is not supported in this profile');
       fetched = true;
       query = query.limit(Number(rel.fetch.count)).offset(Number(rel.fetch.offset ?? '0'));
     } else {
-      throw new Error('Analytical relations require the function profile');
+      throw unsupported('Analytical relations require the function profile');
     }
   }
   visit(root.input);
-  if (root.names.length !== columns.length) throw new Error('Root names must match output width');
-  if (new Set(root.names).size !== root.names.length) throw new Error('Duplicate output names are not supported');
+  if (root.names.length !== columns.length) throw invalid('Root names must match output width');
+  if (new Set(root.names).size !== root.names.length) throw invalid('Duplicate output names are not supported');
   return query!.select(columns.map((column, i) => sql.ref(column).as(root.names[i]))).compile();
 }
