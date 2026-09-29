@@ -222,3 +222,12 @@ The challenge explicitly requires a README written by the candidate. The assista
 - User completed workflow-scope authorization and merged #22. Integrated main fc5e1e4 into the independent CI clone, preserving both AI-log histories. The upcoming hosted run covers the merged typed API, not only the original #21 baseline.
 
 - Hosted run 36507131453 passed at CI head 17d61a1 after correcting the invalid runner.temp job-env reference. All fresh setup/database/driver/docs steps passed. Updated CI history to address the stale-status review comment; local independent-clone checks also passed on merged #22 code.
+
+## Bounded test-methodology expansion after typed API and CI
+
+- User requested a little more correctness evidence before submission while keeping TPC-H, large fuzzing, mutation infrastructure and formal verification as future work.
+- Added six deterministic datasets per backend to the existing API characterization suite: explicit empty/all-NULL/duplicate/i32-boundary cases plus three fixed-seed datasets. No runtime/compiler, dependency or package-script change.
+- Each engine checks an independent JavaScript bag-aggregate/filter oracle, compound versus sequential scoped filters, and grouped insertion-order invariance. Explicit NULL handling and bounded exact integer sums avoid invalid JavaScript/SQL or floating-point assumptions. Real result encodings are asserted unchanged.
+- Documented replay seed, independent oracle boundaries, fixture cleanup, SQL bag/NULL semantics and deferred verification directions in TEST-METHODOLOGY.md. This is a small reproducible corpus, not full property/fuzz/formal verification.
+
+- Validation in the isolated worktree: fresh npm ci, typecheck, 35 local tests, 55 reported integration tests (including parent tests and 18 new dataset subtests), and one three-backend Northwind conformance test passed. These are local results; the PR CI run remains separate evidence.
