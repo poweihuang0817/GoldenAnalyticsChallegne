@@ -60,9 +60,9 @@ Conceptual type propagation:
 
 These are design signatures, not a verified generic implementation. Use nominal/private type markers so unrelated Expr/Measure types cannot become structurally interchangeable. Avoid signatures that infer a broad union to accept incompatible operands.
 
-## Kysely-inspired typed filter: preferred simple form
+## Kysely-inspired typed filter: optional later shorthand
 
-User clarification: learn from Kysely's API, especially schema-aware filter arguments. Prefer a small typed column/operator/value overload for ordinary conditions:
+Updated after the expression-style review: the user prefers predicate/projection objects over callbacks. The recommended primary style is now typed expression helpers plus projection objects; see [API philosophy](API-PHILOSOPHY.md). Kysely remains the reference for schema-aware typing. The following column/operator/value shorthand is a possible later convenience, not a requirement for the first increment:
 
 ```ts
 const query = source.table('orders')
@@ -89,9 +89,9 @@ A typed `select(['order_id', 'order_date'])` shorthand preserves those fields; t
 
 Kysely references: [WhereInterface](https://kysely-org.github.io/kysely-apidoc/interfaces/WhereInterface.html) for value vs reference arguments and [schema setup](https://kysely.dev/docs/getting-started) for typed query construction. Our narrower operator/profile guarantees are Golden's proposed contract, not a claim that Kysely checks all SQL semantics.
 
-## Typed expression/object form for composition
+## Typed expression/object form: recommended primary direction
 
-Expose typed `table.col()` and accept expressions/selection objects directly, while retaining typed callback overloads for convenient chaining and compatibility:
+Expose schema-aware column access (proposed `table.columns`, with `table.col()` as an alternative) and accept expressions/selection objects directly, while retaining typed callback overloads for convenient chaining and compatibility:
 
 ```ts
 const customers = source.table('customers');
@@ -166,7 +166,7 @@ PR #17 (API documentation) and PR #18 (client execution/preview) are now merged.
 1. Review and merge this plan-only PR. Retaining Substrait is confirmed; typed filter syntax, overloads and type contracts remain proposals.
 2. Inventory existing behavioral coverage; add only missing characterization cases in a tests-only PR that passes on current code. Preserve all six challenge query families, ranking, all three backends, parameter binding, NULL ordering, ties, independent numeric oracles, and scope regressions.
 3. Add typed catalog/Expr/Table propagation incrementally with compile-time tests in the same implementation PR. Negative type tests cannot pass against today's permissive API, so they belong here rather than being falsely reported as passing characterization tests.
-4. Add typed filter tuples, select shorthands, expression/object overloads, and typed client execution after the core type contract works; keep typed callbacks for compatibility. Reuse unchanged runtime semantics and lowering.
+4. Add expression/object overloads and typed client execution after the core type contract works; defer tuple filter/select shortcuts unless justified; keep typed callbacks for compatibility. Reuse unchanged runtime semantics and lowering.
 5. Update Northwind examples/API docs and rerun local tests, PostgreSQL/MySQL integration, DuckDB conformance, and documented demo commands before claiming completion.
 
 Compile-time tests should be included in a strict tsc no-emit test configuration. Use positive inferred-result assertions and `@ts-expect-error` negative cases (unused directives must fail). Cover unknown tables/columns, string sum, incompatible equality, non-boolean filter, removed projected fields, aggregate misuse, nullable right-side left-join fields, and exact result representations. Test tuple, object, and callback overloads, including mismatched value types, unknown operators, NULL comparisons, and union-key inference. Ban any/as-cast shortcuts in these tests.
@@ -179,4 +179,4 @@ Evolve `src/api.ts` first; extract catalog/type utilities only if needed for rea
 
 Deferred: semantic metrics layer, federation, DataFusion/Rust service, schema introspection/code generation, general optimizer, full Substrait interoperability, advanced nullability narrowing, callback-free joins, and broad capability/auth/error frameworks. None is required to demonstrate this type-safety improvement.
 
-Review questions: approve Kysely-inspired typed filter/select shorthands plus typed expression/callback compatibility; approve runtime-only relation identity checks; confirm the small test-first increments above. No runtime implementation is authorized by this document alone.
+Review questions: approve the predicate/projection primary style in API-PHILOSOPHY.md, with typed callback compatibility and optional later tuple shorthands; approve runtime-only relation identity checks; confirm the small test-first increments above. No runtime implementation is authorized by this document alone.

@@ -172,3 +172,10 @@ The challenge explicitly requires a README written by the candidate. The assista
 - User merged #18 and requested #19 conflicts be fixed, explicitly confirming retained Substrait IR for a future semantic-query frontend. Merged main 7b806e2 without rebase/force-push; preserved all AI-log histories.
 - Clarified the shared IR boundary: the current relational API and a future semantic frontend can both produce the supported Substrait profile. Metrics, dimensions, grain and relationship resolution belong above it; no semantic engine is implemented by this plan.
 - Updated references to merged #17/#18 and the architecture checkpoint. Typed filters/schema inference remain proposed follow-up work. Documentation-only; no source/test changes or new runtime test claims.
+
+## API philosophy and early submission schedule
+
+- User prefers readable predicate/projection objects to callbacks and requested the design research be finished today, with submission planned before Friday Oct 2.
+- Compared official Kysely, Drizzle and Polars expression/schema documentation. Recommended Drizzle-inspired typed helpers/projection objects, Polars composition ideas, and Kysely type experience; no new runtime dependency or alternate IR. Exact syntax remains for review.
+- Replaced the stale delivery schedule with Sep 28 design, Sep 29 bounded optional type work plus README preparation, Sep 30 freeze/fresh-clone verification/first video, Oct 1 submission, Oct 2 buffer. Existing tests are evidence, not final-version fresh-clone proof.
+- Recorded a fallback to the verified existing API if optional redesign threatens packaging. Candidate-authored README/video/access remain unconfirmed. No implementation, merge or submission was performed.
