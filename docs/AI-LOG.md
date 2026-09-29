@@ -120,6 +120,28 @@ The challenge explicitly requires a README written by the candidate. The assista
 - User merged PR #14 and requested PR #15's remaining conflicts be resolved. Merged origin/main d1a2b32 without rebasing or force-pushing. Preserved both branches' AI-log entries and included compiler/API/window/playground/DuckDB suites together in the default test command. Runtime files merged without conflict; the playground's existing two-backend HTTP allowlist is unchanged.
 - Validation after this merge: typecheck, 28 default local/HTTP tests, 16 PostgreSQL/MySQL integration tests, one three-backend sample/window conformance test, and diff checks passed (45 tests total). No new UI browser inspection, CI, or fresh-clone claim.
 
+## Kysely migration plan PR — September 28, 2026
+
+- User correction: do not begin test additions or migration yet; first submit a plan PR for review.
+- Drafted a plan-only proposal to replace the public Golden Table/Expr + Substrait boundary with direct Kysely query builders. No DataFusion/federation is proposed for current scope.
+- Proposed sequencing: review plan; merge behavior-characterization tests that pass on the current code; migrate query definitions/driver while preserving those tests; then remove unused Substrait code and dependencies.
+- Found open PR #18 adds a client wrapper around the current API. The plan records it as a disposition to resolve before migration and explicitly forbids stacking migration work on it.
+- No source or test implementation changes were made. No checks or test claims are made by the plan PR.
+
+## PR #19 direction revision — September 28, 2026
+
+- User chose to retain Substrait as a relational contract, potentially useful beneath a future semantic-query frontend, and requested these findings be saved in the PR.
+- Clarified that Substrait does not supply a semantic layer and relational algebra is not universally more expressive than SQL. No concrete external consumer is claimed; compiler/interchange costs remain.
+- User reiterated compile-time schema checks and redirected the API design to learn from Kysely, especially typed filters. Proposed schema-correlated column/operator/value arguments, typed select/output inference, expression objects, and typed callback compatibility.
+- Kept runtime scope/profile validation, exact result semantics, and test-first sequencing. No new serialized IR, Kysely AST translation, semantic layer, or compiler replacement is proposed.
+- Updated only planning documents and PR metadata. API examples are proposals, not implemented or typechecked features. PR #17/#18 were neither merged nor closed.
+
+## Persistent context checkpoint
+
+- User requested durable architecture/scope/correctness guidance for shorter task-specific sessions. Extended the existing AGENTS.md rather than replacing its worktree and review rules.
+- Recorded the retained Substrait/Kysely boundary, current three backends, deferred semantic/federation work, and the distinction between proposed typed filters and implemented behavior.
+- User subsequently merged #17. PR #18 was reconciled with main and pushed at 6901985; 50 tests and 21 three-backend example executions passed locally. Verify live PR status when resuming; this is historical evidence, not an automatic merge authorization.
+
 ## September 28: simple client and explicit callback semantics
 
 - Human redirect: ordinary application callers should execute a Table directly, while retaining an optional SQL preview. Explain what callbacks can contain and improve readability without adding another query language.
@@ -144,3 +166,22 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Preserved the docs/api directory and updated the tutorial, execution reference and runnable examples to use createClient. Low-level compilation and serialization remain documented for advanced use.
 - No compiler, result semantics or client runtime changes were needed. Compile-time schema inference remains follow-up design work in #19.
 - Reconciliation validation passed: fresh npm ci in the isolated worktree, normal/docs typechecks, 33 local tests, 16 PostgreSQL/MySQL integration tests, one three-backend conformance test, 21 offline example compilations and 21 real example executions with a dedicated DuckDB snapshot. These are local checks, not CI.
+
+## PR #19 reconciliation and retained IR confirmation
+
+- User merged #18 and requested #19 conflicts be fixed, explicitly confirming retained Substrait IR for a future semantic-query frontend. Merged main 7b806e2 without rebase/force-push; preserved all AI-log histories.
+- Clarified the shared IR boundary: the current relational API and a future semantic frontend can both produce the supported Substrait profile. Metrics, dimensions, grain and relationship resolution belong above it; no semantic engine is implemented by this plan.
+- Updated references to merged #17/#18 and the architecture checkpoint. Typed filters/schema inference remain proposed follow-up work. Documentation-only; no source/test changes or new runtime test claims.
+
+## API philosophy and early submission schedule
+
+- User prefers readable predicate/projection objects to callbacks and requested the design research be finished today, with submission planned before Friday Oct 2.
+- Compared official Kysely, Drizzle and Polars expression/schema documentation. Recommended Drizzle-inspired typed helpers/projection objects, Polars composition ideas, and Kysely type experience; no new runtime dependency or alternate IR. Exact syntax remains for review.
+- Replaced the stale delivery schedule with Sep 28 design, Sep 29 bounded optional type work plus README preparation, Sep 30 freeze/fresh-clone verification/first video, Oct 1 submission, Oct 2 buffer. Existing tests are evidence, not final-version fresh-clone proof.
+- Recorded a fallback to the verified existing API if optional redesign threatens packaging. Candidate-authored README/video/access remain unconfirmed. No implementation, merge or submission was performed.
+
+## PR #19 review: application API versus relational IR
+
+- Addressed review comment 5881414944: removed stale wording that called the Substrait profile the public query representation. The accepted-architecture section now identifies Table/Expr as the application frontend and Substrait as the relational contract consumed by backend compilation.
+- Updated the adjacent text flow to include the frontend and all three existing backends. No implementation change; merging the plan is not authorization to implement the optional typed API.
+- Validation: reviewed the documentation diff, checked local links and git diff --check. No runtime tests required or claimed.
