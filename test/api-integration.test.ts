@@ -3,17 +3,17 @@ import assert from 'node:assert/strict';
 import { sql } from 'kysely';
 import { createSource, literal, count, type Table } from '../src/api.js';
 import { connect } from '../src/backend.js';
+import { createClient } from '../src/client.js';
 import { compilePlan } from '../src/compiler.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { queryExamples, recentOrdersQuery, cityQuery } from '../src/queries.js';
 
 test('every public API example produces equivalent results on PostgreSQL and MySQL', async () => {
-  const pg = connect('postgres'), my = connect('mysql');
+  const pg = createClient('postgres', challengeCatalog), my = createClient('mysql', challengeCatalog);
   try {
     for (const { name, query } of queryExamples) {
-      const plan = query.toSubstrait();
-      const a = (await pg.executeQuery(compilePlan(pg, plan, challengeCatalog))).rows;
-      const b = (await my.executeQuery(compilePlan(my, plan, challengeCatalog))).rows;
+      const a = (await pg.execute(query)).rows;
+      const b = (await my.execute(query)).rows;
       if (name === 'Average units per order') assert.ok(Math.abs(Number(a[0].average_units) - Number(b[0].average_units)) < 1e-12);
       else assert.deepEqual(a, b, name);
     }

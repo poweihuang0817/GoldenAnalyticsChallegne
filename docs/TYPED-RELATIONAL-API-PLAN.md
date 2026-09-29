@@ -4,12 +4,16 @@ Status: API design for review; no implementation in this PR. The user has redire
 
 ## Decision and rationale
 
-Keep the existing boundary:
+**Confirmed direction: retain Substrait as the canonical relational IR, including as a compilation target for a future semantic-query frontend.** This PR does not remove Substrait or migrate the public API to Kysely.
+
+Keep the existing lowering boundary and allow future producers above it:
 
 ```text
-Application / future semantic-query frontend
-    -> typed Table / Expr API
-    -> supported Substrait profile
+Current Table / Expr API       Future semantic-query frontend
+          |                     (resolve metrics/dimensions/grain)
+          +--------------------------+
+                                     v
+                      supported Substrait relational IR
     -> validation and backend lowering
     -> Kysely
     -> PostgreSQL / MySQL / DuckDB
@@ -155,11 +159,11 @@ const preview = client.compile(query);   // SQL and bound parameters; no DB exec
 
 A normal caller needs only execute. It internally performs plan generation, validation, compilation, and database execution. Compile remains independently available for debugging and compiler tests. Query construction is lazy with respect to database I/O, including callbacks. Avoid logging parameter values by default.
 
-PR #18 already proposes this client shape over Substrait. Retaining Substrait removes the previous reason to supersede that PR, but it still requires its own review and an eventual typed execution signature. PR #17's API documentation also remains relevant; reconcile it with the final accepted API. This proposal neither merges nor closes either PR.
+PR #17 (API documentation) and PR #18 (client execution/preview) are now merged. Build on their existing docs/api layout and createClient surface. The current execute result is { rows: Record<string, unknown>[] }; the inferred row types shown above are proposed, not implemented. Update client generics and examples alongside future schema typing, preserving the result envelope and runtime semantics.
 
 ## Test-first implementation sequence
 
-1. Review and merge this plan-only PR. Retaining Substrait is the latest direction; object overload syntax and type contracts are proposals.
+1. Review and merge this plan-only PR. Retaining Substrait is confirmed; typed filter syntax, overloads and type contracts remain proposals.
 2. Inventory existing behavioral coverage; add only missing characterization cases in a tests-only PR that passes on current code. Preserve all six challenge query families, ranking, all three backends, parameter binding, NULL ordering, ties, independent numeric oracles, and scope regressions.
 3. Add typed catalog/Expr/Table propagation incrementally with compile-time tests in the same implementation PR. Negative type tests cannot pass against today's permissive API, so they belong here rather than being falsely reported as passing characterization tests.
 4. Add typed filter tuples, select shorthands, expression/object overloads, and typed client execution after the core type contract works; keep typed callbacks for compatibility. Reuse unchanged runtime semantics and lowering.
@@ -171,7 +175,7 @@ Runtime tests must retain wrong-scope expression rejection, captured join-predic
 
 ## Proposed file boundaries and deferred scope
 
-Evolve `src/api.ts` first; extract catalog/type utilities only if needed for readability. Keep `src/queries.ts` as Northwind examples, `src/compiler.ts` and `src/relational.ts` as unchanged lowering, and the current generated schemas/profile. Add a focused compile-time test file/config alongside existing API runtime tests. Integrate `src/client.ts` only after PR #18's disposition is settled.
+Evolve `src/api.ts` first; extract catalog/type utilities only if needed for readability. Keep `src/queries.ts` as Northwind examples, `src/compiler.ts` and `src/relational.ts` as unchanged lowering, and the current generated schemas/profile. Add a focused compile-time test file/config alongside existing API runtime tests. Extend the merged `src/client.ts` with inferred result types after schema propagation is verified.
 
 Deferred: semantic metrics layer, federation, DataFusion/Rust service, schema introspection/code generation, general optimizer, full Substrait interoperability, advanced nullability narrowing, callback-free joins, and broad capability/auth/error frameworks. None is required to demonstrate this type-safety improvement.
 

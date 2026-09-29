@@ -50,7 +50,7 @@ Required order after design review:
 3. Add schema/type propagation with positive and negative compile-time tests.
 4. Add typed filter/select conveniences and typed execution, then reconcile API examples.
 
-No Substrait removal or compiler rewrite is planned. PR #17/#18 remain independently reviewable; this plan does not merge or close them. Do not begin implementation until the revised plan is reviewed.
+No Substrait removal or compiler rewrite is planned. PR #17/#18 are merged; use their API documentation and createClient surface as the baseline. Do not begin implementation until the revised plan is reviewed.
 
 ## Time record
 

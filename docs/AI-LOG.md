@@ -141,3 +141,34 @@ The challenge explicitly requires a README written by the candidate. The assista
 - User requested durable architecture/scope/correctness guidance for shorter task-specific sessions. Extended the existing AGENTS.md rather than replacing its worktree and review rules.
 - Recorded the retained Substrait/Kysely boundary, current three backends, deferred semantic/federation work, and the distinction between proposed typed filters and implemented behavior.
 - User subsequently merged #17. PR #18 was reconciled with main and pushed at 6901985; 50 tests and 21 three-backend example executions passed locally. Verify live PR status when resuming; this is historical evidence, not an automatic merge authorization.
+
+## September 28: simple client and explicit callback semantics
+
+- Human redirect: ordinary application callers should execute a Table directly, while retaining an optional SQL preview. Explain what callbacks can contain and improve readability without adding another query language.
+- Added createClient with execute(Table), compile(Table), and destroy(); kept the existing Substrait/compiler/driver boundaries internally. Driver demonstration now uses this client. Catalogs are snapshotted and previews are detached from execution.
+- Documented callback return contracts, named expressions/helpers, configuration-time branching versus SQL CASE, unsupported async/arbitrary JavaScript translation, and relation scope limits. Ibis is a design reference, not justification for common lazy/callback patterns.
+- Tests cover all three dialect previews, parameter binding, invalid plans, closed clients, catalog mutation, real DuckDB results/error propagation, and callbacks running once at construction. Existing PostgreSQL/MySQL challenge conformance now exercises the client.
+- Initial test incorrectly assumed DuckDB uses question-mark placeholders; actual existing dialect uses numbered dollar placeholders. Corrected the test expectation, with no compiler change.
+- Validation passed: npm run check, npm test, npm run test:integration (16 tests), npm run test:duckdb (1 three-backend conformance test), PostgreSQL/MySQL demo, git diff --check. These are local checks, not CI. Existing supplied database container was used.
+- API documentation PR #17 and AI README draft #16 remain separate and unmerged; their examples will need reconciliation when merging this API addition. No candidate-authored README was written.
+
+## Dedicated API documentation — September 28, 2026
+
+- Candidate requested a separate comprehensive API-doc PR and an explicit explanation of why the API follows Ibis's design. Moved reference work out of README PR #16 without force-pushing; this branch starts independently from main d8a5fb0.
+- Organized docs/api into tutorial, Table/Expr reference, execution, Northwind recipes, semantics, design and maintenance pages. The design compares Ibis-style composition with direct Kysely and raw Substrait and states there is no Ibis runtime dependency.
+- Added source documentation comments and a runnable/type-checkable Northwind companion. No query behavior changed and no documentation-site dependency was introduced. TypeDoc/API Extractor are documented as possible later tooling, not installed capabilities.
+- Documentation remains supporting material; the candidate-authored submission README is separate. The code MVP stays frozen while its interface is explained.
+- Validation: npm run check and npm run check:docs passed; seven Northwind analyses compiled through binary round trips for each of three backends (21 combinations), then all 21 executed successfully after seeding this worktree's dedicated DuckDB file. Verified 10 Markdown pages / 58 local links and diff checks. Source-only comment edits preserve identical emitted runtime output, checked with the already-installed esbuild transpiler. An initial auxiliary check using the TypeScript compiler API could not use ScriptTarget from the installed package; the actual tsc checks passed and no new tool dependency was added. No full-suite rerun or hosted CI claim.
+
+## PR #18 reconciliation after #17 merged
+
+- User merged #17 and requested resolution of #18 conflicts. Merged current main without rebasing or force-pushing; retained both AI histories, documentation scripts and client tests.
+- Preserved the docs/api directory and updated the tutorial, execution reference and runnable examples to use createClient. Low-level compilation and serialization remain documented for advanced use.
+- No compiler, result semantics or client runtime changes were needed. Compile-time schema inference remains follow-up design work in #19.
+- Reconciliation validation passed: fresh npm ci in the isolated worktree, normal/docs typechecks, 33 local tests, 16 PostgreSQL/MySQL integration tests, one three-backend conformance test, 21 offline example compilations and 21 real example executions with a dedicated DuckDB snapshot. These are local checks, not CI.
+
+## PR #19 reconciliation and retained IR confirmation
+
+- User merged #18 and requested #19 conflicts be fixed, explicitly confirming retained Substrait IR for a future semantic-query frontend. Merged main 7b806e2 without rebase/force-push; preserved all AI-log histories.
+- Clarified the shared IR boundary: the current relational API and a future semantic frontend can both produce the supported Substrait profile. Metrics, dimensions, grain and relationship resolution belong above it; no semantic engine is implemented by this plan.
+- Updated references to merged #17/#18 and the architecture checkpoint. Typed filters/schema inference remain proposed follow-up work. Documentation-only; no source/test changes or new runtime test claims.
