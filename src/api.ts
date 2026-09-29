@@ -6,6 +6,10 @@ import { FUNCTIONS, FUNCTION_URI } from './functions.js';
 type Kind = Catalog[string][number]['type'];
 type Field = { name: string; type: Kind; nullable: boolean };
 type Scope = Map<symbol, number>;
+// Unexported, type-only brands prevent accidental structural construction.
+// They are not runtime authentication; scope/profile validation remains required.
+declare const exprBrand: unique symbol;
+declare const measureBrand: unique symbol;
 /** Field-based ordering. Direction defaults to ascending and NULLs to last. */
 export type Sort = { column: string; direction?: 'asc' | 'desc'; nulls?: 'first' | 'last' };
 const type = (kind: Kind, nullable: boolean): S.IType => ({ [kind]: {
@@ -16,6 +20,7 @@ const anchor = (name: typeof FUNCTIONS[number]) => FUNCTIONS.indexOf(name) + 1;
 
 /** Expressions are lazy and bound to a relation scope, never SQL strings. */
 class RuntimeExpr {
+  declare readonly [exprBrand]: true;
   /** @internal Construct expressions with Columns.col, literals and expression methods. */
   constructor(readonly kind: Kind, readonly nullable: boolean,
     private readonly build: (scope: Scope) => S.IExpression) {}
@@ -117,6 +122,7 @@ function runtimeCaseWhen(condition: RuntimeExpr, yes: RuntimeExpr, no: RuntimeEx
 }
 /** Aggregate description returned by RuntimeExpr aggregate methods and accepted by RuntimeTable.aggregate. */
 class RuntimeMeasure {
+  declare readonly [measureBrand]: true;
   /** @internal Use sum, avg, count or percentile builders. */
   constructor(readonly name: 'sum' | 'avg' | 'count' | 'percentile_cont', readonly args: readonly RuntimeExpr[], readonly kind: Kind, readonly nullable: boolean) {}
 }
@@ -296,9 +302,10 @@ type ArithmeticInput<K extends Kind> = number | Expr<K extends 'decimal' ? 'deci
 type AggregateKind<K extends Kind> = K extends 'decimal' ? 'decimal' : 'fp64';
 /** A scalar expression: logical kind and SQL nullability are tracked separately. */
 export interface Expr<K extends Kind = Kind, N extends boolean = boolean> {
+  readonly [exprBrand]: true;
   readonly kind: K;
   readonly nullable: N;
-  /** Internal Substrait lowering hook; applications normally use toSubstrait(). */
+  /** @internal Substrait lowering hook; applications use Table.toSubstrait(). */
   resolve(scope: Scope): S.IExpression;
   eq<V extends Input<K>>(value: V): Expr<'bool', Or<N, NullableOf<V>>>;
   lower(this: Expr<'string', N>): Expr<'string', N>;
@@ -317,6 +324,7 @@ export interface Expr<K extends Kind = Kind, N extends boolean = boolean> {
 }
 /** Aggregate expression, accepted only by aggregate(). */
 export interface Measure<K extends Kind = Kind, N extends boolean = boolean> {
+  readonly [measureBrand]: true;
   readonly name: 'sum' | 'avg' | 'count' | 'percentile_cont';
   readonly args: readonly Expr[];
   readonly kind: K;

@@ -33,7 +33,7 @@ For number shorthand on i32/decimal receivers, the API creates an i32 literal; o
 
 ## Types and limits
 
-Literal catalogs provide compile-time column/type/nullability checks and inferred result rows. Runtime validation remains for dynamic schemas, expression scopes, value bounds and unsupported combinations. Catalog kinds reuse the existing supported profile. Methods reject incompatible expressions before lowering where possible; compiler checks remain authoritative. Internal constructors and `resolve` are implementation plumbing, not a raw SQL API or security boundary.
+Literal catalogs provide compile-time column/type/nullability checks and inferred result rows. Runtime validation remains for dynamic schemas, expression scopes, value bounds and unsupported combinations. Catalog kinds reuse the existing supported profile. Methods reject incompatible expressions before lowering where possible; compiler checks remain authoritative. Expr and Measure carry unexported unique-symbol type brands, so matching public members alone cannot construct them. Use the factory/expression methods. These compile-time markers do not defend against explicit casts or untyped JavaScript; runtime validation still applies. Internal constructors and `resolve` (marked `@internal`) are implementation plumbing, not a raw SQL API or security boundary.
 
 Numeric `literal` defaults to fp64. `integer` explicitly constructs i32. Numeric shorthand in an i32 or decimal expression accepts i32 integers only; use existing decimal columns for exact monetary arithmetic. Decimal/fp64 mixing fails. Non-decimal sums/averages/arithmetic use fp64 under the existing profile. Counts and decimal results are strings, dates are calendar strings, and division by zero returns null.
 

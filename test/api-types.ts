@@ -1,10 +1,26 @@
 /** Compile-only contracts. Never executed: npm run check validates every expect-error. */
-import { createSource, literal, integer, count, caseWhen, eq, and, type Expr, type InferRow } from '../src/api.js';
+import { createSource, literal, integer, count, caseWhen, eq, and, type Expr, type Measure, type InferRow } from '../src/api.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { createClient } from '../src/client.js';
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Assert<T extends true> = T;
 function contracts() {
+  const built = integer(1);
+  const structuralExpr = {
+    kind: built.kind, nullable: built.nullable,
+    resolve: built.resolve, eq: built.eq, lower: built.lower, lte: built.lte,
+    isNull: built.isNull, isNotNull: built.isNotNull, and: built.and,
+    coalesce: built.coalesce, mul: built.mul, sub: built.sub, div: built.div,
+    sum: built.sum, avg: built.avg, count: built.count, percentile: built.percentile,
+  };
+  // @ts-expect-error matching public members cannot forge a factory-built expression
+  const forgedExpr: Expr<'i32', false> = structuralExpr;
+  const structuralMeasure = { name: 'count', args: [built], kind: 'i64', nullable: false } as const;
+  // @ts-expect-error matching public members cannot forge a factory-built measure
+  const forgedMeasure: Measure<'i64', false> = structuralMeasure;
+  const validExpr: Expr<'i32', false> = integer(1);
+  const validMeasure: Measure<'i64', false> = count();
+  void forgedExpr; void forgedMeasure; void validExpr; void validMeasure;
   const source = createSource(challengeCatalog);
   const flag = Math.random() > 0.5;
   // @ts-expect-error choose a concrete table before accessing its columns
