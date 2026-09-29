@@ -45,7 +45,7 @@ test('predicate helpers run at construction and are not rerun by compile or exec
   try {
     client.compile(query); // No physical table exists; compilation still succeeds.
     assert.equal(calls, 1);
-    await assert.rejects(client.execute(query), /missing/i); // Actual database execution fails.
+    await assert.rejects(client.execute(query), (error: unknown) => error instanceof Error && 'code' in error && error.code === 'EXECUTION_FAILED' && error.cause instanceof Error && /missing/i.test(error.cause.message)); // Actual database execution fails.
     assert.equal(calls, 1);
   } finally { await client.destroy(); }
 });

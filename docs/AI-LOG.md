@@ -244,6 +244,9 @@ User asked to continue as much as possible and save progress without waiting. Fi
 
 Validation: code/docs type checks and 37 local tests passed. Temporary headless Edge outside repository dependencies checked three compile-only paths, nine real Northwind runs across PostgreSQL/MySQL/DuckDB, missing-seed UI feedback, navigation, diagram rendering, 1440/900px page width and absence of JavaScript errors. Visually inspected the three 1440px page screenshots. Updated the submission plan and verification notes; no PR merged or submission sent. Final candidate README and video remain human deliverables.
 
+## September 29: bounded long-query execution controls
+
+User requested parallel work on capability, metadata, timeout/cancellation and stable errors. Added optional AbortSignal / running-query timeout to typed client execution, native cancellation for all three backends, and explicit execution error codes. Investigated pinned Kysely abort internals: its executor rejects before background cancellation cleanup. Instead, hold its provided connection until both the native query and cancellation settle. MySQL uses an independent control connection to avoid exhausted-pool deadlock. Kept synchronous compilation and pool queue deadlines explicitly outside this first execution budget. Cancellation failure is observable and does not silently discard server work. Tests include independent lifecycle fakes and actual PG/MySQL/DuckDB interruption; DuckDB public-client test checks native interruption cause. No compiler or result-normalization changes.
 ## September 29: bounded metadata inspection (issue #27)
 
 - User requested parallel agents for capabilities/errors, long-running-query controls, and metadata inspection. This branch owns metadata only; runtime execution controls remain separate.

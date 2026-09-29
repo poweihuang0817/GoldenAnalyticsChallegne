@@ -1,3 +1,4 @@
+import { executeControlled, validateExecutionOptions, ExecutionError, type ExecuteOptions } from './execution.js';
 import type { Query, InferRow } from './api.js';
 import { connect, type Backend } from './backend.js';
 import { compilePlan, type Catalog } from './compiler.js';
@@ -23,8 +24,10 @@ export function createClient(backend: Backend, catalog: Catalog, options: { duck
       return { sql: compiled.sql, parameters: [...compiled.parameters] };
     },
     /** Compile and execute on this backend; preserves existing driver result representations. */
-    async execute<Q extends Query>(query: Q): Promise<{ rows: InferRow<Q>[] }> {
-      const result = await db.executeQuery(compile(query));
+    async execute<Q extends Query>(query: Q, executionOptions: ExecuteOptions = {}): Promise<{ rows: InferRow<Q>[] }> {
+      validateExecutionOptions(executionOptions);
+      if (executionOptions.signal?.aborted) throw new ExecutionError('QUERY_CANCELLED', backend);
+      const result = await executeControlled(db, backend, compile(query), executionOptions);
       return { rows: result.rows as InferRow<Q>[] };
     },
     /** Close the pool. Do not call while queries are still in flight. */
