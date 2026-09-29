@@ -186,6 +186,13 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Updated the adjacent text flow to include the frontend and all three existing backends. No implementation change; merging the plan is not authorization to implement the optional typed API.
 - Validation: reviewed the documentation diff, checked local links and git diff --check. No runtime tests required or claimed.
 
+## Submission walkthrough preparation after #19
+
+- User requested parallel work in separate worktrees after merging the retained-IR/API plan. This documentation task uses docs/submission-guide independently from test-characterization work.
+- Added a five-minute screen-by-screen walkthrough outline and final submission checklist grounded in current query/client/driver code. Retained October 1 submission, September 30 first-video/code-freeze targets from PLAN.md.
+- Distinguished implemented callback API from proposed typed predicates; selected DuckDB as the primary extension and described its separate snapshot accurately. Candidate authors the README and records the video; these are AI supporting notes only.
+- Validation: inspected package scripts and linked source/docs, checked local Markdown link targets and git diff --check. No dependencies installed, database operations performed or runtime tests claimed for this documentation-only change.
+
 ## API characterization before typed API work
 
 - User approved a tests-only checkpoint and explicitly requested parallel agents in different worktrees. Root owns test/api-characterization; independent read-only review used review/api-test-review, and submission notes use docs/submission-guide in separate worktrees.
@@ -222,3 +229,15 @@ The challenge explicitly requires a README written by the candidate. The assista
 - User completed workflow-scope authorization and merged #22. Integrated main fc5e1e4 into the independent CI clone, preserving both AI-log histories. The upcoming hosted run covers the merged typed API, not only the original #21 baseline.
 
 - Hosted run 36507131453 passed at CI head 17d61a1 after correcting the invalid runner.temp job-env reference. All fresh setup/database/driver/docs steps passed. Updated CI history to address the stale-status review comment; local independent-clone checks also passed on merged #22 code.
+
+## Submission guide reconciliation after #22/#23
+
+- User authorized parallel delivery preparation while root develops the UI follow-up. Merged current main 5fc0b64 into the existing submission-guide branch, preserving both AI-log histories.
+- Updated the walkthrough for implemented callback-free typed predicates/projections/staged joins and inferred results. Uses API docs, existing Playground source/SQL/live results, and the architecture image; candidate still authors the README and records the video.
+- Clearly separated current PG/MySQL Playground from pending DuckDB/API/Architecture tabs and demo:ui command on feat/demo-walkthrough. DuckDB remains a separate snapshot, not federation.
+- Updated verification instructions to use the exact-revision fresh-clone CI evidence now that #23 is merged. Checked local links, package commands and diff; no runtime/DB checks performed for this docs-only reconciliation.
+
+## Submission guide review for pending PR #25
+
+- Replaced the stale architecture PNG recommendation with the updated SVG on the pending UI branch; explicitly labeled PR #25's Driver/API/Architecture tabs, DuckDB selector and demo:ui command as pending until merged/verified.
+- Clarified seeding before UI startup and kept the current-main driver fallback. Documentation diff/link checks only; no new execution claims or merge.
