@@ -6,7 +6,7 @@
 
 The application needs to express analytical computation independently of a backend. Ibis's Table/Expression model is a useful reference because transformations compose into relations, and expressions can be constructed before binding to execution. See Ibis's [table API](https://ibis-project.org/reference/expression-tables) and [unbound-expression guide](https://ibis-project.org/how-to/extending/unbound_expression).
 
-**This project does not depend on Ibis.** It implements a small TypeScript API inspired by that model. It does not port Ibis's Python API, optimizer, backend support or complete type system. The callback column syntax is this implementation's way to provide named, scope-checked fields.
+**This project does not depend on Ibis.** It implements a small TypeScript API inspired by that model. It does not port Ibis's Python API, optimizer, backend support or complete type system. The API uses typed column objects, predicates and projection objects without callbacks. This is our TypeScript design, not a port of Ibis syntax.
 
 | Design choice | Benefit in this challenge | Concrete example |
 | --- | --- | --- |
@@ -17,6 +17,12 @@ The application needs to express analytical computation independently of a backe
 | Relational composition in the public API | SQL query-block/subquery details remain the compiler's responsibility | Filtering a computed row number needs an outer SQL query |
 
 These are properties implemented by this prototype and checked by its tests, not automatic guarantees obtained from using the Ibis name. Portability still depends on our function semantics, compiler and backend tests.
+
+### What we borrow from Drizzle, Polars and Kysely
+
+The API combines typed column/projection objects (a useful [Drizzle reference](https://orm.drizzle.team/docs/select)), composable expressions (a useful [Polars reference](https://docs.pola.rs/user-guide/concepts/expressions-and-contexts/)), and schema-aware feedback (a useful [Kysely reference](https://kysely.dev/docs/getting-started)). These are design references, not new runtime dependencies. Kysely remains the internal SQL layer.
+
+A predicate can be named before calling filter; a projection object exposes output aliases directly. We chose one callback-free surface. The tradeoff is explicit intermediate variables: each new relation owns its columns, and staged joins separate input scopes from nullable output scopes.
 
 ### Why not expose Kysely directly?
 
@@ -43,7 +49,7 @@ A table expression represents both a relational computation and its output field
 
 ## An Expr belongs to a relation scope
 
-The callback parameter exposes the columns available at that operation. Internally each relation has a symbol identity; a column resolves to a positional Substrait field only within its valid scope. This allows named application code without letting a stale column silently refer to a different positional field after projection.
+Each Table exposes its available fields through `columns` and typed `col(name)`. Internally each relation has a symbol identity; a column resolves to a positional Substrait field only within its valid scope. This allows named application code without letting a stale column silently refer to a different positional field after projection.
 
 Join predicates receive distinct left/right occurrences, including for self-joins. Join outputs receive fresh scopes, with nullable right-side fields for a left join. A predicate expression cannot escape into output selection with incorrect non-nullability.
 
@@ -51,9 +57,9 @@ The catalog is a logical schema, not a live database connection. One query can b
 
 ## Expr and Measure are different
 
-Scalar expressions describe values within a row; Measures describe aggregates across rows. `select` accepts Expr values and `aggregate` accepts Measure values. After aggregation, use `t.col('alias')` to reference the resulting column and perform further scalar arithmetic.
+Scalar expressions describe values within a row; Measures describe aggregates across rows. `select` accepts Expr values and `aggregate` accepts Measure values. After aggregation, use `result.columns.alias` to reference the resulting column and perform further scalar arithmetic.
 
-These boundaries prevent accidentally flattening nested operations. TypeScript catches some misuse; runtime checks and compiler validation catch others. The library has no generic schema-to-TypeScript result inference yet.
+These boundaries prevent accidentally flattening nested operations. TypeScript catches some misuse; runtime checks and compiler validation catch others. Literal catalog types propagate through transformations into result-row inference. Dynamic catalogs lose static precision; relation identity still requires runtime checks.
 
 ## Substrait is the interchange contract
 
@@ -67,7 +73,7 @@ An arbitrary relational composition is not one SQL SELECT block. For example, gr
 
 Kysely supplies construction, quoting, parameters and execution infrastructure. It does not decide our relational meaning or ensure identical decimal behavior across engines. DuckDB's bounded exact decimal division is one example of work the backend/compiler must still supply.
 
-The execution facade currently returns Kysely connections and compiled queries. A fully backend-independent execution service and native non-SQL targets remain future work.
+The application facade returns inferred rows from `execute` and SQL/parameters from `compile`; the lower-level backend module exposes Kysely connections. A fully backend-independent execution service and native non-SQL targets remain future work.
 
 ## Current tradeoffs
 

@@ -16,23 +16,27 @@ test('row_number is a standard window relation with appended required i64 output
   assert.ok('window' in plan.relations[0].root.input);
   assert.equal(plan.relations[0].root.names.at(-1), 'position');
   assert.deepEqual(decodePlan(encodePlan(plan)), plan);
-  ranked().select(t => {
-    assert.equal(t.col('position').kind, 'i64');
-    assert.equal(t.col('position').nullable, false);
-    assert.equal(t.col('position').lte(3).nullable, false);
-    return { position: t.col('position') };
-  });
+  const result = ranked();
+  assert.equal(result.columns.position.kind, 'i64');
+  assert.equal(result.columns.position.nullable, false);
+  assert.equal(result.columns.position.lte(3).nullable, false);
+  result.select({ position: result.columns.position });
 });
 test('window API rejects invalid names, partitions, sorting and top-N arguments', () => {
-  const orders = source.table('orders'), sort = [{ column: 'order_id' }];
+  const orders = source.table('orders'), sort = [{ column: 'order_id' as const }];
+  // @ts-expect-error Appended window names cannot shadow an existing field.
   assert.throws(() => orders.withRowNumber('order_id', { partitionBy: [], orderBy: sort }), /unique/);
   assert.throws(() => orders.withRowNumber('', { partitionBy: [], orderBy: sort }), /nonempty/);
+  // @ts-expect-error Unknown partition names are rejected statically and at runtime.
   assert.throws(() => orders.withRowNumber('n', { partitionBy: ['missing'], orderBy: sort }), /Unknown column/);
   assert.throws(() => orders.withRowNumber('n', { partitionBy: ['customer_id','customer_id'], orderBy: sort }), /Duplicate/);
   assert.throws(() => orders.withRowNumber('n', { partitionBy: [], orderBy: [] }), /sort/);
+  // @ts-expect-error Unknown sort names are rejected statically and at runtime.
   assert.throws(() => orders.withRowNumber('n', { partitionBy: [], orderBy: [{ column: 'missing' }] }), /Unknown column/);
   for (const n of [-1, 0.5, NaN, Infinity, 2147483648]) assert.throws(() => recentOrdersPerCustomer(n), /nonnegative i32/);
-  assert.throws(() => literal('x').lte(literal('y') as never), /Numeric/);
+  // @ts-expect-error Strings cannot be compared with numeric lte.
+  assert.throws(() => literal('x').lte(literal('y')), /Numeric/);
+  // @ts-expect-error Different numeric kinds cannot be compared implicitly.
   assert.throws(() => integer(1).lte(literal(1)), /matching/);
 });
 test('both dialects lower ranking in a subquery before filtering and reject unsupported windows', async () => {

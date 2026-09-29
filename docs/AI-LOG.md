@@ -198,3 +198,25 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Human direction: complete typed API in a separate worktree while another agent verifies fresh setup; then requested hosted CI to avoid repeated manual full-suite runs.
 - Used a genuine independent clone from main cb4678d9. Added a single Linux/Node 22 workflow for lockfile installation, typechecks, unit/integration/conformance tests, drivers and documentation examples, with isolated Compose databases and bounded cleanup.
 - This does not validate the parallel typed API implementation. Hosted results and limitations are recorded in docs/CI.md; no candidate README or billing configuration changed.
+
+## Unified typed API after PR #21
+
+- User approved completing the typed API in a separate worktree and explicitly redirected the design to one typed predicate/projection surface, removing callback compatibility. A later prompt confirmed finishing this PR before additional UI/CI work.
+- Root owns feat/typed-api; authorized agents migrated tests and API docs in separate worktrees, then root integrated their commits. CI remains a separate task/branch. No compiler consolidation, Substrait replacement, dependency or backend change is included.
+- Preserved literal catalog schemas; added typed Table/Expr/Measure contracts, expression/projection objects, staged callback-free joins, and inferred client rows. Join input/output scopes remain separate and left-join right fields become nullable. Existing relation-identity checks remain runtime checks.
+- Migrated all application queries, driver examples, runnable docs and tests. Substrait remains the canonical IR and Kysely the lowering layer. A one-off comparison against pre-migration query builders confirmed structurally identical Substrait JSON for all eight driver examples, including ranking.
+- Retained the observed MySQL computed-i32 behavior: inferred i32 results are conservatively number|string. No numeric coercion or loss of decimal/i64 precision hides backend differences.
+- Independent review found union/dynamic structural names could falsely promise multiple output fields. Added failing negative type contracts (confirmed unused expect-error failures), then restricted table/group/window names and output aliases. Fixed grouping tuples and literal aliases keep the bounded type contract honest. Dynamic Catalog annotations intentionally lose precise schema inference.
+- Validation on the combined implementation: fresh worktree npm ci; normal/docs typechecks; 35 local tests; 34 reported integration tests (including nested containers); one three-backend Northwind conformance test; 21 documentation examples compiled offline and executed on PostgreSQL/MySQL/seeded DuckDB; both driver commands passed. These are local checks, not hosted CI or final-release fresh-clone proof.
+- Known limits: no static per-instance relation identity, no general dynamic-alias inference, no filter-based nullability refinement, no schema introspection or new normalization layer. Numeric literal range/decimal constraints and backend capabilities still require runtime validation. Candidate-authored README/video remain separate deliverables.
+
+## PR #22 review: nominal expression and measure types
+
+- Addressed review 5346505110: structural Expr/Measure interfaces allowed ordinary object literals to match the public shape without factory construction.
+- Added compile-only negative assignments for complete structural expression and measure objects. Both directives first failed as unused, confirming the gap; both pass after the fix. Positive factory assignments and existing inference contracts remain checked.
+- Added separate unexported unique-symbol brands to the interfaces and internal runtime classes as erased declarations. Marked resolve with @internal and documented that these are compile-time markers, not a runtime security boundary. SQL, Substrait construction and execution behavior are unchanged.
+- Validation: normal/docs typechecks, 35 local tests, 34 reported integration tests and one three-backend conformance test passed. Hosted CI remains a separate task; no hosted run is claimed.
+
+## CI publication after typed API merge
+
+- User completed workflow-scope authorization and merged #22. Integrated main fc5e1e4 into the independent CI clone, preserving both AI-log histories. The upcoming hosted run covers the merged typed API, not only the original #21 baseline.

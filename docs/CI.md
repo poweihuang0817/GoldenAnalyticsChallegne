@@ -17,3 +17,7 @@ The separate typed API branch is not covered until this workflow runs on that br
 On the fresh clone, Node 24.19.0 on Windows completed `npm ci`, `npm run check`, `npm run check:docs`, all 34 unit tests, and all 21 offline documentation compilations. The initial sandboxed tsx process could not read Windows user information; rerunning outside the sandbox passed. This is not verification of the workflow's Node 22/Linux environment.
 
 GitHub rejected the initial workflow push because the CLI OAuth token lacks the `workflow` scope. Therefore no hosted run or CI PR has been created yet, and no PostgreSQL/MySQL integration, DuckDB conformance, or executing driver/docs result is claimed for this fresh clone. The account owner can grant the required scope with `gh auth refresh -h github.com -s workflow`, then push this branch and open its PR. Do not treat the workflow as active until a hosted run is observed.
+
+### Typed API merge checkpoint
+
+The user granted workflow scope after merging PR #22. The CI branch now includes main `fc5e1e4` (typed API and nominal-brand review fix). The earlier permission blocker is resolved; hosted verification is pending publication and execution. Original local results above remain attributed to their original revision.

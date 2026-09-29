@@ -21,14 +21,14 @@ These are proposed checkpoints, not measured work durations or scheduled autonom
 - #17 API docs and #18 createClient are merged. Six challenge families, row-number extension and DuckDB backend exist.
 - Latest local evidence on #18 reconciliation 6901985: 33 local tests, 16 PG/MySQL integration tests, one three-backend conformance test; 21 documentation examples compiled and executed. This is not hosted CI or final release fresh-clone proof.
 - Existing fresh-clone evidence in CHECKPOINT.md is for older revisions. Verify the final chosen revision again after code freeze.
-- #19 is a plan-only review. Compile-time schema inference and callback-free predicates are not implemented or required to claim the current runtime MVP works.
+- #19 and characterization PR #21 are merged. The user subsequently approved completing one typed, callback-free API in a dedicated worktree; this supersedes the earlier compatibility/fallback proposal. Review the implementation PR before choosing the submission revision.
 - #16 is an open AI README draft for reference; it does not satisfy the candidate-authored README requirement. The candidate writes the final README and records the video.
 - #11 compiler investigation is open and not a submission prerequisite. No consolidation or broad test-corpus project before submission.
 - Final README, video, reviewer access and submission version are not confirmed complete. Treat them as remaining until actual evidence is recorded.
 
 ## Scope cutoff and fallback
 
-The remaining API improvement is optional for submission. If the Sep 29 type work requires compiler rewrites, new join scopes or a broad schema framework, stop expansion and submit the verified existing callback API with the reviewed design as future work. Do not mix a half-migrated public API into the release. A design document must label proposed syntax clearly.
+The remaining API improvement is optional for submission. The approved typed API work keeps the compiler unchanged and must migrate callers, tests and docs together. If unverified work remains at scope cutoff, choose a previously verified revision explicitly. Do not mix a half-migrated public API into the release. A design document must label proposed syntax clearly.
 
 Use DuckDB as the requested third-backend extension in the walkthrough; row-number ranking is additional existing functionality. Show one compact Northwind query, its SQL preview/results, and reuse across backends. A five-minute walkthrough need not demonstrate every test/query.
 
@@ -57,11 +57,11 @@ September 26 update: PR #4 merged the lower-layer implementation of all six quer
 - Tag the verified final commit `submission-v1`; include its hash with the submission.
 - Verify reviewer access to the private repository and video. Do not make the repository public by default.
 
-## Proposed API evolution (awaiting review)
+## Approved API evolution
 
 The latest user direction retains Substrait and keeps Kysely as internal SQL machinery. The earlier Kysely-only migration proposal is superseded. See [the typed relational API proposal](TYPED-RELATIONAL-API-PLAN.md).
 
-Use Kysely as a type-experience reference; prefer typed predicate/projection objects for readability, with callback compatibility. See [API philosophy](API-PHILOSOPHY.md). Infer output schemas and keep runtime validation for dynamic plans and relation scopes. A future semantic frontend is a possible producer of relational plans, not a feature to implement now.
+Use Kysely as a type-experience reference; prefer typed predicate/projection objects for readability, without callback compatibility. See [API philosophy](API-PHILOSOPHY.md). Infer output schemas and keep runtime validation for dynamic plans and relation scopes. A future semantic frontend is a possible producer of relational plans, not a feature to implement now.
 
 Required order after design review:
 
@@ -70,7 +70,7 @@ Required order after design review:
 3. Add schema/type propagation with positive and negative compile-time tests.
 4. Add typed filter/select conveniences and typed execution, then reconcile API examples.
 
-No Substrait removal or compiler rewrite is planned. PR #17/#18 are merged; use their API documentation and createClient surface as the baseline. Do not begin implementation until the revised plan is reviewed.
+No Substrait removal or compiler rewrite is planned. PR #17/#18/#19/#21 are merged. The typed implementation adds compile-time contracts and inferred client results; final submission verification must use the exact merged revision.
 
 ## Time record
 
