@@ -12,7 +12,7 @@
 | `Expr` | A typed scalar expression, such as a column, literal, comparison or arithmetic operation |
 | `Measure` | An aggregate description, accepted by `aggregate`, not by `select` |
 
-Callbacks execute immediately to build descriptions. They do not run once per fetched row. Data operations are lazy until `db.executeQuery(...)`. A base table can be reused to build independent query branches.
+Callbacks execute immediately to build descriptions. They do not run once per fetched row. Data operations are lazy until `client.execute(query)` (or the lower-level `db.executeQuery(...)`). A base table can be reused to build independent query branches.
 
 ## Source and catalog
 

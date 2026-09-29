@@ -120,6 +120,16 @@ The challenge explicitly requires a README written by the candidate. The assista
 - User merged PR #14 and requested PR #15's remaining conflicts be resolved. Merged origin/main d1a2b32 without rebasing or force-pushing. Preserved both branches' AI-log entries and included compiler/API/window/playground/DuckDB suites together in the default test command. Runtime files merged without conflict; the playground's existing two-backend HTTP allowlist is unchanged.
 - Validation after this merge: typecheck, 28 default local/HTTP tests, 16 PostgreSQL/MySQL integration tests, one three-backend sample/window conformance test, and diff checks passed (45 tests total). No new UI browser inspection, CI, or fresh-clone claim.
 
+## September 28: simple client and explicit callback semantics
+
+- Human redirect: ordinary application callers should execute a Table directly, while retaining an optional SQL preview. Explain what callbacks can contain and improve readability without adding another query language.
+- Added createClient with execute(Table), compile(Table), and destroy(); kept the existing Substrait/compiler/driver boundaries internally. Driver demonstration now uses this client. Catalogs are snapshotted and previews are detached from execution.
+- Documented callback return contracts, named expressions/helpers, configuration-time branching versus SQL CASE, unsupported async/arbitrary JavaScript translation, and relation scope limits. Ibis is a design reference, not justification for common lazy/callback patterns.
+- Tests cover all three dialect previews, parameter binding, invalid plans, closed clients, catalog mutation, real DuckDB results/error propagation, and callbacks running once at construction. Existing PostgreSQL/MySQL challenge conformance now exercises the client.
+- Initial test incorrectly assumed DuckDB uses question-mark placeholders; actual existing dialect uses numbered dollar placeholders. Corrected the test expectation, with no compiler change.
+- Validation passed: npm run check, npm test, npm run test:integration (16 tests), npm run test:duckdb (1 three-backend conformance test), PostgreSQL/MySQL demo, git diff --check. These are local checks, not CI. Existing supplied database container was used.
+- API documentation PR #17 and AI README draft #16 remain separate and unmerged; their examples will need reconciliation when merging this API addition. No candidate-authored README was written.
+
 ## Dedicated API documentation — September 28, 2026
 
 - Candidate requested a separate comprehensive API-doc PR and an explicit explanation of why the API follows Ibis's design. Moved reference work out of README PR #16 without force-pushing; this branch starts independently from main d8a5fb0.
@@ -127,3 +137,10 @@ The challenge explicitly requires a README written by the candidate. The assista
 - Added source documentation comments and a runnable/type-checkable Northwind companion. No query behavior changed and no documentation-site dependency was introduced. TypeDoc/API Extractor are documented as possible later tooling, not installed capabilities.
 - Documentation remains supporting material; the candidate-authored submission README is separate. The code MVP stays frozen while its interface is explained.
 - Validation: npm run check and npm run check:docs passed; seven Northwind analyses compiled through binary round trips for each of three backends (21 combinations), then all 21 executed successfully after seeding this worktree's dedicated DuckDB file. Verified 10 Markdown pages / 58 local links and diff checks. Source-only comment edits preserve identical emitted runtime output, checked with the already-installed esbuild transpiler. An initial auxiliary check using the TypeScript compiler API could not use ScriptTarget from the installed package; the actual tsc checks passed and no new tool dependency was added. No full-suite rerun or hosted CI claim.
+
+## PR #18 reconciliation after #17 merged
+
+- User merged #17 and requested resolution of #18 conflicts. Merged current main without rebasing or force-pushing; retained both AI histories, documentation scripts and client tests.
+- Preserved the docs/api directory and updated the tutorial, execution reference and runnable examples to use createClient. Low-level compilation and serialization remain documented for advanced use.
+- No compiler, result semantics or client runtime changes were needed. Compile-time schema inference remains follow-up design work in #19.
+- Reconciliation validation passed: fresh npm ci in the isolated worktree, normal/docs typechecks, 33 local tests, 16 PostgreSQL/MySQL integration tests, one three-backend conformance test, 21 offline example compilations and 21 real example executions with a dedicated DuckDB snapshot. These are local checks, not CI.

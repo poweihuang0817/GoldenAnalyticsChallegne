@@ -2,6 +2,7 @@
 
 The API documentation is now organized under [docs/api](api/README.md).
 
+- [Client execution and callback guide](QUERY-CLIENT.md)
 - [First Northwind query](api/tutorial.md)
 - [Why Ibis-style Table/Expr, and the alternatives](api/design.md)
 - [Source and Table methods](api/tables.md)

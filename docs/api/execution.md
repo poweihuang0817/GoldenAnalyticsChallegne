@@ -2,7 +2,13 @@
 
 [API guide](README.md)
 
-## Compile, execute and serialize
+## Normal application execution
+
+Use `createClient(backend, catalog, options?)` from `src/client.ts`. `await client.execute(query)` returns `{ rows }`; `client.compile(query)` returns `{ sql, parameters }` without querying the database. Reuse the client and call `await client.destroy()` after in-flight queries finish. Preview parameter values may be sensitive; do not log them by default. Results remain runtime-typed, and vendor errors propagate unchanged.
+
+See the [tutorial](tutorial.md) and [client/callback guide](../QUERY-CLIENT.md). The lower-level interfaces below remain available for compiler tests and serialized-plan consumers.
+
+## Advanced: compile, execute and serialize
 
 | Entry point | Behavior |
 | --- | --- |

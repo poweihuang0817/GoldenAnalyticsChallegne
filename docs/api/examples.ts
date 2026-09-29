@@ -1,10 +1,9 @@
 /** Runnable Northwind documentation examples; compilation is offline by default. */
 import { createSource, count, literal } from '../../src/api.js';
 import { challengeCatalog } from '../../src/challenge.js';
-import { compilePlan } from '../../src/compiler.js';
-import { connect, type Backend } from '../../src/backend.js';
+import { createClient } from '../../src/client.js';
+import { type Backend } from '../../src/backend.js';
 import { shippingQuery, freightQuery, percentileQuery } from '../../src/queries.js';
-import { encodePlan, decodePlan } from '../../src/plan.js';
 
 const source = createSource(challengeCatalog);
 const city = source.table('customers')
@@ -54,19 +53,18 @@ if (args.some(arg => arg !== '--execute')) throw new Error('Usage: npm run docs:
 const execute = args.includes('--execute');
 const backends: Backend[] = ['postgres', 'mysql', 'duckdb'];
 for (const backend of backends) {
-  const db = connect(backend, execute ? undefined : { duckdbPath: ':memory:' });
+  const client = createClient(backend, challengeCatalog, execute ? undefined : { duckdbPath: ':memory:' });
   try {
     for (const { name, query } of examples) {
-      const plan = decodePlan(encodePlan(query.toSubstrait()));
-      const compiled = compilePlan(db, plan, challengeCatalog);
+      const compiled = client.compile(query);
       if (execute) {
-        const { rows } = await db.executeQuery(compiled);
+        const { rows } = await client.execute(query);
         console.log({ backend, name, rowCount: rows.length, preview: rows.slice(0, 2) });
       } else {
         console.log({ backend, name, parameterCount: compiled.parameters.length });
       }
     }
   } finally {
-    await db.destroy();
+    await client.destroy();
   }
 }
