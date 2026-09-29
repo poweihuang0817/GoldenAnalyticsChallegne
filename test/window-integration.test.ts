@@ -36,10 +36,10 @@ for (const backend of ['postgres','mysql'] as const) {
   });
   test(`${backend}: window ties, nulls, small partitions, global rank and empty input`, async () => {
     const db = connect(backend), table = `window_test_${randomBytes(6).toString('hex')}`;
-    const catalog: Catalog = { [table]: [
+    const catalog = { [table]: [
       { name: 'customer_id', type: 'string', nullable: true }, { name: 'order_id', type: 'i32', nullable: false },
       { name: 'order_date', type: 'date', nullable: true },
-    ] };
+    ] } as const satisfies Catalog;
     const rows: Order[] = [
       { customer_id: 'a', order_id: 1, order_date: null },
       { customer_id: 'a', order_id: 2, order_date: '2020-01-01' },
@@ -59,14 +59,15 @@ for (const backend of ['postgres','mysql'] as const) {
             { column: 'order_date', direction: 'desc' }, { column: 'order_id', direction: 'desc' },
           ] });
           const run = async (query: typeof base) => (await connection.executeQuery(compilePlan(connection, decodePlan(encodePlan(query.toSubstrait())), catalog))).rows;
-          for (const n of [0,1,3,9]) assert.deepEqual(await run(ranked.filter(t => t.col('position').lte(n)).orderBy({ column: 'customer_id' }, { column: 'position' })), oracle(rows,n));
+          for (const n of [0,1,3,9]) assert.deepEqual(await run(ranked.filter(ranked.columns.position.lte(n)).orderBy({ column: 'customer_id' }, { column: 'position' })), oracle(rows,n));
           const global = base.withRowNumber('position', { partitionBy: [], orderBy: [{ column: 'order_id' }] }).orderBy({ column: 'order_id' });
           assert.deepEqual((await run(global)).map(r => r.position), ['1','2','3','4','5','6','7']);
-          const nullFirst = base.withRowNumber('position', { partitionBy: ['customer_id'], orderBy: [
+          const nullFirstRanked = base.withRowNumber('position', { partitionBy: ['customer_id'], orderBy: [
             { column: 'order_date', direction: 'asc', nulls: 'first' }, { column: 'order_id' },
-          ] }).filter(t => t.col('position').lte(1)).orderBy({ column: 'customer_id' });
+          ] });
+          const nullFirst = nullFirstRanked.filter(nullFirstRanked.columns.position.lte(1)).orderBy({ column: 'customer_id' });
           assert.deepEqual((await run(nullFirst)).map(r => r.order_id), [1,5,7]);
-          assert.deepEqual(await run(base.filter(() => literal(false)).withRowNumber('position', { partitionBy: [], orderBy: [{ column: 'order_id' }] })), []);
+          assert.deepEqual(await run(base.filter(literal(false)).withRowNumber('position', { partitionBy: [], orderBy: [{ column: 'order_id' }] })), []);
         } finally { await sql`drop table ${sql.id(table)}`.execute(connection); }
       });
     } finally { await db.destroy(); }
