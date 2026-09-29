@@ -1,3 +1,4 @@
+import { CompileQueryError } from './errors.js';
 import { z } from 'zod';
 import generated from './generated/substrait.cjs';
 import type { substrait as Substrait } from './generated/substrait.cjs';
@@ -107,7 +108,7 @@ export function assertBounded(input: unknown) {
   let nodes = 0;
   while (pending.length) {
     const { value, depth } = pending.pop()!;
-    if (++nodes > 10000 || depth > 100) throw new Error('Plan exceeds size or depth limit');
+    if (++nodes > 10000 || depth > 100) throw new CompileQueryError('Plan exceeds size or depth limit', { code: 'INVALID_QUERY', stage: 'validation' });
     if (value && typeof value === 'object') {
       for (const child of Object.values(value)) pending.push({ value: child, depth: depth + 1 });
     }

@@ -247,3 +247,17 @@ Validation: code/docs type checks and 37 local tests passed. Temporary headless 
 ## September 29: bounded long-query execution controls
 
 User requested parallel work on capability, metadata, timeout/cancellation and stable errors. Added optional AbortSignal / running-query timeout to typed client execution, native cancellation for all three backends, and explicit execution error codes. Investigated pinned Kysely abort internals: its executor rejects before background cancellation cleanup. Instead, hold its provided connection until both the native query and cancellation settle. MySQL uses an independent control connection to avoid exhausted-pool deadlock. Kept synchronous compilation and pool queue deadlines explicitly outside this first execution budget. Cancellation failure is observable and does not silently discard server work. Tests include independent lifecycle fakes and actual PG/MySQL/DuckDB interruption; DuckDB public-client test checks native interruption cause. No compiler or result-normalization changes.
+## September 29: bounded metadata inspection (issue #27)
+
+- User requested parallel agents for capabilities/errors, long-running-query controls, and metadata inspection. This branch owns metadata only; runtime execution controls remain separate.
+- Added explicit-schema/table discovery with preserved physical type information and strict conversion to the existing catalog, including default-schema validation and unsigned/decimal rejection.
+- Checked the installed Kysely introspector: no bounded table filter, precision/scale, or unsigned metadata. Used parameterized information-schema queries instead of broad introspection plus guessed types.
+- Integration found that dotted table keys are quoted as a single identifier in current relational lowering. Kept the compiler unchanged and restricted catalog conversion to confirmed default-schema names. Also corrected MySQL metadata aliases and serialized independent DuckDB file handles after real database failures.
+- Decimal conversion remains exact (38,10); no claim that all Northwind physical types are automatically supported. Discovery does not synthesize compile-time schema types or replace manual catalogs.
+## September 29: bounded capabilities and compiler errors (#26)
+
+- User requested agents implement capability/error codes alongside long-query controls and metadata inspection, after the original MVP checkpoint. This explicitly expands the prior post-submission plan.
+- Kept the existing SQL semantics: continuous percentile remains a rank/count rewrite on all three backends; DuckDB exact decimal AVG remains rejected.
+- Added four inspectable capability keys and stable compiler rejection codes/stages, preserving causes for profile-validation errors and allowing unexpected errors to propagate unchanged. Separated invalid declarations from unsupported implementation choices at explicit rejection sites, without parsing message strings.
+- Full-standard Substrait classification, public API-construction error normalization and a generic capability planner remain out of scope. Root coordinated package.json test-script ownership; separate agents own execution controls and metadata.
+- Added focused tests for native/rewrite/unsupported behavior, contextual restrictions, validation causes and propagation. Two initial test failures exposed a test that hit the public API before compilation and a declaration split that had not applied; corrected the fixture and explicit classifier before final validation.
