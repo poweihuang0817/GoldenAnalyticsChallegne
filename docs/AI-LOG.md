@@ -308,3 +308,33 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - User requested a vertical Typed API/Substrait/backend diagram, consistent green for DuckDB, formatted SQL and a more readable Substrait view for filming.
 - Added display-only dialect formatting with original SQL retained and an operator outline with authoritative raw JSON retained. No compiler or execution semantics changed. Diagram is shared by UI and architecture documentation.
 - Validation: 57 unit tests, code/docs typechecks, nine fixed-example dialect formatting combinations, XML parse and visual SVG review passed. SQL Formatter is a pinned display dependency; raw SQL remains the execution input. No new full remote integration run claimed.
+
+## SQL query-block simplification (September 30, 2026)
+
+- User identified verbose generated SQL and requested a bounded compiler fix,
+  references to Calcite/DataFusion/PRQL, diagnostic tracing, and a separate PR.
+- Retained Substrait and function semantics; combined compatible query blocks,
+  preserved aggregate/fetch/window boundaries, and reduced window top-N to two
+  SELECTs. Added optional value-free lowering trace to Playground.
+- Regression first failed on the original four-SELECT city query. Final local
+  checks: 60 unit tests, 62 integration tests, three-backend conformance and code/
+  documentation type checks passed. See SQL-QUERY-BLOCKS.md for before/after
+  evidence and limitations; no formal proof or performance benchmark claimed.
+
+- Follow-up request: expand #51 tests and record per-backend plans/performance.
+  Added 12 database regression cases (74 integration tests total), a fixed-corpus
+  plan/timing collector and before/after evidence. Investigated DuckDB freight
+  with alternating execution; retained the unresolved small slowdown in docs.
+  No universal speedup or formal proof claimed.
+
+- User clarified optimizer plans must not be regression snapshots. Added 24
+  compiler SQL/ordered-parameter/trace snapshots (61 unit tests pass); EXPLAIN
+  remains observational evidence only. Investigated DuckDB freight across six
+  seeded instances and two thread settings; the initial slowdown did not recur
+  consistently. Preserved all measurements and did not claim a universal speedup.
+
+- PR #51 review requested compact performance evidence. Replaced full raw rows,
+  engine plans and timing samples with revision/hash/count/median-range summaries
+  and one small freight baseline SQL fixture. Raw artifacts are now ignored local
+  outputs; compiler SQL/trace snapshots remain unchanged. Re-ran 61 unit tests,
+  type checks and the six-instance investigation successfully after rewiring it.

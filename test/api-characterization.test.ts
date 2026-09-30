@@ -33,6 +33,46 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
           const base = createSource(catalog).table(name);
           const run = async (q: Table) => (await connection.executeQuery(compilePlan(connection, q.toSubstrait(), catalog))).rows;
 
+          await t.test('window input filters and output filters remain different computations', async () => {
+            const rank = (q: typeof base) => q.withRowNumber('position', { partitionBy: ['grp'], orderBy: [{ column: 'id' }] });
+            const ranked = rank(base);
+            const after = ranked.filter(ranked.columns.id.eq(4));
+            const before = rank(base.filter(base.columns.id.eq(4)));
+            assert.deepEqual(await run(after.select({ id: after.columns.id, position: after.columns.position })), [{ id: 4, position: '2' }]);
+            assert.deepEqual(await run(before.select({ id: before.columns.id, position: before.columns.position })), [{ id: 4, position: '1' }]);
+          });
+
+          await t.test('renamed window inputs preserve null partitions, ties and explicit null ordering', async () => {
+            const renamed = base.select({ key: base.columns.id, category: base.columns.grp, amount: base.columns.qty });
+            for (const nulls of ['first', 'last'] as const) {
+              const ranked = renamed.withRowNumber('position', { partitionBy: ['category'], orderBy: [
+                { column: 'amount', nulls }, { column: 'key' },
+              ] });
+              const top = ranked.filter(ranked.columns.position.lte(1));
+              const expected = nulls === 'first' ? [2, 3, 5, 7] : [1, 3, 6, 7];
+              assert.deepEqual(await run(top.select({ id: top.columns.key, position: top.columns.position }).orderBy({ column: 'id' })),
+                expected.map(id => ({ id, position: '1' })));
+            }
+          });
+
+          await t.test('offset, nested limits and replacement sort preserve the selected population', async () => {
+            const page = base.orderBy({ column: 'id' }).limit(4, 1);
+            const reversed = page.orderBy({ column: 'id', direction: 'desc' }).limit(2, 1);
+            assert.deepEqual(await run(reversed.select({ id: reversed.columns.id })), [{ id: 4 }, { id: 3 }]);
+            const empty = page.limit(0);
+            const none = empty.aggregate({ n: count(), total: empty.columns.qty.sum() });
+            assert.deepEqual(await run(none), [{ n: '0', total: null }]);
+          });
+
+          await t.test('ranking aggregate outputs and aggregate over filtered ranks retain separate levels', async () => {
+            const totals = base.groupBy('grp').aggregate({ total: base.columns.qty.sum() });
+            const ranked = totals.withRowNumber('position', { partitionBy: [], orderBy: [{ column: 'total', direction: 'desc', nulls: 'last' }] });
+            const top = ranked.filter(ranked.columns.position.lte(2));
+            assert.deepEqual(await run(top.select({ grp: top.columns.grp, total: top.columns.total, position: top.columns.position }).orderBy({ column: 'position' })),
+              [{ grp: 'B', total: 40, position: '1' }, { grp: 'A', total: 10, position: '2' }]);
+            assert.deepEqual(await run(top.aggregate({ total: top.columns.total.sum(), n: count() })), [{ total: 50, n: '2' }]);
+          });
+
           await t.test('compound predicate follows three-valued logic; filter retains only TRUE', async () => {
             // Encode TRUE/FALSE/UNKNOWN as 1/0/-1, avoiding vendor bool encodings.
             const predicate = base.col('flag').eq(1).and(base.col('qty').lte(10));

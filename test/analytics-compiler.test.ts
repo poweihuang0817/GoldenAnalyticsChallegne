@@ -1,10 +1,85 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { connect } from '../src/backend.js';
-import { compilePlan } from '../src/compiler.js';
+import { compilePlan, type LoweringDecision } from '../src/compiler.js';
 import { challengeCatalog, customersInCity } from '../src/challenge.js';
 import { FUNCTIONS } from '../src/relational.js';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { createSource, count } from '../src/api.js';
+import { cityQuery, recentOrdersPerCustomer, queryExamples } from '../src/queries.js';
+
+test('generated SQL, ordered bindings and lowering trace match reviewed snapshots', async () => {
+  for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
+    const db = connect(backend, { duckdbPath: ':memory:' });
+    try {
+      const snapshots = [...queryExamples, { name: 'Window top N', query: recentOrdersPerCustomer() }].map(({name, query}) => {
+        const trace: LoweringDecision[] = [];
+        const compiled = compilePlan(db, query.toSubstrait(), challengeCatalog, { trace });
+        return { name, sql: compiled.sql, parameters: compiled.parameters, trace };
+      });
+      const directory = new URL('./fixtures/sql-query-blocks/', import.meta.url);
+      const path = new URL(`${backend}.json`, directory);
+      if (process.env.UPDATE_SQL_SNAPSHOTS === '1') {
+        mkdirSync(directory, { recursive: true });
+        writeFileSync(path, JSON.stringify(snapshots, null, 2) + '\n');
+      }
+      assert.deepEqual(snapshots, JSON.parse(readFileSync(path, 'utf8')), `${backend}: review SQL/trace changes; update snapshots explicitly`);
+    } finally { await db.destroy(); }
+  }
+});
+
+test('query blocks retain aggregate, computed projection, fetch and window boundaries', async () => {
+  for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
+    const db = connect(backend, { duckdbPath: ':memory:' });
+    try {
+      const orders = createSource(challengeCatalog).table('orders');
+      const grouped = orders.groupBy('customer_id').aggregate({ n: count() });
+      const nested = grouped.aggregate({ average: grouped.columns.n.avg() });
+      const limited = orders.orderBy({ column: 'order_id' }).limit(2);
+      const computed = orders.select({ value: orders.columns.freight.div(orders.columns.freight) });
+      for (const query of [nested, limited.filter(limited.columns.order_id.eq(10250)),
+        computed.filter(computed.columns.value.isNotNull()), recentOrdersPerCustomer(2)]) {
+        const compiled = compilePlan(db, query.toSubstrait(), challengeCatalog);
+        assert.match(compiled.sql, /from \(select/);
+      }
+      const nestedSql = compilePlan(db, nested.toSubstrait(), challengeCatalog).sql;
+      const trace: LoweringDecision[] = [];
+      const window = compilePlan(db, recentOrdersPerCustomer(2).toSubstrait(), challengeCatalog, { trace });
+      assert.equal(window.sql.match(/\bselect\b/gi)?.length, 2);
+      assert.ok(trace.some(e => e.operation === 'window' && e.decision === 'merged'));
+      assert.ok(trace.some(e => e.operation === 'filter' && e.decision === 'boundary' && e.reason.includes('window')));
+      const withoutTrace = compilePlan(db, recentOrdersPerCustomer(2).toSubstrait(), challengeCatalog);
+      assert.equal(window.sql, withoutTrace.sql);
+      assert.deepEqual(window.parameters, withoutTrace.parameters);
+      assert.equal(nestedSql.match(/\bselect\b/gi)?.length, 2);
+      const filteredSql = compilePlan(db, limited.filter(limited.columns.order_id.eq(10250)).toSubstrait(), challengeCatalog).sql;
+      assert.match(filteredSql, /limit .*\).*where/s);
+    } finally { await db.destroy(); }
+  }
+});
+
+test('simple analytical pipelines use one SQL query block without losing bindings', async () => {
+  for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
+    const db = connect(backend, { duckdbPath: ':memory:' });
+    try {
+      const city = "London' OR 1=1 --";
+      const compiled = compilePlan(db, cityQuery(city).toSubstrait(), challengeCatalog);
+      assert.equal(compiled.sql.match(/\bselect\b/gi)?.length, 1);
+      assert.ok(compiled.parameters.includes(city));
+      assert.ok(!compiled.sql.includes(city));
+      const trace: LoweringDecision[] = [];
+      compilePlan(db, cityQuery(city).toSubstrait(), challengeCatalog, { trace });
+      assert.ok(!JSON.stringify(trace).includes(city));
+      const customers = createSource(challengeCatalog).table('customers');
+      const renamed = customers.select({ place: customers.columns.city });
+      const filtered = renamed.filter(renamed.columns.place.isNotNull());
+      const grouped = filtered.groupBy('place').aggregate({ n: count() }).orderBy({ column: 'place' });
+      const query = compilePlan(db, grouped.toSubstrait(), challengeCatalog);
+      assert.equal(query.sql.match(/\bselect\b/gi)?.length, 1);
+      assert.match(query.sql, /where .*is not null.*group by .*order by/);
+    } finally { await db.destroy(); }
+  }
+});
 
 test('extension specification declares exactly the registered function names', () => {
   const yaml = readFileSync('spec/golden-functions.yaml', 'utf8');

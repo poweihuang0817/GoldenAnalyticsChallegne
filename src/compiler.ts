@@ -3,7 +3,8 @@ import { CompileQueryError } from './errors.js';
 import { compilerBackend } from './capabilities.js';
 import { Kysely, sql, type SelectQueryBuilder } from 'kysely';
 import { fromPlanJson, toPlanJson, type Field, type Rel } from './plan.js';
-import { compileAnalytics } from './relational.js';
+import { compileAnalytics, type LoweringDecision } from './relational.js';
+export type { LoweringDecision } from './relational.js';
 
 /** Trusted logical table schemas, with ordered fields; decimal means precision 38 and scale 10. */
 export type Catalog = Record<string, readonly { name: string; type: 'i32' | 'date' | 'string' | 'fp64' | 'i64' | 'bool' | 'decimal'; nullable: boolean }[]>;
@@ -15,7 +16,7 @@ type Query = SelectQueryBuilder<Database, string, {}>;
  * @returns A Kysely compiled query containing SQL and bound parameters.
  * @remarks Compile separately for each backend; catalog validation does not inspect live metadata.
  */
-export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catalog) {
+export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catalog, options: { trace?: LoweringDecision[] } = {}) {
   const backend = compilerBackend(db);
   const invalid = (message: string) => new CompileQueryError(message, { code: 'INVALID_QUERY', stage: 'compile', backend });
   const unsupported = (message: string) => new CompileQueryError(message, { code: 'UNSUPPORTED_CAPABILITY', stage: 'compile', backend });
@@ -28,7 +29,8 @@ export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catal
     });
     throw cause;
   }
-  if (plan.extensions?.length || plan.extensionUris?.length) return compileAnalytics(db, plan, catalog);
+  if (plan.extensions?.length || plan.extensionUris?.length) return compileAnalytics(db, plan, catalog, options.trace);
+  options.trace?.push({ relationId: 'legacy', operation: 'dispatch', decision: 'source', reason: 'Function-free compiler; detailed trace unavailable' });
   const root = plan.relations[0].root;
   let query: Query;
   let columns: string[] = [];

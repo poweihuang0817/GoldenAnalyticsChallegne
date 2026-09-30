@@ -1,0 +1,660 @@
+{
+  "baselineRevision": "fa86807d6a58218353e4d02225c46896c774bada",
+  "candidateRevision": "cf8643cd27e21bcbbe639c8575ca4b00c53a0f01",
+  "capturedAt": "2026-09-30T21:57:01.411Z",
+  "environment": {
+    "duckdb": "v1.5.5",
+    "postgres": "17; exact patch not recorded during original capture",
+    "mysql": "8; exact patch not recorded during original capture",
+    "platform": "Windows; local supplied databases and seeded in-memory DuckDB"
+  },
+  "methodology": "Fixed Northwind corpus; one warm-up plus seven sequential executions on a held connection. Execution includes transfer/decoding, excludes acquisition. Single cold-ish compile observation. EXPLAIN ANALYZE runs separately. No throughput/large-data claim. Rows contain public sample data; no bound parameter values logged.",
+  "hashMethod": "SHA256(JSON.stringify(raw rows)); ordering and representations retained",
+  "observations": [
+    {
+      "backend": "postgres",
+      "name": "Most recent orders",
+      "rowCount": 5,
+      "resultSha256": "4a1035906a6fca4e96be9c67d891783b0898b4a1777aced82431844a001ccbef",
+      "resultsEqual": true,
+      "selectCounts": [
+        4,
+        3
+      ],
+      "before": {
+        "minMs": 1.2472000000000207,
+        "medianMs": 1.8612000000000535,
+        "maxMs": 2.3110999999998967
+      },
+      "after": {
+        "minMs": 1.3642999999999574,
+        "medianMs": 1.5984000000000833,
+        "maxMs": 3.2817000000000007
+      }
+    },
+    {
+      "backend": "postgres",
+      "name": "Customers in London",
+      "rowCount": 1,
+      "resultSha256": "50f2f2e35663d8afa98835ad87d3944f5d4057df8dceb471bd172427f8de29db",
+      "resultsEqual": true,
+      "selectCounts": [
+        4,
+        1
+      ],
+      "before": {
+        "minMs": 0.9772000000000389,
+        "medianMs": 1.032399999999825,
+        "maxMs": 1.3949999999999818
+      },
+      "after": {
+        "minMs": 0.9912999999999101,
+        "medianMs": 1.1005999999999858,
+        "maxMs": 1.5469000000000506
+      }
+    },
+    {
+      "backend": "postgres",
+      "name": "Customers in Mexico D.F.",
+      "rowCount": 1,
+      "resultSha256": "ca27b64b686a50975c8f79c6d1080d4f28cea60609015c84469b063e4d2153a7",
+      "resultsEqual": true,
+      "selectCounts": [
+        4,
+        1
+      ],
+      "before": {
+        "minMs": 0.9401000000000295,
+        "medianMs": 1.0092999999999392,
+        "maxMs": 1.9109000000000833
+      },
+      "after": {
+        "minMs": 0.9663000000000466,
+        "medianMs": 0.9871000000000549,
+        "maxMs": 1.121599999999944
+      }
+    },
+    {
+      "backend": "postgres",
+      "name": "Average units per order",
+      "rowCount": 1,
+      "resultSha256": "1ce1a813094cd6794d63e54b89b130261655a1f804e879e02c26cd21d359a619",
+      "resultsEqual": true,
+      "selectCounts": [
+        7,
+        5
+      ],
+      "before": {
+        "minMs": 1.5234000000000378,
+        "medianMs": 1.7069000000001324,
+        "maxMs": 1.9514000000001488
+      },
+      "after": {
+        "minMs": 1.6194000000000415,
+        "medianMs": 1.692299999999932,
+        "maxMs": 1.9589999999998327
+      }
+    },
+    {
+      "backend": "postgres",
+      "name": "Employee shipped/unshipped orders",
+      "rowCount": 9,
+      "resultSha256": "b7c671665df075958a2399ca888476914319226bb16a1c1f3ac2b889ec614e81",
+      "resultsEqual": true,
+      "selectCounts": [
+        6,
+        5
+      ],
+      "before": {
+        "minMs": 1.411100000000033,
+        "medianMs": 1.5153999999999996,
+        "maxMs": 1.7846000000001823
+      },
+      "after": {
+        "minMs": 1.3786999999999807,
+        "medianMs": 1.5480000000000018,
+        "maxMs": 2.030300000000125
+      }
+    },
+    {
+      "backend": "postgres",
+      "name": "Customer freight/order-price ratio",
+      "rowCount": 91,
+      "resultSha256": "cbda81367db91fcd94fa0f2f4f98fc8601f0ee12b6896365febacf8451237974",
+      "resultsEqual": true,
+      "selectCounts": [
+        11,
+        8
+      ],
+      "before": {
+        "minMs": 3.59050000000002,
+        "medianMs": 3.7213000000001557,
+        "maxMs": 4.451499999999896
+      },
+      "after": {
+        "minMs": 3.2312999999999192,
+        "medianMs": 3.6748000000000047,
+        "maxMs": 4.10570000000007
+      }
+    },
+    {
+      "backend": "postgres",
+      "name": "75th percentile of order price by customer country",
+      "rowCount": 21,
+      "resultSha256": "ca65fa2951bdf565964b1b6102109bdf4c0ec9d059c76582a204f688908ba976",
+      "resultsEqual": true,
+      "selectCounts": [
+        11,
+        10
+      ],
+      "before": {
+        "minMs": 4.832299999999805,
+        "medianMs": 5.258600000000115,
+        "maxMs": 5.961799999999812
+      },
+      "after": {
+        "minMs": 4.801000000000158,
+        "medianMs": 5.066100000000006,
+        "maxMs": 7.519700000000057
+      }
+    },
+    {
+      "backend": "postgres",
+      "name": "Window top N",
+      "rowCount": 263,
+      "resultSha256": "c465e2fc50239ccc9a1f6689355b9a15079a20c576bd7e8004f6f4a7a249b802",
+      "resultsEqual": true,
+      "selectCounts": [
+        5,
+        2
+      ],
+      "before": {
+        "minMs": 2.108600000000024,
+        "medianMs": 2.546000000000049,
+        "maxMs": 2.923699999999826
+      },
+      "after": {
+        "minMs": 2.29079999999999,
+        "medianMs": 2.4887999999998556,
+        "maxMs": 3.4282000000000608
+      }
+    },
+    {
+      "backend": "mysql",
+      "name": "Most recent orders",
+      "rowCount": 5,
+      "resultSha256": "4a1035906a6fca4e96be9c67d891783b0898b4a1777aced82431844a001ccbef",
+      "resultsEqual": true,
+      "selectCounts": [
+        4,
+        3
+      ],
+      "before": {
+        "minMs": 1.2871000000000095,
+        "medianMs": 1.4529999999999745,
+        "maxMs": 1.8609999999998763
+      },
+      "after": {
+        "minMs": 1.5254999999999654,
+        "medianMs": 1.6364999999998417,
+        "maxMs": 1.8326999999999316
+      }
+    },
+    {
+      "backend": "mysql",
+      "name": "Customers in London",
+      "rowCount": 1,
+      "resultSha256": "50f2f2e35663d8afa98835ad87d3944f5d4057df8dceb471bd172427f8de29db",
+      "resultsEqual": true,
+      "selectCounts": [
+        4,
+        1
+      ],
+      "before": {
+        "minMs": 0.9908000000000357,
+        "medianMs": 1.2215000000001055,
+        "maxMs": 1.4346000000000458
+      },
+      "after": {
+        "minMs": 0.9296999999999116,
+        "medianMs": 1.0877000000000407,
+        "maxMs": 1.2721000000001368
+      }
+    },
+    {
+      "backend": "mysql",
+      "name": "Customers in Mexico D.F.",
+      "rowCount": 1,
+      "resultSha256": "ca27b64b686a50975c8f79c6d1080d4f28cea60609015c84469b063e4d2153a7",
+      "resultsEqual": true,
+      "selectCounts": [
+        4,
+        1
+      ],
+      "before": {
+        "minMs": 0.9701000000000022,
+        "medianMs": 1.167699999999968,
+        "maxMs": 1.397899999999936
+      },
+      "after": {
+        "minMs": 0.9317999999998392,
+        "medianMs": 0.9667000000001735,
+        "maxMs": 1.1009000000001379
+      }
+    },
+    {
+      "backend": "mysql",
+      "name": "Average units per order",
+      "rowCount": 1,
+      "resultSha256": "1ce1a813094cd6794d63e54b89b130261655a1f804e879e02c26cd21d359a619",
+      "resultsEqual": true,
+      "selectCounts": [
+        7,
+        5
+      ],
+      "before": {
+        "minMs": 2.1175000000000637,
+        "medianMs": 2.3745000000001255,
+        "maxMs": 3.0269000000000688
+      },
+      "after": {
+        "minMs": 2.0785000000000764,
+        "medianMs": 2.152499999999918,
+        "maxMs": 2.430900000000065
+      }
+    },
+    {
+      "backend": "mysql",
+      "name": "Employee shipped/unshipped orders",
+      "rowCount": 9,
+      "resultSha256": "b7c671665df075958a2399ca888476914319226bb16a1c1f3ac2b889ec614e81",
+      "resultsEqual": true,
+      "selectCounts": [
+        6,
+        5
+      ],
+      "before": {
+        "minMs": 1.5449999999998454,
+        "medianMs": 1.8408999999999196,
+        "maxMs": 2.3846000000000913
+      },
+      "after": {
+        "minMs": 1.425000000000182,
+        "medianMs": 1.779299999999921,
+        "maxMs": 1.9092000000000553
+      }
+    },
+    {
+      "backend": "mysql",
+      "name": "Customer freight/order-price ratio",
+      "rowCount": 91,
+      "resultSha256": "cbda81367db91fcd94fa0f2f4f98fc8601f0ee12b6896365febacf8451237974",
+      "resultsEqual": true,
+      "selectCounts": [
+        11,
+        8
+      ],
+      "before": {
+        "minMs": 4.407699999999977,
+        "medianMs": 4.8366000000000895,
+        "maxMs": 5.374299999999948
+      },
+      "after": {
+        "minMs": 4.180700000000115,
+        "medianMs": 4.455500000000029,
+        "maxMs": 4.5569000000000415
+      }
+    },
+    {
+      "backend": "mysql",
+      "name": "75th percentile of order price by customer country",
+      "rowCount": 21,
+      "resultSha256": "ca65fa2951bdf565964b1b6102109bdf4c0ec9d059c76582a204f688908ba976",
+      "resultsEqual": true,
+      "selectCounts": [
+        11,
+        10
+      ],
+      "before": {
+        "minMs": 7.838799999999992,
+        "medianMs": 8.077099999999973,
+        "maxMs": 8.294100000000071
+      },
+      "after": {
+        "minMs": 7.787700000000086,
+        "medianMs": 8.139199999999846,
+        "maxMs": 10.107700000000023
+      }
+    },
+    {
+      "backend": "mysql",
+      "name": "Window top N",
+      "rowCount": 263,
+      "resultSha256": "c465e2fc50239ccc9a1f6689355b9a15079a20c576bd7e8004f6f4a7a249b802",
+      "resultsEqual": true,
+      "selectCounts": [
+        5,
+        2
+      ],
+      "before": {
+        "minMs": 2.1035000000001673,
+        "medianMs": 2.2216000000000804,
+        "maxMs": 2.2541000000001077
+      },
+      "after": {
+        "minMs": 1.871599999999944,
+        "medianMs": 2.251399999999876,
+        "maxMs": 11.136199999999917
+      }
+    },
+    {
+      "backend": "duckdb",
+      "name": "Most recent orders",
+      "rowCount": 5,
+      "resultSha256": "4a1035906a6fca4e96be9c67d891783b0898b4a1777aced82431844a001ccbef",
+      "resultsEqual": true,
+      "selectCounts": [
+        4,
+        3
+      ],
+      "before": {
+        "minMs": 1.9731999999999061,
+        "medianMs": 2.365300000000161,
+        "maxMs": 3.093499999999949
+      },
+      "after": {
+        "minMs": 1.8336000000001604,
+        "medianMs": 1.9908000000000357,
+        "maxMs": 2.9239000000000033
+      }
+    },
+    {
+      "backend": "duckdb",
+      "name": "Customers in London",
+      "rowCount": 1,
+      "resultSha256": "50f2f2e35663d8afa98835ad87d3944f5d4057df8dceb471bd172427f8de29db",
+      "resultsEqual": true,
+      "selectCounts": [
+        4,
+        1
+      ],
+      "before": {
+        "minMs": 1.1589999999998781,
+        "medianMs": 1.243900000000167,
+        "maxMs": 2.4166000000000167
+      },
+      "after": {
+        "minMs": 1.022399999999834,
+        "medianMs": 1.2372000000000298,
+        "maxMs": 1.7670000000000528
+      }
+    },
+    {
+      "backend": "duckdb",
+      "name": "Customers in Mexico D.F.",
+      "rowCount": 1,
+      "resultSha256": "ca27b64b686a50975c8f79c6d1080d4f28cea60609015c84469b063e4d2153a7",
+      "resultsEqual": true,
+      "selectCounts": [
+        4,
+        1
+      ],
+      "before": {
+        "minMs": 1.115199999999959,
+        "medianMs": 1.190499999999929,
+        "maxMs": 1.4046000000000731
+      },
+      "after": {
+        "minMs": 1.0421999999998661,
+        "medianMs": 1.2807999999999993,
+        "maxMs": 1.5824000000002343
+      }
+    },
+    {
+      "backend": "duckdb",
+      "name": "Average units per order",
+      "rowCount": 1,
+      "resultSha256": "1ce1a813094cd6794d63e54b89b130261655a1f804e879e02c26cd21d359a619",
+      "resultsEqual": true,
+      "selectCounts": [
+        7,
+        5
+      ],
+      "before": {
+        "minMs": 2.5130000000003747,
+        "medianMs": 2.636199999999917,
+        "maxMs": 3.244799999999941
+      },
+      "after": {
+        "minMs": 2.2268000000003667,
+        "medianMs": 2.808400000000347,
+        "maxMs": 3.3699000000001433
+      }
+    },
+    {
+      "backend": "duckdb",
+      "name": "Employee shipped/unshipped orders",
+      "rowCount": 9,
+      "resultSha256": "b7c671665df075958a2399ca888476914319226bb16a1c1f3ac2b889ec614e81",
+      "resultsEqual": true,
+      "selectCounts": [
+        6,
+        5
+      ],
+      "before": {
+        "minMs": 3.087500000000091,
+        "medianMs": 3.5482999999999265,
+        "maxMs": 10.846599999999853
+      },
+      "after": {
+        "minMs": 3.1400000000003274,
+        "medianMs": 3.263999999999669,
+        "maxMs": 3.770599999999831
+      }
+    },
+    {
+      "backend": "duckdb",
+      "name": "Customer freight/order-price ratio",
+      "rowCount": 91,
+      "resultSha256": "cbda81367db91fcd94fa0f2f4f98fc8601f0ee12b6896365febacf8451237974",
+      "resultsEqual": true,
+      "selectCounts": [
+        14,
+        11
+      ],
+      "before": {
+        "minMs": 24.94959999999992,
+        "medianMs": 29.033500000000004,
+        "maxMs": 34.20310000000018
+      },
+      "after": {
+        "minMs": 32.17040000000043,
+        "medianMs": 37.8770999999997,
+        "maxMs": 43.96399999999994
+      }
+    },
+    {
+      "backend": "duckdb",
+      "name": "75th percentile of order price by customer country",
+      "rowCount": 21,
+      "resultSha256": "ca65fa2951bdf565964b1b6102109bdf4c0ec9d059c76582a204f688908ba976",
+      "resultsEqual": true,
+      "selectCounts": [
+        11,
+        10
+      ],
+      "before": {
+        "minMs": 19.473799999999756,
+        "medianMs": 21.88689999999997,
+        "maxMs": 26.68229999999994
+      },
+      "after": {
+        "minMs": 18.765399999999772,
+        "medianMs": 22.00759999999991,
+        "maxMs": 25.070999999999913
+      }
+    },
+    {
+      "backend": "duckdb",
+      "name": "Window top N",
+      "rowCount": 263,
+      "resultSha256": "c465e2fc50239ccc9a1f6689355b9a15079a20c576bd7e8004f6f4a7a249b802",
+      "resultsEqual": true,
+      "selectCounts": [
+        5,
+        2
+      ],
+      "before": {
+        "minMs": 5.5142000000000735,
+        "medianMs": 6.913000000000011,
+        "maxMs": 7.509500000000116
+      },
+      "after": {
+        "minMs": 5.520400000000336,
+        "medianMs": 5.9999000000002525,
+        "maxMs": 6.591199999999844
+      }
+    }
+  ],
+  "initialPaired": {
+    "methodology": "One seeded DuckDB connection, alternating AB/BA order; 3 warm-up pairs, 21 measured pairs. Raw results equal.",
+    "statistics": [
+      {
+        "minMs": 22.29320000000007,
+        "medianMs": 38.70450000000028,
+        "maxMs": 51.47980000000007
+      },
+      {
+        "minMs": 19.52500000000009,
+        "medianMs": 40.81280000000015,
+        "maxMs": 55.653299999999945
+      }
+    ]
+  },
+  "duckdbFollowup": {
+    "methodology": "Six independently seeded in-memory instances (three default threads, three single-thread); five warmup pairs then 21 measured AB/BA pairs; exact raw results equal; JSON analyzed profiles are observations, not test snapshots.",
+    "rounds": [
+      {
+        "round": 0,
+        "environment": [
+          {
+            "version": "v1.5.5",
+            "threads": "22"
+          }
+        ],
+        "resultsEqual": true,
+        "before": {
+          "minMs": 16.08759999999984,
+          "medianMs": 20.271700000000237,
+          "maxMs": 29.806899999999814
+        },
+        "after": {
+          "minMs": 15.967499999999973,
+          "medianMs": 18.553100000000086,
+          "maxMs": 29.661299999999983
+        }
+      },
+      {
+        "round": 1,
+        "environment": [
+          {
+            "version": "v1.5.5",
+            "threads": "22"
+          }
+        ],
+        "resultsEqual": true,
+        "before": {
+          "minMs": 16.9074999999998,
+          "medianMs": 20.76929999999993,
+          "maxMs": 30.439300000000003
+        },
+        "after": {
+          "minMs": 16.590999999999894,
+          "medianMs": 20.952400000000125,
+          "maxMs": 30.2796000000003
+        }
+      },
+      {
+        "round": 2,
+        "environment": [
+          {
+            "version": "v1.5.5",
+            "threads": "22"
+          }
+        ],
+        "resultsEqual": true,
+        "before": {
+          "minMs": 23.1916999999994,
+          "medianMs": 27.58179999999993,
+          "maxMs": 53.88040000000001
+        },
+        "after": {
+          "minMs": 22.60229999999956,
+          "medianMs": 26.072799999999916,
+          "maxMs": 31.909700000000157
+        }
+      },
+      {
+        "round": 3,
+        "environment": [
+          {
+            "version": "v1.5.5",
+            "threads": "1"
+          }
+        ],
+        "resultsEqual": true,
+        "before": {
+          "minMs": 17.195400000000518,
+          "medianMs": 18.977499999999964,
+          "maxMs": 22.068599999999606
+        },
+        "after": {
+          "minMs": 16.59809999999925,
+          "medianMs": 18.933500000000095,
+          "maxMs": 25.583700000000135
+        }
+      },
+      {
+        "round": 4,
+        "environment": [
+          {
+            "version": "v1.5.5",
+            "threads": "1"
+          }
+        ],
+        "resultsEqual": true,
+        "before": {
+          "minMs": 13.619599999999991,
+          "medianMs": 15.609400000000278,
+          "maxMs": 26.25920000000042
+        },
+        "after": {
+          "minMs": 13.213300000000345,
+          "medianMs": 14.862200000000485,
+          "maxMs": 20.867699999998877
+        }
+      },
+      {
+        "round": 5,
+        "environment": [
+          {
+            "version": "v1.5.5",
+            "threads": "1"
+          }
+        ],
+        "resultsEqual": true,
+        "before": {
+          "minMs": 13.546700000000783,
+          "medianMs": 15.537199999998847,
+          "maxMs": 26.23790000000008
+        },
+        "after": {
+          "minMs": 13.303599999999278,
+          "medianMs": 15.647000000000844,
+          "maxMs": 20.810699999999997
+        }
+      }
+    ],
+    "conclusion": "Initial slowdown not consistently reproduced; no universal speedup established."
+  }
+}

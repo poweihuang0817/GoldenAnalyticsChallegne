@@ -16,6 +16,7 @@ function reset() {
   el('plan').textContent = 'Compile or run a query to inspect the supported plan.';
   el('parameters').textContent = '';
   el('sql-raw').textContent = '';
+  el('lowering-trace').textContent = '';
   el('plan-tree').textContent = 'Compile or run a query to inspect the operator tree.';
 }
 function table(rows) {
@@ -41,6 +42,7 @@ async function submit(action) {
     const response = await fetch('/query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: el('example').value, backend: el('backend').value, action }) });
     const result = await response.json(); if (!response.ok) throw new Error(result.error);
     el('sql').textContent = result.sqlPreview.text;
+    el('lowering-trace').textContent = result.loweringTrace.map(e => e.relationId + ' ' + e.operation + ': ' + e.decision + ' - ' + e.reason).join('\n');
     el('sql-raw').textContent = result.sql;
     el('sql-note').textContent = result.sqlPreview.formatted ? 'Display formatting only; the original SQL is executed.' : 'Formatting unavailable; showing original SQL.';
     el('plan-tree').textContent = result.planOutline;
@@ -54,6 +56,7 @@ async function submit(action) {
     el('status').className = 'error'; el('status').textContent = error.message || 'Unable to reach the local server.';
     el('sql').textContent = 'No SQL preview available for this failed request.';
     el('sql-raw').textContent = '';
+  el('lowering-trace').textContent = '';
     el('plan-tree').textContent = 'No plan available for this failed request.';
     el('plan').textContent = 'No plan available for this failed request.'; el('parameters').textContent = '';
   } finally { for (const id of ['compile','run','example','backend']) el(id).disabled = false; }

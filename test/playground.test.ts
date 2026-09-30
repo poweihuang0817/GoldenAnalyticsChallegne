@@ -4,6 +4,12 @@ import { once } from 'node:events';
 import { request as httpRequest } from 'node:http';
 import { createDemoServer, executeExample } from '../src/playground/server.js';
 
+test('playground exposes value-free lowering decisions with SQL preview', async () => {
+  const preview = await executeExample({ query: 'city', backend: 'duckdb', action: 'compile' }, { duckdbPath: ':memory:' });
+  assert.ok(preview.loweringTrace.some(e => e.operation === 'aggregate' && e.decision === 'merged'));
+  assert.ok(!JSON.stringify(preview.loweringTrace).includes('london'));
+});
+
 test('demo serves actual examples and validates every request before execution', async () => {
   let calls = 0;
   const server = createDemoServer(async input => { calls++; return { selected: input.query }; });
