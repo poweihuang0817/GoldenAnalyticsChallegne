@@ -287,6 +287,12 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Added --full stdout output for reproducing all reference rows without committing them. Documented that raw driver hashes are representation-sensitive, not a cross-backend equality oracle.
 - Validation: code and audit typechecks passed; 54 unit tests (4 focused reference/artifact tests) passed; compact and full audits each matched all 21 baseline executions across PostgreSQL/MySQL/DuckDB; reference fingerprints agreed. Artifact reduced from 727,661 bytes / 21,709 lines to 24,803 bytes / 824 lines. Whitespace check passed. No production semantics or candidate README changed.
 
+## Sequential submission verification (September 30, 2026)
+
+- User requested working through the submission checklist one item at a time. Preserved their uncommitted README and used the checklist worktree.
+- Installed locked dependencies and ran both CLI drivers: all 8 examples on each of three backends passed. Seeded a new worktree-owned DuckDB file, leaving existing demo snapshots unchanged.
+- Recorded current candidate f43e370 driver evidence and successful hosted fresh-clone run 36741924009. Final revision, candidate narration, video and delivery remain unconfirmed; no PR merged or submission sent.
+
 ## Reviewer navigation guide (September 30, 2026)
 
 - User requested a company-friendly guide in its own PR mapping each challenge deliverable to files and commands. Added root REVIEWER_GUIDE.md with driver/extension/test/design/AI/future-work links and an explicit pending video/version/access section.

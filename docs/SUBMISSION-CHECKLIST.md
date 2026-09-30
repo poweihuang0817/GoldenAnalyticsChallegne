@@ -14,7 +14,7 @@ Supporting checklist for the candidate, inspected September 30, 2026. Checked im
 
 Candidate notes / final run evidence:
 
-> TODO
+> Checkpoint verified September 30, 2026 on f43e3708e75297da63b5e4d0162524be362d8ce1 (PR #44 before this evidence-only edit): fresh worktree npm ci; npm run demo passed all 8 examples on PostgreSQL and MySQL; a newly created isolated DuckDB snapshot was seeded, then npm run demo:duckdb passed all 8 examples (24 executions total). Snapshot counts: 830 orders, 91 customers, 9 employees, 2,155 details; SHA-256 83925750f4c70d986bd4efc86ae3e939a4e29efea4b20364a44ebdeabfe01803. This verifies the current candidate's driver; final submission revision remains to be selected.
 
 ## 2. Test suite — required
 
@@ -44,7 +44,7 @@ README already has a Test methodology section. Clarify these points in your own 
 
 Candidate notes / final CI URL and SHA:
 
-> TODO
+> Current candidate checkpoint: [Fresh clone run 36741924009](https://github.com/poweihuang0817/GoldenAnalytics/actions/runs/36741924009) passed for PR #44 head f43e3708e75297da63b5e4d0162524be362d8ce1. The workflow includes code/docs typechecks, unit tests, PostgreSQL/MySQL integration, three-backend conformance, drivers and executed documentation examples. This is not evidence for later commits; check the final submitted revision separately.
 
 ## 3. Candidate-authored README — required
 
