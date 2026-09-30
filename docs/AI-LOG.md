@@ -357,3 +357,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Suggested terminal-fetch absorption first, then type-proven cast cleanup and
   non-null sort keys; deferred join pruning, percentile and decimal-division work.
   No compiler changes or new runtime performance/correctness claims in this PR.
+
+- User expanded the audit to all runtime test SQL. Dedicated-worktree capture
+  recorded 527 successful compilations / 254 distinct outputs and 52 rejections;
+  all five commands passed and compiler source was restored. Full raw corpus
+  remains local; committed replay tool and compact summary avoid artifact noise.
+  Per-case semantic review still covers the eight fixed demo families only.

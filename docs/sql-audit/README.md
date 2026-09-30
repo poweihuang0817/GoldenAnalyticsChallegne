@@ -5,6 +5,31 @@ Scope: all seven `queryExamples` entries (six challenge families, two city input
 plus `recentOrdersPerCustomer(3)`, each on three backends. This is not every query
 in the fixture/property corpus. No compiler or semantic changes in this audit.
 
+## Full runtime-test corpus
+
+The user subsequently requested all test-case SQL, not only demo cases. Run
+`node scripts/capture-test-sql.mjs` in a dedicated idle worktree with dependencies
+installed and supplied databases running. It temporarily instruments compilePlan,
+runs unit/integration/three-backend tests, docs compilation and the default driver,
+then restores the compiler byte-for-byte in finally. Do not run other work in that
+worktree during capture. Forced termination may bypass finally; restore from the
+local compiler.ts.backup before any other work if interrupted.
+
+The observed run compiled 527 queries, producing 254 distinct SQL/ordered-binding/
+trace tuples, and recorded 52 rejected compilations. All five commands passed.
+Full .sql files, trace/binding comments, caller locations, rejected-call inventory,
+logs and INDEX.md are in the ignored `.sql-audit-all/run-*/` directory. Random
+fixture identifiers remain unchanged; distinct outputs are not necessarily
+distinct logical query shapes. Rejected inputs produce no SQL. Type-only negatives
+and hand-written oracle SQL are outside this generated-SQL inventory.
+
+The compact [capture summary](capture-summary.json) is committed; full runtime
+outputs stay local to avoid repeating the large-artifact issue from #51. Some
+fixtures intentionally contain synthetic secret-like values, so inspect before
+sharing raw captures. The 24 fixed demo SQL files below remain easy review copies.
+The per-case findings below cover those eight families; this is not a claim that
+all 254 captured outputs have individually received semantic/performance review.
+
 `npx tsx scripts/export-demo-sql.ts` compiles each query without opening a database
 connection, verifies exact SQL/bindings/trace against committed test snapshots,
 then writes formatted review copies here. Parameters remain placeholders; ordered
