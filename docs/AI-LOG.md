@@ -348,3 +348,12 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
   remove the constant parameter and renumber city binding. UI expectation updated
   from two parameters to one. Code/docs checks, 62 unit tests, 74 integration
   tests and three-backend conformance pass. No latency improvement claimed.
+
+## Generated SQL audit (September 30, 2026)
+
+- User requested all case SQL files and case-by-case optimization review. Exported
+  eight fixed demo queries for three backends, with bindings/trace comments and
+  snapshot equality checks. Reviewed each shape and dialect differences.
+- Suggested terminal-fetch absorption first, then type-proven cast cleanup and
+  non-null sort keys; deferred join pruning, percentile and decimal-division work.
+  No compiler changes or new runtime performance/correctness claims in this PR.
