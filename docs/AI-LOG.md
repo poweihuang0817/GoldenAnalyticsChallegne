@@ -338,3 +338,13 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
   and one small freight baseline SQL fixture. Raw artifacts are now ignored local
   outputs; compiler SQL/trace snapshots remain unchanged. Re-ran 61 unit tests,
   type checks and the six-instance investigation successfully after rewiring it.
+
+## Row-count SQL cleanup (September 30, 2026)
+
+- User requested simpler city-count SQL before recording. Lower only validated
+  non-null literal count arguments to COUNT(*); preserve nullable/expression
+  counts, i64 string output and comparison casts. No IR/API change.
+- Regression failed before implementation; reviewed three-backend SQL snapshots
+  remove the constant parameter and renumber city binding. UI expectation updated
+  from two parameters to one. Code/docs checks, 62 unit tests, 74 integration
+  tests and three-backend conformance pass. No latency improvement claimed.
