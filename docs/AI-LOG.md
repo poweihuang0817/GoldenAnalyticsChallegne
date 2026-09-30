@@ -292,3 +292,19 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - User requested working through the submission checklist one item at a time. Preserved their uncommitted README and used the checklist worktree.
 - Installed locked dependencies and ran both CLI drivers: all 8 examples on each of three backends passed. Seeded a new worktree-owned DuckDB file, leaving existing demo snapshots unchanged.
 - Recorded current candidate f43e370 driver evidence and successful hosted fresh-clone run 36741924009. Final revision, candidate narration, video and delivery remain unconfirmed; no PR merged or submission sent.
+
+## Reviewer navigation guide (September 30, 2026)
+
+- User requested a company-friendly guide in its own PR mapping each challenge deliverable to files and commands. Added root REVIEWER_GUIDE.md with driver/extension/test/design/AI/future-work links and an explicit pending video/version/access section.
+- Guide is labelled AI-assisted supporting navigation; no README or candidate AI record modifications in this PR. No claim of final submission or new runtime validation.
+
+## AI usage record organization (September 30, 2026)
+
+- Candidate explicitly requested a separate PR to organize the manually started AI record. Preserved the recorded prompt topics and grounded redirects/outcomes in conversation and repository history; labelled summaries and AI-assisted organization rather than claiming verbatim prompts or sole human authorship of the revision.
+- Clarified async execution vs synchronous compilation and implemented functionality vs deferred semantic/compiler research. No candidate review or elapsed time invented. README unchanged in this PR.
+
+## Walkthrough readability (September 30, 2026)
+
+- User requested a vertical Typed API/Substrait/backend diagram, consistent green for DuckDB, formatted SQL and a more readable Substrait view for filming.
+- Added display-only dialect formatting with original SQL retained and an operator outline with authoritative raw JSON retained. No compiler or execution semantics changed. Diagram is shared by UI and architecture documentation.
+- Validation: 57 unit tests, code/docs typechecks, nine fixed-example dialect formatting combinations, XML parse and visual SVG review passed. SQL Formatter is a pinned display dependency; raw SQL remains the execution input. No new full remote integration run claimed.

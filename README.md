@@ -1,8 +1,8 @@
 # Golden Interview Challenge
-Author: Po-wei Huang
+Author: Po-wei Huang (Manually written)
 
 ## Architecture discussion
-This challenge is like creating our version of power query. I hope to reuse new open source project or standard so that we don't rebuild the wheel. The first thing I need to decide is whether to introduce an IR like power query. In the end, I decide to pick a subset of Substrait. It's an open IR for relational algebra and could be ported to future semantic language upstream like Malloy.
+This challenge is like creating our version of power query. I hope to reuse open source project or standard so that we don't rebuild the wheel. The first thing I need to decide is whether to introduce an IR like power query. In the end, I decide to pick a subset of Substrait. It's an open IR for relational algebra and could be ported to future semantic language upstream like Malloy.
 
 After that, I need to pick a connector/dialect to implement postgresql/mysql backend. I choose Kysely since it's a good sql builder and dialect implementation in typescript world.
 
@@ -16,6 +16,8 @@ The last piece is metadata. I only finish metadata discovery by runtime fetch. B
 
 So, overall the architecture is typed API -> IR by substrait -> Kysely dialect in typescript.
 
+For design rationale and tradeoffs, see [API design](docs/api/design.md). For usage and reference, see [API documentation](docs/api/README.md).
+
 ## Implementation details
 During implementation, I reuse my knowledge from power bi to ensure it have the characteristic of production service.
 
@@ -27,7 +29,7 @@ During implementation, I reuse my knowledge from power bi to ensure it have the 
 - Debugging - framework to isolate issue. remote issue or our issue.
 
 ### For typed API
-- Compile to generate query for debugging. Execute as async in API
+- Compile is synchronous and generates SQL for debugging. Execute is asynchronous.
 - Each component as type, instead of callback.
 - type and spelling check due to pre-load schema.
 
@@ -53,14 +55,23 @@ export const challengeCatalog = {
 } as const satisfies Catalog;
 ```
 
+```ts
+import { createSource, count, literal } from './src/api.js';
+import { createClient } from './src/client.js';
+import { challengeCatalog } from './src/challenge.js';
+```
+
 ### Get table from that
+
+```ts
 const source = createSource(challengeCatalog);
 const customers = source.table('customers');
+```
 
 ### Build query
 Typed predicate and aggregation
 
-```
+```ts
 const query = customers
   .filter(
     customers.columns.city
@@ -73,10 +84,15 @@ const query = customers
 ```
 
 ### Select dialect and execute
-```
+
+```ts
 const client = createClient('postgres', challengeCatalog);
 
 try {
+  // Optional: preview SQL without executing the query.
+  const preview = client.compile(query);
+  console.log(preview.sql);
+
   const { rows } = await client.execute(query);
   console.table(rows);
 } finally {
@@ -85,27 +101,35 @@ try {
 ```
 
 ### For debugging, preview query
-const preview = client.compile(query);
-console.log(preview.sql)
 
-## Db dialect
+The optional `compile()` call above returns SQL and bound parameters without executing the query. This could be used to check compiled SQL.
+
+## Db dialect and extension
 - postgresql
 - mysql
 - duckdb
 I added duckdb as it's asked by analyst in youtube video. It works well
 
+For sql extension, I added row number window function
+
 ## Test methodology
-- Test case- 6 cases in challenge. Enlarge it with more SQL cases (total 50).
+- Test cases cover the six challenge query families, with additional NULL, empty-input, duplicate, join, nested-aggregate and decimal/percentile cases.
 - Comparison between each database
 - Component test in each layer
 - Equivalence test - filter (A and B) = filter A then filter B.
-- Independent test
+- Independent raw-data and BigInt reference calculations check expected results separately from the compiler.
 - CI to check fresh clone and basic test in github action
+
+See [test methodology](docs/TEST-METHODOLOGY.md) for coverage and limits.
 
 
 ## Tools and setup commands
 I implemented an UI to drive API
-Please check doc folder for setup commands.
+See [Setup, driver, UI and tests](docs/RUNNING.md) for prerequisites and commands.
+
+## AI usage
+
+See my [manually written AI usage record](Manual_Record_AI_Usage.md).
 
 ## Future work
 - Enlarge test suite by TPC-H or substrait consumer test

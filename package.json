@@ -25,6 +25,7 @@
     "mysql2": "3.24.4",
     "pg": "8.23.0",
     "protobufjs": "8.8.0",
+    "sql-formatter": "15.9.0",
     "zod": "4.6.5"
   },
   "devDependencies": {

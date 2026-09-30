@@ -116,3 +116,43 @@ test('unseeded DuckDB compiles without creating a file and run gives actionable 
     await rm(directory, { recursive: true });
   }
 });
+
+import {sqlPreview, planOutline} from '../src/playground/preview.js';
+import {cityQuery, averageUnitsQuery} from '../src/queries.js';
+
+test('SQL preview preserves quoted content/placeholders and falls back on unsupported syntax',()=>{
+  for (const backend of ['postgres','mysql','duckdb'] as const) {
+    const parameter=backend==='postgres'?'$1':'?';
+    const input=`select 'from  x' as label from customers where city = ${parameter}`;
+    const preview=sqlPreview(input,backend);
+    assert.equal(preview.formatted,true);
+    assert.match(preview.text,/\n/);
+    assert.ok(preview.text.includes("'from  x'"));
+    assert.ok(preview.text.includes(parameter));
+  }
+  const invalid="select 'unterminated";
+  assert.deepEqual(sqlPreview(invalid,'postgres'),{text:invalid,formatted:false});
+});
+
+test('plan outline uses actual operators, function anchors and both join inputs without mutating plan',()=>{
+  const plan=cityQuery('london').toSubstrait(), original=JSON.stringify(plan);
+  const outline=planOutline(plan);
+  assert.match(outline,/Output: customer_count\n  Aggregate: count/);
+  assert.match(outline,/Filter: equal\(lower\(field#1\)/);
+  assert.match(outline,/Read customers \(0: customer_id, 1: city/);
+  assert.equal(JSON.stringify(plan),original);
+  const nested=planOutline(averageUnitsQuery().toSubstrait());
+  assert.match(nested,/Join/);assert.match(nested,/left: Read orders/);assert.match(nested,/right: Aggregate: sum/);
+  assert.match(planOutline({relations:[{rel:{unknown:{}}}]}),/unrecognized relation/);
+});
+
+test('all fixed walkthrough queries have formatted previews on each backend',async()=>{
+  for(const backend of ['postgres','mysql','duckdb'] as const)for(const query of ['city','units','percentile']) {
+    const preview=await executeExample({backend,query,action:'compile'},{duckdbPath:':memory:'});
+    assert.equal(preview.sqlPreview.formatted,true,`${backend}/${query}`);
+    assert.match(preview.sqlPreview.text,/\n/);
+    assert.match(preview.planOutline,/Output:/);
+    assert.ok(!preview.sql.includes('\n')); // Original compiler output remains distinct.
+    assert.equal(preview.rows,undefined);
+  }
+});
