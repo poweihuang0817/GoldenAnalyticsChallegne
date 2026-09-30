@@ -2,6 +2,8 @@
 
 Recommendation: **DEFER transparent replacement**, not rejection of PRQL. The compiler works for useful relational compositions, but adopting it requires explicit semantic and driver adaptation. No production architecture or dependencies changed.
 
+The [Substrait-defined versus PRQL-defined API comparison](DESIGN-COMPARISON.md) evaluates deliberately changing Golden's API contract, rather than requiring compatibility with every old choice. It audits five operation families, distinguishes PRQL source from PL/RQ, and gives separate migration gates. Business-definition ambiguity is tracked in #38.
+
 ## Reproduce
 
 From the worktree root, with the supplied PostgreSQL/MySQL Docker databases running:
@@ -47,7 +49,7 @@ PG/MySQL use existing environment URLs/defaults. DuckDB uses a private in-memory
 Differences from Golden are **not automatically PRQL bugs**. Separate language semantics, driver integration and our product contract.
 
 1. **Parameters:** MySQL SQL target emits `$1`, which fails in the current execution path. A direct native `mysql2.execute` control, bypassing Kysely, also rejects `$1`; `?` succeeds. PG/DuckDB preserve repeated/out-of-order parameter identities. No regex SQL replacement or user-value interpolation was used. A production bridge needs structurally correct placeholder adaptation and a binding contract.
-2. **NULL aggregates:** PRQL generates `COALESCE(SUM(...), 0)` and its `count column` includes NULL rows. Independent SQL controls on all three engines return NULL for all-null SUM and zero for COUNT(column). This is a language-contract difference, not evidence that PRQL arithmetic is broken. A Golden adapter must deliberately preserve the existing semantics rather than map names blindly.
+2. **NULL aggregates:** PRQL generates `COALESCE(SUM(...), 0)` and its `count column` includes NULL rows. Independent SQL controls on all three engines return NULL for all-null SUM and zero for COUNT(column). This is a language-contract difference, not evidence that PRQL arithmetic is broken. Preserving Golden requires adaptation; deliberately adopting PRQL's contract instead is also a valid proposal. Do not map names blindly in either mode.
 3. **Decimal division:** DuckDB returns the number `9007199254740992` from decimal `9007199254740993.0000000000 / 1`. Independent SQL reproduces this without either compiler. Thus it is backend floating-point division behavior; Golden's existing exact-decimal lowering compensates for it. PRQL is not inherently wrong to expose that behavior, but an exact-decimal contract cannot accept it silently.
 4. **Decimal representation:** PG/MySQL division and all three two-point interpolations preserve the exact value, with extra trailing zeros. The comparator only strips insignificant trailing zeros from strings, never converts exact decimals to Number. Raw rows remain visible. Exact interpolation is `9007199254740993.0000000075`; this two-point case is not a complete percentile implementation.
 5. **Average:** unadapted MySQL AVG returns `61.8277` against independent `61.827710843373495`. Explicit `as float` input passes all three, illustrating a small viable adaptation rather than a fundamental compiler failure. PG initially returns a numeric string and DuckDB a number; value agreement does not establish the whole typed result contract.

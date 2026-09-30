@@ -1,5 +1,12 @@
 # AI collaboration log
 
+## September 29: choose an upstream semantic contract
+
+- User challenged treating Golden's prototype semantics as immutable and requested deeper comparison of an API following official Substrait definitions versus an API adopting PRQL. No production migration was authorized.
+- Inspected pinned Substrait v0.63.0 function YAML and PRQL 0.13.14 stdlib/compiler architecture. Golden currently allowlists only its custom function URI; a supported subset does not require making every function custom. Official integer AVG truncates, while Golden promotes to fp64; official integer SUM also differs in output type. URI replacement alone would misstate conformance.
+- Compared source-first PRQL with preserving the typed frontend through source or PL/RQ generation. Recorded unresolved MySQL binding, full percentile, precision, typed-result and migration-cost gates. Reused prior database observations without claiming a new runtime test run.
+- User separately requested calculations of the six challenge queries' alternative business definitions; created issue #38 with a finite variant matrix, independent oracles and candidate-authored README follow-up. Kept that task distinct from function-library semantics.
+
 ## PRQL feasibility spike (#36)
 
 - User asked to evaluate a Node-compatible transformation/compiler alternative, then explicitly requested an isolated spike. Kept current Substrait/Kysely architecture and application dependencies unchanged.
