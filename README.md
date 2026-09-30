@@ -1,8 +1,8 @@
 # Golden Interview Challenge
-Author: Po-wei Huang
+Author: Po-wei Huang (Manually written)
 
 ## Architecture discussion
-This challenge is like creating our version of power query. I hope to reuse new open source project or standard so that we don't rebuild the wheel. The first thing I need to decide is whether to introduce an IR like power query. In the end, I decide to pick a subset of Substrait. It's an open IR for relational algebra and could be ported to future semantic language upstream like Malloy.
+This challenge is like creating our version of power query. I hope to reuse open source project or standard so that we don't rebuild the wheel. The first thing I need to decide is whether to introduce an IR like power query. In the end, I decide to pick a subset of Substrait. It's an open IR for relational algebra and could be ported to future semantic language upstream like Malloy.
 
 After that, I need to pick a connector/dialect to implement postgresql/mysql backend. I choose Kysely since it's a good sql builder and dialect implementation in typescript world.
 
