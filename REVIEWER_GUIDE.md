@@ -1,4 +1,4 @@
-﻿# Reviewer guide
+# Reviewer guide
 
 This guide maps the requested deliverables to their locations. It is AI-assisted navigation material; the candidate's design narrative is in the [README](README.md).
 
@@ -68,4 +68,3 @@ The implementation supports a [constrained Substrait profile](docs/SUBSTRAIT-PRO
 - Private repository and video reviewer access: **pending candidate confirmation**.
 
 These are explicit outstanding handoff items, not claims of completed delivery. The working [submission checklist](docs/SUBMISSION-CHECKLIST.md) tracks them.
-
