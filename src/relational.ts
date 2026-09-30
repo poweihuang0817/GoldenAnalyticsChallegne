@@ -9,16 +9,20 @@ import { duckdbDecimalDivide } from './duckdb-decimal.js';
 import { FUNCTION_URI, FUNCTIONS } from './functions.js';
 export { FUNCTION_URI, FUNCTIONS } from './functions.js';
 type Kind = Catalog[string][number]['type'];
+export type LoweringDecision = { relationId: string; operation: string; decision: string; reason: string };
 type Value = { expr: RawBuilder<unknown>; kind: Kind; nullable: boolean };
-type Relation = { query: RawBuilder<unknown>; fields: Omit<Value, 'expr'>[]; order?: { index: number; direction: string }[] };
+// SQL emission state, not another relational IR. Only simple row-level blocks
+// may absorb another operation; aggregates remain a boundary for their parent.
+type QueryBlock = { source: RawBuilder<unknown>; values: Value[]; where?: RawBuilder<unknown>; groups?: Value[]; extendable: boolean };
+type Relation = { query: RawBuilder<unknown>; fields: Omit<Value, 'expr'>[]; order?: { index: number; direction: string }[]; block?: QueryBlock };
 
 /**
  * Internal lowering entry: callers must pass a profile-validated plan via compilePlan.
  * SupportedPlanJson is a TypeScript shape, not proof of runtime validation.
  * In particular, planSchema enforces window arity/output/phase/frame restrictions.
- * Compile relation boundaries as derived tables; never flatten aggregates or joins.
+ * Combine compatible SQL clauses, retaining aggregate/window/fetch boundaries.
  */
-export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, catalog: Catalog) {
+export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, catalog: Catalog, trace?: LoweringDecision[]) {
   const backend = compilerBackend(db);
   const invalid = (message: string) => new CompileQueryError(message, { code: 'INVALID_QUERY', stage: 'compile', backend });
   const unsupported = (message: string) => new CompileQueryError(message, { code: 'UNSUPPORTED_CAPABILITY', stage: 'compile', backend });
@@ -46,6 +50,10 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
   const fields = (relation: Relation, name: string): Value[] => relation.fields.map((field, i) => ({ ...field, expr: col(name, i) }));
   const select = (values: Value[]) => sql.join(values.map((value, i) => sql`${value.expr} as ${sql.id(`c${i}`)}`));
   const from = (relation: Relation, name: string) => sql`(${relation.query}) as ${sql.id(name)}`;
+  const clauses = (block: QueryBlock) => sql` from ${block.source}${block.where ? sql` where ${block.where}` : sql``}${block.groups?.length ? sql` group by ${sql.join(block.groups.map(g => g.expr))}` : sql``}`;
+  const blockRelation = (block: QueryBlock, order?: Relation['order']): Relation => ({
+    query: sql`select ${select(block.values)}${clauses(block)}`, fields: block.values, block, order,
+  });
   const kindOf = (type: object) => Object.keys(type)[0] as Kind;
   function declared(type: object, value: Value) {
     const kind = kindOf(type);
@@ -129,10 +137,10 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
       return values[i];
     }) : values;
   }
-  function ordering(relation: Relation, name: string) {
+  function ordering(relation: Relation, name: string, values?: Value[]) {
     if (!relation.order?.length) return sql``;
     return sql` order by ${sql.join(relation.order.flatMap(sort => {
-      const value = col(name, sort.index), rank = sort.direction.endsWith('NULLS_FIRST') ? 0 : 1;
+      const value = values ? values[sort.index].expr : col(name, sort.index), rank = sort.direction.endsWith('NULLS_FIRST') ? 0 : 1;
       return [sql`case when ${value} is null then ${sql.lit(rank)} else ${sql.lit(1-rank)} end asc`,
         sort.direction.includes('_ASC_') ? sql`${value} asc` : sql`${value} desc`];
     }))}`;
@@ -153,7 +161,7 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
         return { ...checked, expr: column.type === 'fp64' ? float(value.expr) : column.type === 'decimal' ? decimal(value.expr) : value.expr };
       });
       const output = emit(values, read.common);
-      return { query: sql`select ${select(output)} from ${sql.id(table)}`, fields: output };
+      return blockRelation({ source: sql.id(table), values: output, extendable: true });
     }
     if ('join' in rel) {
       const left = visit(rel.join.left, depth+1), right = visit(rel.join.right, depth+1), rightName = alias();
@@ -165,7 +173,16 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
       return { query: sql`select ${select(output)} from ${from(left, name)} ${join} ${from(right, rightName)} on ${condition.expr}`, fields: output };
     }
     const node = 'project' in rel ? rel.project : 'filter' in rel ? rel.filter : 'aggregate' in rel ? rel.aggregate : 'sort' in rel ? rel.sort : 'window' in rel ? rel.window : rel.fetch;
-    const child = visit(node.input, depth+1), input = fields(child, name);
+    const child = visit(node.input, depth+1);
+    // Fetch/percentile lowering still uses derived-table field references.
+    const canAbsorb = child.block?.extendable && ('filter' in rel || 'project' in rel || 'window' in rel ||
+      ('aggregate' in rel && !rel.aggregate.measures.some(m => functions.get(m.measure.functionReference) === 'percentile_cont')));
+    const block = canAbsorb ? child.block! : undefined;
+    const input = block ? block.values : fields(child, name);
+    const operation = 'project' in rel ? 'project' : 'filter' in rel ? 'filter' : 'aggregate' in rel ? 'aggregate' : 'window' in rel ? 'window' : 'fetch' in rel ? 'fetch' : 'sort';
+    const childKind = Object.keys(node.input).find(k => ['read', 'filter', 'project', 'aggregate', 'window', 'fetch', 'sort', 'join'].includes(k));
+    trace?.push({ relationId: name, operation, decision: block || operation === 'sort' ? 'merged' : 'boundary',
+      reason: operation === 'sort' ? 'Track output ordering without a new query block' : block ? 'Compatible row-level input block' : `Preserve ${childKind} input scope or specialized lowering boundary` });
     if ('window' in rel) {
       const fn = rel.window.windowFunctions[0];
       if (!functions.has(fn.functionReference)) throw invalid(`Unresolved function reference: ${fn.functionReference}`);
@@ -176,9 +193,9 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
         return { index: sort.expr.selection.directReference.structField.field, direction: sort.direction };
       });
       const partition = partitions.length ? sql`partition by ${sql.join(partitions.map(p => p.expr))}` : sql``;
-      const number: Value = { expr: sql`row_number() over (${partition}${ordering({ ...child, order: sorts }, name)})`, kind: 'i64', nullable: false };
+      const number: Value = { expr: sql`row_number() over (${partition}${ordering({ ...child, order: sorts }, name, block?.values)})`, kind: 'i64', nullable: false };
       const output = [...input, number];
-      return { query: sql`select ${select(output)} from ${from(child, name)}`, fields: output, order: child.order };
+      return blockRelation({ source: block?.source ?? from(child, name), where: block?.where, values: output, extendable: false }, child.order);
     }
     if ('project' in rel) {
       const output = emit([...input, ...rel.project.expressions.map(e => expression(e, input))], rel.project.common);
@@ -187,12 +204,16 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
         if (position < 0) throw unsupported('Project cannot discard a sort field in this profile');
         return { ...sort, index: position };
       });
-      return { query: sql`select ${select(output)} from ${from(child, name)}`, fields: output, order };
+      // Computed projections are boundaries: avoid duplicating expressions or
+      // moving their evaluation through a later filter/aggregate.
+      return blockRelation({ source: block?.source ?? from(child, name), where: block?.where,
+        values: output, extendable: rel.project.expressions.every(e => 'selection' in e) }, order);
     }
     if ('filter' in rel) {
       const condition = expression(rel.filter.condition, input);
       if (condition.kind !== 'bool') throw invalid('Filter condition must be bool');
-      return { query: sql`select ${select(input)} from ${from(child, name)} where ${condition.expr}`, fields: input, order: child.order };
+      return blockRelation({ source: block?.source ?? from(child, name), values: input,
+        where: block?.where ? sql`(${block.where}) and (${condition.expr})` : condition.expr, extendable: true }, child.order);
     }
     if ('sort' in rel) {
       const order = rel.sort.sorts.map(sort => {
@@ -248,13 +269,14 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
       return declared(measure.outputType, value);
     });
     const output = [...groups, ...aggregateValues];
-    return { query: sql`select ${select(output)} from ${from(child, name)}${groups.length ? sql` group by ${sql.join(groups.map(g => g.expr))}` : sql``}`, fields: output };
+    return blockRelation({ source: block?.source ?? from(child, name), where: block?.where,
+      values: output, groups, extendable: false });
   }
   const root = plan.relations[0].root, relation = visit(root.input), name = alias();
   if (root.names.length !== relation.fields.length || new Set(root.names).size !== root.names.length) throw invalid('Invalid root names');
-  const output = fields(relation, name).map((value, i) => {
+  const output = (relation.block?.values ?? fields(relation, name)).map((value, i) => {
     const expr = value.kind === 'fp64' ? float(value.expr) : value.kind === 'decimal' ? decimal(value.expr) : value.kind === 'i64' ? (mysql ? sql`cast(${value.expr} as char)` : sql`cast(${value.expr} as text)`) : value.expr;
     return sql`${expr} as ${sql.id(root.names[i])}`;
   });
-  return sql<Record<string, unknown>>`select ${sql.join(output)} from ${from(relation, name)}${ordering(relation, name)}`.compile(db);
+  return sql<Record<string, unknown>>`select ${sql.join(output)}${relation.block ? clauses(relation.block) : sql` from ${from(relation, name)}`}${ordering(relation, name, relation.block?.values)}`.compile(db);
 }

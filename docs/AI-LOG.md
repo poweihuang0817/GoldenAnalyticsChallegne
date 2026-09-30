@@ -308,3 +308,15 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - User requested a vertical Typed API/Substrait/backend diagram, consistent green for DuckDB, formatted SQL and a more readable Substrait view for filming.
 - Added display-only dialect formatting with original SQL retained and an operator outline with authoritative raw JSON retained. No compiler or execution semantics changed. Diagram is shared by UI and architecture documentation.
 - Validation: 57 unit tests, code/docs typechecks, nine fixed-example dialect formatting combinations, XML parse and visual SVG review passed. SQL Formatter is a pinned display dependency; raw SQL remains the execution input. No new full remote integration run claimed.
+
+## SQL query-block simplification (September 30, 2026)
+
+- User identified verbose generated SQL and requested a bounded compiler fix,
+  references to Calcite/DataFusion/PRQL, diagnostic tracing, and a separate PR.
+- Retained Substrait and function semantics; combined compatible query blocks,
+  preserved aggregate/fetch/window boundaries, and reduced window top-N to two
+  SELECTs. Added optional value-free lowering trace to Playground.
+- Regression first failed on the original four-SELECT city query. Final local
+  checks: 60 unit tests, 62 integration tests, three-backend conformance and code/
+  documentation type checks passed. See SQL-QUERY-BLOCKS.md for before/after
+  evidence and limitations; no formal proof or performance benchmark claimed.
