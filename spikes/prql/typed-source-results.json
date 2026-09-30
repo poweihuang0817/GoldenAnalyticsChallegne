@@ -1,0 +1,113 @@
+{
+  "node": "v24.19.0",
+  "prql": "0.13.14",
+  "findings": [
+    {
+      "backend": "postgres",
+      "city": "London",
+      "source": "from customers\nfilter city == $1\nselect {id = customer_id}",
+      "parameters": [
+        "London"
+      ],
+      "sql": "SELECT\n  customer_id AS id\nFROM\n  customers\nWHERE\n  city = $1\n",
+      "expected": [
+        "AROUT",
+        "BSBEV",
+        "CONSH",
+        "EASTC",
+        "NORTS",
+        "SEVES"
+      ],
+      "rows": [
+        "AROUT",
+        "BSBEV",
+        "CONSH",
+        "EASTC",
+        "NORTS",
+        "SEVES"
+      ],
+      "status": "pass"
+    },
+    {
+      "backend": "postgres",
+      "city": "London' OR 1=1 --",
+      "source": "from customers\nfilter city == $1\nselect {id = customer_id}",
+      "parameters": [
+        "London' OR 1=1 --"
+      ],
+      "sql": "SELECT\n  customer_id AS id\nFROM\n  customers\nWHERE\n  city = $1\n",
+      "expected": [],
+      "rows": [],
+      "status": "pass"
+    },
+    {
+      "backend": "mysql",
+      "city": "London",
+      "source": "from customers\nfilter city == $1\nselect {id = customer_id}",
+      "parameters": [
+        "London"
+      ],
+      "sql": "SELECT\n  customer_id AS id\nFROM\n  customers\nWHERE\n  city = $1\n",
+      "expected": [
+        "AROUT",
+        "BSBEV",
+        "CONSH",
+        "EASTC",
+        "NORTS",
+        "SEVES"
+      ],
+      "status": "known-binding-rejection",
+      "error": "Error: Unknown column '$1' in 'where clause'"
+    },
+    {
+      "backend": "mysql",
+      "city": "London' OR 1=1 --",
+      "source": "from customers\nfilter city == $1\nselect {id = customer_id}",
+      "parameters": [
+        "London' OR 1=1 --"
+      ],
+      "sql": "SELECT\n  customer_id AS id\nFROM\n  customers\nWHERE\n  city = $1\n",
+      "expected": [],
+      "status": "known-binding-rejection",
+      "error": "Error: Unknown column '$1' in 'where clause'"
+    },
+    {
+      "backend": "duckdb",
+      "city": "London",
+      "source": "from customers\nfilter city == $1\nselect {id = customer_id}",
+      "parameters": [
+        "London"
+      ],
+      "sql": "SELECT\n  customer_id AS id\nFROM\n  customers\nWHERE\n  city = $1\n",
+      "expected": [
+        "AROUT",
+        "BSBEV",
+        "CONSH",
+        "EASTC",
+        "NORTS",
+        "SEVES"
+      ],
+      "rows": [
+        "AROUT",
+        "BSBEV",
+        "CONSH",
+        "EASTC",
+        "NORTS",
+        "SEVES"
+      ],
+      "status": "pass"
+    },
+    {
+      "backend": "duckdb",
+      "city": "London' OR 1=1 --",
+      "source": "from customers\nfilter city == $1\nselect {id = customer_id}",
+      "parameters": [
+        "London' OR 1=1 --"
+      ],
+      "sql": "SELECT\n  customer_id AS id\nFROM\n  customers\nWHERE\n  city = $1\n",
+      "expected": [],
+      "rows": [],
+      "status": "pass"
+    }
+  ]
+}

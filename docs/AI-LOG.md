@@ -1,5 +1,34 @@
 # AI collaboration log
 
+## September 29: typed PRQL source feasibility
+
+- User requested continued research with TypeScript/Node prioritized. Built a local-only callback-free filter/projection source-generation slice, not a public API or custom serialized IR. Added compile-time negative checks, scope/literal/identifier rejection and independent SQL result comparisons.
+- PG/DuckDB bound London and hostile-string cases passed; MySQL's specific dollar-placeholder error remained a characterized blocker. Explicitly excluded nullable/decimal/join/aggregate/result-decoding claims from this narrow prototype.
+- Found directly relevant upstream PRQL #5699, Tybis and Teta references. Distinguished experimental prior art and a collaborator's unreleased PL-builder report from production-ready dependency evidence. No upstream messages or new dependency adoption.
+
+## September 29: deeper compiler feasibility checks
+
+- User requested more research. Added an opt-in, read-only PRQL experiment using inline fixtures: continuous percentile composition passes PostgreSQL/MySQL/DuckDB for ordinary, NULL, singleton, tied and empty-grouped cases. This is bounded numeric evidence, not arbitrary exact-decimal or full Northwind conformance.
+- Demonstrated schema-sensitive compiler behavior (unknown external-table column compiles; known inline-table missing column rejects) and PL/RQ round-trip access. Traced dollar-prefixed parameter emission to pinned upstream code; no unsafe placeholder rewrite was introduced.
+- Inspected Isthmus SubstraitToSql and DataFusion consumer/unparser APIs. Corrected the overly narrow implication that retaining Substrait necessarily requires writing all SQL lowering. These bridges were source-reviewed only, not integrated or executed.
+- Kept production code unchanged. Initial sandbox tsx execution hit the known Windows user-info lookup failure; rerun outside the sandbox succeeded.
+- User clarified TypeScript/Node is the primary platform. Prioritized the existing TS pipeline versus in-process PRQL npm/WASM with a typed frontend; deferred JVM/Python services and custom Rust bindings rather than letting the ecosystem survey expand implementation scope.
+
+## September 29: choose an upstream semantic contract
+
+- User challenged treating Golden's prototype semantics as immutable and requested deeper comparison of an API following official Substrait definitions versus an API adopting PRQL. No production migration was authorized.
+- Inspected pinned Substrait v0.63.0 function YAML and PRQL 0.13.14 stdlib/compiler architecture. Golden currently allowlists only its custom function URI; a supported subset does not require making every function custom. Official integer AVG truncates, while Golden promotes to fp64; official integer SUM also differs in output type. URI replacement alone would misstate conformance.
+- Compared source-first PRQL with preserving the typed frontend through source or PL/RQ generation. Recorded unresolved MySQL binding, full percentile, precision, typed-result and migration-cost gates. Reused prior database observations without claiming a new runtime test run.
+- User separately requested calculations of the six challenge queries' alternative business definitions; created issue #38 with a finite variant matrix, independent oracles and candidate-authored README follow-up. Kept that task distinct from function-library semantics.
+
+## PRQL feasibility spike (#36)
+
+- User asked to evaluate a Node-compatible transformation/compiler alternative, then explicitly requested an isolated spike. Kept current Substrait/Kysely architecture and application dependencies unchanged.
+- User supplied CMU PRQL/Malloy seminar references; read event abstracts, not full videos. User highlighted dialect-rendering overlap and challenged whether differences might be Kysely bugs. Added independent SQL controls and native mysql2 parameter execution to distinguish backend behavior, language semantics and Golden's contract.
+- Pinned prqlc 0.13.14 in a separate opt-in package. Tested real PG/MySQL Northwind and a private in-memory DuckDB snapshot, plus unique decimal fixtures with cleanup. Captured SQL/results and documented a DEFER recommendation with explicit untested scope.
+- AI mistakes corrected during exploration: attempted to free already-consumed CompileOptions; initially used `lower`/`cast` instead of the current namespaced text.lower / as forms; initially classified extra decimal trailing zeros with value mismatches. Final comparison preserves raw representations and distinguishes exact values from formatting without floating conversion. None of these mistakes was classified as an upstream bug.
+- PRQL generated nested aggregate/window query blocks successfully. MySQL parameter integration, differing NULL aggregates and exact-decimal requirements need additional adapter work. No production migration, automatic multi-compiler fallback, or claim of full DAX/Malloy interoperability.
+
 ## Initial setup
 
 - User supplied the challenge and directed the assistant to start by checking the Docker image.
