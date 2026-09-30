@@ -1,5 +1,12 @@
 # AI collaboration log
 
+## September 30: resolve challenge-query ambiguity (#38)
+
+- User requested completing #38 while personally writing the README, and authorized a separate agent to close out PRQL/Ossie research. Root used an isolated query-semantics worktree; candidate README left untouched.
+- Added independent raw-row rational calculations for a finite variant matrix, adversarial reference fixtures, and baseline Golden execution on PostgreSQL/MySQL/private in-memory DuckDB. Kept alternative-reference results distinct from API-supported queries; no compiler or default semantic changes.
+- Observed concrete differences for date cutoff ties, city accents, order-versus-line averages, freight ratio grain and percentile definition. Some populations coincide on Northwind, so fixtures establish their distinction. Exact monetary inputs are validated before integer arithmetic; no blanket floating normalization.
+- Initial typecheck caught a reference-helper row spread losing indexed properties; corrected the type annotation before execution. All baseline driver results and alternative-reference matrices agreed across three backends. This is local evidence and not a claim of final-release CI or a candidate-authored README.
+
 ## Initial setup
 
 - User supplied the challenge and directed the assistant to start by checking the Docker image.
