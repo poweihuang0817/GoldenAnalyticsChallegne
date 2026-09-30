@@ -1,5 +1,13 @@
 # AI collaboration log
 
+## PRQL feasibility spike (#36)
+
+- User asked to evaluate a Node-compatible transformation/compiler alternative, then explicitly requested an isolated spike. Kept current Substrait/Kysely architecture and application dependencies unchanged.
+- User supplied CMU PRQL/Malloy seminar references; read event abstracts, not full videos. User highlighted dialect-rendering overlap and challenged whether differences might be Kysely bugs. Added independent SQL controls and native mysql2 parameter execution to distinguish backend behavior, language semantics and Golden's contract.
+- Pinned prqlc 0.13.14 in a separate opt-in package. Tested real PG/MySQL Northwind and a private in-memory DuckDB snapshot, plus unique decimal fixtures with cleanup. Captured SQL/results and documented a DEFER recommendation with explicit untested scope.
+- AI mistakes corrected during exploration: attempted to free already-consumed CompileOptions; initially used `lower`/`cast` instead of the current namespaced text.lower / as forms; initially classified extra decimal trailing zeros with value mismatches. Final comparison preserves raw representations and distinguishes exact values from formatting without floating conversion. None of these mistakes was classified as an upstream bug.
+- PRQL generated nested aggregate/window query blocks successfully. MySQL parameter integration, differing NULL aggregates and exact-decimal requirements need additional adapter work. No production migration, automatic multi-compiler fallback, or claim of full DAX/Malloy interoperability.
+
 ## Initial setup
 
 - User supplied the challenge and directed the assistant to start by checking the Docker image.

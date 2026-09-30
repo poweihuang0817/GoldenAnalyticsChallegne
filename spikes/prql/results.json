@@ -1,0 +1,1042 @@
+{
+  "node": "v24.19.0",
+  "prql": "0.13.14",
+  "findings": [
+    {
+      "backend": "postgres",
+      "name": "recent-orders-literal-N",
+      "source": "from orders | derive {missing_date = order_date == null} | sort {missing_date, -order_date, -order_id} | take 5 | select {order_id, order_date}",
+      "status": "pass",
+      "expected": [
+        {
+          "order_id": 11077,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11076,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11075,
+          "order_date": "1998-05-06"
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    order_id,\n    order_date,\n    order_date IS NULL AS _expr_0\n  FROM\n    orders\n  ORDER BY\n    _expr_0,\n    order_date DESC,\n    order_id DESC\n  LIMIT\n    5\n)\nSELECT\n  order_id,\n  order_date\nFROM\n  table_0\nORDER BY\n  _expr_0,\n  order_date DESC,\n  order_id DESC\n",
+      "rows": [
+        {
+          "order_id": 11077,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11076,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11075,
+          "order_date": "1998-05-06"
+        }
+      ],
+      "rowCount": 5,
+      "expectedRowCount": 5
+    },
+    {
+      "backend": "postgres",
+      "name": "recent-orders-parameter-N",
+      "source": "from orders | sort {-order_id} | take $1 | select order_id",
+      "status": "compile-rejected",
+      "expected": "parameterized N must compile and execute",
+      "error": "Error: {\"inner\":[{\"kind\":\"Error\",\"code\":null,\"reason\":\"`take` expected int or range, but found $1\",\"hints\":[],\"span\":\"1:38-40\",\"display\":\"Error: \\n   ╭─[ :1:39 ]\\n   │\\n 1 │ from orders | sort {-order_id} | take $1 | select order_id\\n   │                                       ─┬  \\n   │                                        ╰── `take` expected int or range, but found $1\\n───╯\\n\",\"location\":{\"start\":[0,38],\"end\":[0,40]}}]}"
+    },
+    {
+      "backend": "postgres",
+      "name": "city-parameter:london",
+      "source": "from customers | filter (text.lower city) == (text.lower $1) | aggregate {customer_count = count this}",
+      "status": "pass",
+      "expected": 6,
+      "sql": "SELECT\n  COUNT(*) AS customer_count\nFROM\n  customers\nWHERE\n  LOWER(city) = LOWER($1)\n",
+      "rows": [
+        {
+          "customer_count": "6"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "postgres",
+      "name": "city-parameter:mexico d.f.",
+      "source": "from customers | filter (text.lower city) == (text.lower $1) | aggregate {customer_count = count this}",
+      "status": "pass",
+      "expected": 0,
+      "sql": "SELECT\n  COUNT(*) AS customer_count\nFROM\n  customers\nWHERE\n  LOWER(city) = LOWER($1)\n",
+      "rows": [
+        {
+          "customer_count": "0"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "postgres",
+      "name": "city-parameter:london' OR 1=1 --",
+      "source": "from customers | filter (text.lower city) == (text.lower $1) | aggregate {customer_count = count this}",
+      "status": "pass",
+      "expected": 0,
+      "sql": "SELECT\n  COUNT(*) AS customer_count\nFROM\n  customers\nWHERE\n  LOWER(city) = LOWER($1)\n",
+      "rows": [
+        {
+          "customer_count": "0"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "postgres",
+      "name": "repeated-out-of-order-parameters",
+      "source": "from customers | filter city == $2 || city == $1 || city == $2 | select customer_id | sort customer_id",
+      "status": "pass",
+      "expected": [
+        "ALFKI",
+        "AROUT",
+        "BSBEV"
+      ],
+      "sql": "SELECT\n  customer_id\nFROM\n  customers\nWHERE\n  city = $2\n  OR city = $1\n  OR city = $2\nORDER BY\n  customer_id\n",
+      "rows": [
+        {
+          "customer_id": "ALFKI"
+        },
+        {
+          "customer_id": "AROUT"
+        },
+        {
+          "customer_id": "BSBEV"
+        }
+      ],
+      "rowCount": 7,
+      "expectedRowCount": 7
+    },
+    {
+      "backend": "postgres",
+      "name": "average-units-all-orders",
+      "source": "let totals = (from order_details | group order_id (aggregate {units = sum quantity}))\nfrom o=orders\njoin side:left t=totals (o.order_id == t.order_id)\nderive {units = t.units ?? 0}\naggregate {average_units = average units}",
+      "status": "pass",
+      "expected": 61.827710843373495,
+      "sql": "WITH totals AS (\n  SELECT\n    order_id,\n    COALESCE(SUM(quantity), 0) AS units\n  FROM\n    order_details\n  GROUP BY\n    order_id\n)\nSELECT\n  AVG(COALESCE(t.units, 0)) AS average_units\nFROM\n  orders AS o\n  LEFT OUTER JOIN totals AS t ON o.order_id = t.order_id\n",
+      "rows": [
+        {
+          "average_units": "61.8277108433734940"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "postgres",
+      "name": "average-units-explicit-float",
+      "source": "let totals = (from order_details | group order_id (aggregate {units = sum quantity}))\nfrom o=orders\njoin side:left t=totals (o.order_id == t.order_id)\nderive {units = t.units ?? 0}\naggregate {average_units = average (as float units)}",
+      "status": "pass",
+      "expected": 61.827710843373495,
+      "sql": "WITH totals AS (\n  SELECT\n    order_id,\n    COALESCE(SUM(quantity), 0) AS units\n  FROM\n    order_details\n  GROUP BY\n    order_id\n)\nSELECT\n  AVG(CAST(COALESCE(t.units, 0) AS float)) AS average_units\nFROM\n  orders AS o\n  LEFT OUTER JOIN totals AS t ON o.order_id = t.order_id\n",
+      "rows": [
+        {
+          "average_units": 61.827710843373495
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "postgres",
+      "name": "window-then-filter",
+      "source": "from orders\nderive {missing_date = order_date == null}\ngroup customer_id (sort {missing_date, -order_date, -order_id} | derive {position = row_number this})\nfilter position <= 3\nselect {customer_id, order_id, position}\nsort {customer_id, position}",
+      "status": "pass",
+      "expected": [
+        {
+          "customer_id": "ALFKI",
+          "order_id": 11011,
+          "position": "1"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10952,
+          "position": "2"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10835,
+          "position": "3"
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    customer_id,\n    order_id,\n    ROW_NUMBER() OVER (\n      PARTITION BY customer_id\n      ORDER BY\n        order_date IS NULL,\n        order_date DESC,\n        order_id DESC\n    ) AS position\n  FROM\n    orders\n)\nSELECT\n  customer_id,\n  order_id,\n  position\nFROM\n  table_0\nWHERE\n  position <= 3\nORDER BY\n  customer_id,\n  position\n",
+      "rows": [
+        {
+          "customer_id": "ALFKI",
+          "order_id": 11011,
+          "position": "1"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10952,
+          "position": "2"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10835,
+          "position": "3"
+        }
+      ],
+      "rowCount": 263,
+      "expectedRowCount": 263
+    },
+    {
+      "backend": "postgres",
+      "name": "employee-shipping",
+      "source": "from e=employees\njoin side:left o=orders (e.employee_id == o.employee_id)\nderive {\n shipped = case [o.order_id != null && o.shipped_date != null => 1, true => 0],\n unshipped = case [o.order_id != null && o.shipped_date == null => 1, true => 0]\n}\ngroup e.employee_id (aggregate {shipped = sum shipped, unshipped = sum unshipped})\nsort employee_id",
+      "status": "pass",
+      "expected": [
+        {
+          "employee_id": 1,
+          "shipped": 120,
+          "unshipped": 3
+        },
+        {
+          "employee_id": 2,
+          "shipped": 93,
+          "unshipped": 3
+        },
+        {
+          "employee_id": 3,
+          "shipped": 127,
+          "unshipped": 0
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    e.employee_id,\n    CASE\n      WHEN o.order_id IS NOT NULL\n      AND o.shipped_date IS NULL THEN 1\n      ELSE 0\n    END AS _expr_0,\n    CASE\n      WHEN o.order_id IS NOT NULL\n      AND o.shipped_date IS NOT NULL THEN 1\n      ELSE 0\n    END AS _expr_1,\n    o.order_id,\n    o.shipped_date\n  FROM\n    employees AS e\n    LEFT OUTER JOIN orders AS o ON e.employee_id = o.employee_id\n)\nSELECT\n  employee_id,\n  COALESCE(SUM(_expr_1), 0) AS shipped,\n  COALESCE(SUM(_expr_0), 0) AS unshipped\nFROM\n  table_0\nGROUP BY\n  employee_id\nORDER BY\n  employee_id\n",
+      "rows": [
+        {
+          "employee_id": 1,
+          "shipped": "120",
+          "unshipped": "3"
+        },
+        {
+          "employee_id": 2,
+          "shipped": "93",
+          "unshipped": "3"
+        },
+        {
+          "employee_id": 3,
+          "shipped": "127",
+          "unshipped": "0"
+        }
+      ],
+      "rowCount": 9,
+      "expectedRowCount": 9
+    },
+    {
+      "backend": "postgres",
+      "name": "freight-ratio",
+      "source": "let totals = (from order_details | group order_id (aggregate {price = sum (unit_price * quantity * (1 - discount))}))\nlet priced = (from o=orders | join side:left t=totals (o.order_id == t.order_id) | select {customer_id=o.customer_id, price=t.price ?? 0, freight=o.freight ?? 0})\nfrom c=customers | join side:left p=priced (c.customer_id == p.customer_id)\ngroup c.customer_id (aggregate {freight=sum p.freight, price=sum p.price})\nselect {customer_id, freight_ratio = case [price == 0 => null, true => freight / price]}\nsort customer_id",
+      "status": "compiled-not-executed",
+      "sql": "WITH totals AS (\n  SELECT\n    order_id,\n    COALESCE(SUM(unit_price * quantity * (1 - discount)), 0) AS price\n  FROM\n    order_details\n  GROUP BY\n    order_id\n),\npriced AS (\n  SELECT\n    o.customer_id,\n    COALESCE(t.price, 0) AS price,\n    COALESCE(o.freight, 0) AS freight\n  FROM\n    orders AS o\n    LEFT OUTER JOIN totals AS t ON o.order_id = t.order_id\n),\ntable_0 AS (\n  SELECT\n    c.customer_id,\n    COALESCE(SUM(p.price), 0) AS _expr_0,\n    COALESCE(SUM(p.freight), 0) AS _expr_1\n  FROM\n    customers AS c\n    LEFT OUTER JOIN priced AS p ON c.customer_id = p.customer_id\n  GROUP BY\n    c.customer_id\n)\nSELECT\n  customer_id,\n  CASE\n    WHEN _expr_0 = 0 THEN NULL\n    ELSE (_expr_1 * 1.0 / _expr_0)\n  END AS freight_ratio\nFROM\n  table_0\nORDER BY\n  customer_id\n"
+    },
+    {
+      "backend": "postgres",
+      "name": "country-percentile",
+      "source": "let totals = (from order_details | group order_id (aggregate {price = sum (unit_price * quantity * (1 - discount))}))\nlet priced = (from o=orders | join side:left t=totals (o.order_id == t.order_id) | select {customer_id=o.customer_id, price=t.price ?? 0, freight=o.freight ?? 0})\nfrom c=customers | join p=priced (c.customer_id == p.customer_id)\ngroup country (aggregate {order_price_p75 = percentile 0.75 p.price}) | sort country",
+      "status": "compile-rejected",
+      "error": "Error: {\"inner\":[{\"kind\":\"Error\",\"code\":null,\"reason\":\"expected a function, but found `this.c.percentile`\",\"hints\":[],\"span\":\"1:391-401\",\"display\":\"Error: \\n   ╭─[ :4:45 ]\\n   │\\n 4 │ group country (aggregate {order_price_p75 = percentile 0.75 p.price}) | sort country\\n   │                                             ─────┬────  \\n   │                                                  ╰────── expected a function, but found `this.c.percentile`\\n───╯\\n\",\"location\":{\"start\":[3,44],\"end\":[3,54]}}]}"
+    },
+    {
+      "backend": "postgres",
+      "name": "sum-all-null",
+      "source": "from prql_probe_4069193b4cfe | filter id <= 2 | aggregate {total = sum amount}",
+      "status": "contract-mismatch",
+      "expected": [
+        {
+          "total": null
+        }
+      ],
+      "sql": "SELECT\n  COALESCE(SUM(amount), 0) AS total\nFROM\n  prql_probe_4069193b4cfe\nWHERE\n  id <= 2\n",
+      "rows": [
+        {
+          "total": "0"
+        }
+      ],
+      "rowCount": 1,
+      "expectedRowCount": 1
+    },
+    {
+      "backend": "postgres",
+      "name": "sum-empty",
+      "source": "from prql_probe_4069193b4cfe | filter id < 0 | aggregate {total = sum amount}",
+      "status": "contract-mismatch",
+      "expected": [
+        {
+          "total": null
+        }
+      ],
+      "sql": "SELECT\n  COALESCE(SUM(amount), 0) AS total\nFROM\n  prql_probe_4069193b4cfe\nWHERE\n  id < 0\n",
+      "rows": [
+        {
+          "total": "0"
+        }
+      ],
+      "rowCount": 1,
+      "expectedRowCount": 1
+    },
+    {
+      "backend": "postgres",
+      "name": "count-null-column",
+      "source": "from prql_probe_4069193b4cfe | filter id <= 2 | aggregate {n = count amount}",
+      "status": "contract-mismatch",
+      "expected": "SQL/Golden COUNT(column) excludes NULL",
+      "sql": "SELECT\n  COUNT(*) AS n\nFROM\n  prql_probe_4069193b4cfe\nWHERE\n  id <= 2\n",
+      "rows": [
+        {
+          "n": "2"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "postgres",
+      "name": "exact-decimal-divide-one",
+      "source": "from prql_probe_4069193b4cfe | filter id == 3 | select {value = amount / 1}",
+      "status": "pass",
+      "expected": "9007199254740993.0000000000",
+      "sql": "SELECT\n  (amount * 1.0 / 1) AS value\nFROM\n  prql_probe_4069193b4cfe\nWHERE\n  id = 3\n",
+      "rows": [
+        {
+          "value": "9007199254740993.00000000000"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "postgres",
+      "name": "exact-decimal-interpolation",
+      "source": "from prql_probe_4069193b4cfe | filter id >= 3 | aggregate {lo = min amount, hi = max amount} | select {p75 = lo + (hi - lo) * 0.75}",
+      "status": "pass",
+      "expected": "9007199254740993.0000000075",
+      "sql": "WITH table_0 AS (\n  SELECT\n    MIN(amount) AS _expr_0,\n    MAX(amount) AS _expr_1\n  FROM\n    prql_probe_4069193b4cfe\n  WHERE\n    id >= 3\n)\nSELECT\n  _expr_0 + (_expr_1 - _expr_0) * 0.75 AS p75\nFROM\n  table_0\n",
+      "rows": [
+        {
+          "p75": "9007199254740993.000000007500"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "postgres",
+      "name": "sql-null-aggregates",
+      "source": "Independent SQL control (no PRQL or Golden compiler)",
+      "sql": "select sum(amount) as total, count(amount) as n from \"prql_probe_4069193b4cfe\" where id <= 2",
+      "status": "pass",
+      "rows": [
+        {
+          "total": null,
+          "n": "0"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "postgres",
+      "name": "sql-decimal-division",
+      "source": "Independent SQL control (no PRQL or Golden compiler)",
+      "sql": "select amount / 1 as value from \"prql_probe_4069193b4cfe\" where id = 3",
+      "status": "pass",
+      "rows": [
+        {
+          "value": "9007199254740993.0000000000"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "mysql",
+      "name": "recent-orders-literal-N",
+      "source": "from orders | derive {missing_date = order_date == null} | sort {missing_date, -order_date, -order_id} | take 5 | select {order_id, order_date}",
+      "status": "pass",
+      "expected": [
+        {
+          "order_id": 11077,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11076,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11075,
+          "order_date": "1998-05-06"
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    order_id,\n    order_date,\n    order_date IS NULL AS _expr_0\n  FROM\n    orders\n  ORDER BY\n    _expr_0,\n    order_date DESC,\n    order_id DESC\n  LIMIT\n    5\n)\nSELECT\n  order_id,\n  order_date\nFROM\n  table_0\nORDER BY\n  _expr_0,\n  order_date DESC,\n  order_id DESC\n",
+      "rows": [
+        {
+          "order_id": 11077,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11076,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11075,
+          "order_date": "1998-05-06"
+        }
+      ],
+      "rowCount": 5,
+      "expectedRowCount": 5
+    },
+    {
+      "backend": "mysql",
+      "name": "recent-orders-parameter-N",
+      "source": "from orders | sort {-order_id} | take $1 | select order_id",
+      "status": "compile-rejected",
+      "expected": "parameterized N must compile and execute",
+      "error": "Error: {\"inner\":[{\"kind\":\"Error\",\"code\":null,\"reason\":\"`take` expected int or range, but found $1\",\"hints\":[],\"span\":\"1:38-40\",\"display\":\"Error: \\n   ╭─[ :1:39 ]\\n   │\\n 1 │ from orders | sort {-order_id} | take $1 | select order_id\\n   │                                       ─┬  \\n   │                                        ╰── `take` expected int or range, but found $1\\n───╯\\n\",\"location\":{\"start\":[0,38],\"end\":[0,40]}}]}"
+    },
+    {
+      "backend": "mysql",
+      "name": "city-parameter:london",
+      "source": "from customers | filter (text.lower city) == (text.lower $1) | aggregate {customer_count = count this}",
+      "status": "execution-rejected",
+      "expected": 6,
+      "sql": "SELECT\n  COUNT(*) AS customer_count\nFROM\n  customers\nWHERE\n  LOWER(city) = LOWER($1)\n",
+      "error": "Error: Unknown column '$1' in 'where clause'"
+    },
+    {
+      "backend": "mysql",
+      "name": "city-parameter:mexico d.f.",
+      "source": "from customers | filter (text.lower city) == (text.lower $1) | aggregate {customer_count = count this}",
+      "status": "execution-rejected",
+      "expected": 0,
+      "sql": "SELECT\n  COUNT(*) AS customer_count\nFROM\n  customers\nWHERE\n  LOWER(city) = LOWER($1)\n",
+      "error": "Error: Unknown column '$1' in 'where clause'"
+    },
+    {
+      "backend": "mysql",
+      "name": "city-parameter:london' OR 1=1 --",
+      "source": "from customers | filter (text.lower city) == (text.lower $1) | aggregate {customer_count = count this}",
+      "status": "execution-rejected",
+      "expected": 0,
+      "sql": "SELECT\n  COUNT(*) AS customer_count\nFROM\n  customers\nWHERE\n  LOWER(city) = LOWER($1)\n",
+      "error": "Error: Unknown column '$1' in 'where clause'"
+    },
+    {
+      "backend": "mysql",
+      "name": "repeated-out-of-order-parameters",
+      "source": "from customers | filter city == $2 || city == $1 || city == $2 | select customer_id | sort customer_id",
+      "status": "execution-rejected",
+      "expected": [
+        "ALFKI",
+        "AROUT",
+        "BSBEV"
+      ],
+      "sql": "SELECT\n  customer_id\nFROM\n  customers\nWHERE\n  city = $2\n  OR city = $1\n  OR city = $2\nORDER BY\n  customer_id\n",
+      "error": "Error: Unknown column '$2' in 'where clause'",
+      "expectedRowCount": 7
+    },
+    {
+      "backend": "mysql",
+      "name": "average-units-all-orders",
+      "source": "let totals = (from order_details | group order_id (aggregate {units = sum quantity}))\nfrom o=orders\njoin side:left t=totals (o.order_id == t.order_id)\nderive {units = t.units ?? 0}\naggregate {average_units = average units}",
+      "status": "contract-mismatch",
+      "expected": 61.827710843373495,
+      "sql": "WITH totals AS (\n  SELECT\n    order_id,\n    COALESCE(SUM(quantity), 0) AS units\n  FROM\n    order_details\n  GROUP BY\n    order_id\n)\nSELECT\n  AVG(COALESCE(t.units, 0)) AS average_units\nFROM\n  orders AS o\n  LEFT OUTER JOIN totals AS t ON o.order_id = t.order_id\n",
+      "rows": [
+        {
+          "average_units": "61.8277"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "mysql",
+      "name": "average-units-explicit-float",
+      "source": "let totals = (from order_details | group order_id (aggregate {units = sum quantity}))\nfrom o=orders\njoin side:left t=totals (o.order_id == t.order_id)\nderive {units = t.units ?? 0}\naggregate {average_units = average (as float units)}",
+      "status": "pass",
+      "expected": 61.827710843373495,
+      "sql": "WITH totals AS (\n  SELECT\n    order_id,\n    COALESCE(SUM(quantity), 0) AS units\n  FROM\n    order_details\n  GROUP BY\n    order_id\n)\nSELECT\n  AVG(CAST(COALESCE(t.units, 0) AS float)) AS average_units\nFROM\n  orders AS o\n  LEFT OUTER JOIN totals AS t ON o.order_id = t.order_id\n",
+      "rows": [
+        {
+          "average_units": 61.827710843373495
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "mysql",
+      "name": "window-then-filter",
+      "source": "from orders\nderive {missing_date = order_date == null}\ngroup customer_id (sort {missing_date, -order_date, -order_id} | derive {position = row_number this})\nfilter position <= 3\nselect {customer_id, order_id, position}\nsort {customer_id, position}",
+      "status": "pass",
+      "expected": [
+        {
+          "customer_id": "ALFKI",
+          "order_id": 11011,
+          "position": "1"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10952,
+          "position": "2"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10835,
+          "position": "3"
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    customer_id,\n    order_id,\n    ROW_NUMBER() OVER (\n      PARTITION BY customer_id\n      ORDER BY\n        order_date IS NULL,\n        order_date DESC,\n        order_id DESC\n    ) AS position\n  FROM\n    orders\n)\nSELECT\n  customer_id,\n  order_id,\n  position\nFROM\n  table_0\nWHERE\n  position <= 3\nORDER BY\n  customer_id,\n  position\n",
+      "rows": [
+        {
+          "customer_id": "ALFKI",
+          "order_id": 11011,
+          "position": "1"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10952,
+          "position": "2"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10835,
+          "position": "3"
+        }
+      ],
+      "rowCount": 263,
+      "expectedRowCount": 263
+    },
+    {
+      "backend": "mysql",
+      "name": "employee-shipping",
+      "source": "from e=employees\njoin side:left o=orders (e.employee_id == o.employee_id)\nderive {\n shipped = case [o.order_id != null && o.shipped_date != null => 1, true => 0],\n unshipped = case [o.order_id != null && o.shipped_date == null => 1, true => 0]\n}\ngroup e.employee_id (aggregate {shipped = sum shipped, unshipped = sum unshipped})\nsort employee_id",
+      "status": "pass",
+      "expected": [
+        {
+          "employee_id": 1,
+          "shipped": 120,
+          "unshipped": 3
+        },
+        {
+          "employee_id": 2,
+          "shipped": 93,
+          "unshipped": 3
+        },
+        {
+          "employee_id": 3,
+          "shipped": 127,
+          "unshipped": 0
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    e.employee_id,\n    CASE\n      WHEN o.order_id IS NOT NULL\n      AND o.shipped_date IS NULL THEN 1\n      ELSE 0\n    END AS _expr_0,\n    CASE\n      WHEN o.order_id IS NOT NULL\n      AND o.shipped_date IS NOT NULL THEN 1\n      ELSE 0\n    END AS _expr_1,\n    o.order_id,\n    o.shipped_date\n  FROM\n    employees AS e\n    LEFT OUTER JOIN orders AS o ON e.employee_id = o.employee_id\n)\nSELECT\n  employee_id,\n  COALESCE(SUM(_expr_1), 0) AS shipped,\n  COALESCE(SUM(_expr_0), 0) AS unshipped\nFROM\n  table_0\nGROUP BY\n  employee_id\nORDER BY\n  employee_id\n",
+      "rows": [
+        {
+          "employee_id": 1,
+          "shipped": "120",
+          "unshipped": "3"
+        },
+        {
+          "employee_id": 2,
+          "shipped": "93",
+          "unshipped": "3"
+        },
+        {
+          "employee_id": 3,
+          "shipped": "127",
+          "unshipped": "0"
+        }
+      ],
+      "rowCount": 9,
+      "expectedRowCount": 9
+    },
+    {
+      "backend": "mysql",
+      "name": "freight-ratio",
+      "source": "let totals = (from order_details | group order_id (aggregate {price = sum (unit_price * quantity * (1 - discount))}))\nlet priced = (from o=orders | join side:left t=totals (o.order_id == t.order_id) | select {customer_id=o.customer_id, price=t.price ?? 0, freight=o.freight ?? 0})\nfrom c=customers | join side:left p=priced (c.customer_id == p.customer_id)\ngroup c.customer_id (aggregate {freight=sum p.freight, price=sum p.price})\nselect {customer_id, freight_ratio = case [price == 0 => null, true => freight / price]}\nsort customer_id",
+      "status": "compiled-not-executed",
+      "sql": "WITH totals AS (\n  SELECT\n    order_id,\n    COALESCE(SUM(unit_price * quantity * (1 - discount)), 0) AS price\n  FROM\n    order_details\n  GROUP BY\n    order_id\n),\npriced AS (\n  SELECT\n    o.customer_id,\n    COALESCE(t.price, 0) AS price,\n    COALESCE(o.freight, 0) AS freight\n  FROM\n    orders AS o\n    LEFT OUTER JOIN totals AS t ON o.order_id = t.order_id\n),\ntable_0 AS (\n  SELECT\n    c.customer_id,\n    COALESCE(SUM(p.price), 0) AS _expr_0,\n    COALESCE(SUM(p.freight), 0) AS _expr_1\n  FROM\n    customers AS c\n    LEFT OUTER JOIN priced AS p ON c.customer_id = p.customer_id\n  GROUP BY\n    c.customer_id\n)\nSELECT\n  customer_id,\n  CASE\n    WHEN _expr_0 = 0 THEN NULL\n    ELSE (_expr_1 / _expr_0)\n  END AS freight_ratio\nFROM\n  table_0\nORDER BY\n  customer_id\n"
+    },
+    {
+      "backend": "mysql",
+      "name": "country-percentile",
+      "source": "let totals = (from order_details | group order_id (aggregate {price = sum (unit_price * quantity * (1 - discount))}))\nlet priced = (from o=orders | join side:left t=totals (o.order_id == t.order_id) | select {customer_id=o.customer_id, price=t.price ?? 0, freight=o.freight ?? 0})\nfrom c=customers | join p=priced (c.customer_id == p.customer_id)\ngroup country (aggregate {order_price_p75 = percentile 0.75 p.price}) | sort country",
+      "status": "compile-rejected",
+      "error": "Error: {\"inner\":[{\"kind\":\"Error\",\"code\":null,\"reason\":\"expected a function, but found `this.c.percentile`\",\"hints\":[],\"span\":\"1:391-401\",\"display\":\"Error: \\n   ╭─[ :4:45 ]\\n   │\\n 4 │ group country (aggregate {order_price_p75 = percentile 0.75 p.price}) | sort country\\n   │                                             ─────┬────  \\n   │                                                  ╰────── expected a function, but found `this.c.percentile`\\n───╯\\n\",\"location\":{\"start\":[3,44],\"end\":[3,54]}}]}"
+    },
+    {
+      "backend": "mysql",
+      "name": "sum-all-null",
+      "source": "from prql_probe_a7eba0a82073 | filter id <= 2 | aggregate {total = sum amount}",
+      "status": "contract-mismatch",
+      "expected": [
+        {
+          "total": null
+        }
+      ],
+      "sql": "SELECT\n  COALESCE(SUM(amount), 0) AS total\nFROM\n  prql_probe_a7eba0a82073\nWHERE\n  id <= 2\n",
+      "rows": [
+        {
+          "total": "0.0000000000"
+        }
+      ],
+      "rowCount": 1,
+      "expectedRowCount": 1
+    },
+    {
+      "backend": "mysql",
+      "name": "sum-empty",
+      "source": "from prql_probe_a7eba0a82073 | filter id < 0 | aggregate {total = sum amount}",
+      "status": "contract-mismatch",
+      "expected": [
+        {
+          "total": null
+        }
+      ],
+      "sql": "SELECT\n  COALESCE(SUM(amount), 0) AS total\nFROM\n  prql_probe_a7eba0a82073\nWHERE\n  id < 0\n",
+      "rows": [
+        {
+          "total": "0.0000000000"
+        }
+      ],
+      "rowCount": 1,
+      "expectedRowCount": 1
+    },
+    {
+      "backend": "mysql",
+      "name": "count-null-column",
+      "source": "from prql_probe_a7eba0a82073 | filter id <= 2 | aggregate {n = count amount}",
+      "status": "contract-mismatch",
+      "expected": "SQL/Golden COUNT(column) excludes NULL",
+      "sql": "SELECT\n  COUNT(*) AS n\nFROM\n  prql_probe_a7eba0a82073\nWHERE\n  id <= 2\n",
+      "rows": [
+        {
+          "n": "2"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "mysql",
+      "name": "exact-decimal-divide-one",
+      "source": "from prql_probe_a7eba0a82073 | filter id == 3 | select {value = amount / 1}",
+      "status": "pass",
+      "expected": "9007199254740993.0000000000",
+      "sql": "SELECT\n  (amount / 1) AS value\nFROM\n  prql_probe_a7eba0a82073\nWHERE\n  id = 3\n",
+      "rows": [
+        {
+          "value": "9007199254740993.00000000000000"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "mysql",
+      "name": "exact-decimal-interpolation",
+      "source": "from prql_probe_a7eba0a82073 | filter id >= 3 | aggregate {lo = min amount, hi = max amount} | select {p75 = lo + (hi - lo) * 0.75}",
+      "status": "pass",
+      "expected": "9007199254740993.0000000075",
+      "sql": "WITH table_0 AS (\n  SELECT\n    MIN(amount) AS _expr_0,\n    MAX(amount) AS _expr_1\n  FROM\n    prql_probe_a7eba0a82073\n  WHERE\n    id >= 3\n)\nSELECT\n  _expr_0 + (_expr_1 - _expr_0) * 0.75 AS p75\nFROM\n  table_0\n",
+      "rows": [
+        {
+          "p75": "9007199254740993.000000007500"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "mysql",
+      "name": "sql-null-aggregates",
+      "source": "Independent SQL control (no PRQL or Golden compiler)",
+      "sql": "select sum(amount) as total, count(amount) as n from `prql_probe_a7eba0a82073` where id <= 2",
+      "status": "pass",
+      "rows": [
+        {
+          "total": null,
+          "n": "0"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "mysql",
+      "name": "sql-decimal-division",
+      "source": "Independent SQL control (no PRQL or Golden compiler)",
+      "sql": "select amount / 1 as value from `prql_probe_a7eba0a82073` where id = 3",
+      "status": "pass",
+      "rows": [
+        {
+          "value": "9007199254740993.00000000000000"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "mysql",
+      "name": "native-mysql-parameter:$1",
+      "source": "Direct mysql2.execute; Kysely bypassed",
+      "sql": "select $1 as value",
+      "status": "execution-rejected",
+      "error": "Error: Unknown column '$1' in 'field list'"
+    },
+    {
+      "backend": "mysql",
+      "name": "native-mysql-parameter:?",
+      "source": "Direct mysql2.execute; Kysely bypassed",
+      "sql": "select ? as value",
+      "status": "pass",
+      "rows": [
+        {
+          "value": "bound-value"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "recent-orders-literal-N",
+      "source": "from orders | derive {missing_date = order_date == null} | sort {missing_date, -order_date, -order_id} | take 5 | select {order_id, order_date}",
+      "status": "pass",
+      "expected": [
+        {
+          "order_id": 11077,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11076,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11075,
+          "order_date": "1998-05-06"
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    order_id,\n    order_date,\n    order_date IS NULL AS _expr_0\n  FROM\n    orders\n  ORDER BY\n    _expr_0,\n    order_date DESC,\n    order_id DESC\n  LIMIT\n    5\n)\nSELECT\n  order_id,\n  order_date\nFROM\n  table_0\nORDER BY\n  _expr_0,\n  order_date DESC,\n  order_id DESC\n",
+      "rows": [
+        {
+          "order_id": 11077,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11076,
+          "order_date": "1998-05-06"
+        },
+        {
+          "order_id": 11075,
+          "order_date": "1998-05-06"
+        }
+      ],
+      "rowCount": 5,
+      "expectedRowCount": 5
+    },
+    {
+      "backend": "duckdb",
+      "name": "recent-orders-parameter-N",
+      "source": "from orders | sort {-order_id} | take $1 | select order_id",
+      "status": "compile-rejected",
+      "expected": "parameterized N must compile and execute",
+      "error": "Error: {\"inner\":[{\"kind\":\"Error\",\"code\":null,\"reason\":\"`take` expected int or range, but found $1\",\"hints\":[],\"span\":\"1:38-40\",\"display\":\"Error: \\n   ╭─[ :1:39 ]\\n   │\\n 1 │ from orders | sort {-order_id} | take $1 | select order_id\\n   │                                       ─┬  \\n   │                                        ╰── `take` expected int or range, but found $1\\n───╯\\n\",\"location\":{\"start\":[0,38],\"end\":[0,40]}}]}"
+    },
+    {
+      "backend": "duckdb",
+      "name": "city-parameter:london",
+      "source": "from customers | filter (text.lower city) == (text.lower $1) | aggregate {customer_count = count this}",
+      "status": "pass",
+      "expected": 6,
+      "sql": "SELECT\n  COUNT(*) AS customer_count\nFROM\n  customers\nWHERE\n  LOWER(city) = LOWER($1)\n",
+      "rows": [
+        {
+          "customer_count": "6"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "city-parameter:mexico d.f.",
+      "source": "from customers | filter (text.lower city) == (text.lower $1) | aggregate {customer_count = count this}",
+      "status": "pass",
+      "expected": 0,
+      "sql": "SELECT\n  COUNT(*) AS customer_count\nFROM\n  customers\nWHERE\n  LOWER(city) = LOWER($1)\n",
+      "rows": [
+        {
+          "customer_count": "0"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "city-parameter:london' OR 1=1 --",
+      "source": "from customers | filter (text.lower city) == (text.lower $1) | aggregate {customer_count = count this}",
+      "status": "pass",
+      "expected": 0,
+      "sql": "SELECT\n  COUNT(*) AS customer_count\nFROM\n  customers\nWHERE\n  LOWER(city) = LOWER($1)\n",
+      "rows": [
+        {
+          "customer_count": "0"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "repeated-out-of-order-parameters",
+      "source": "from customers | filter city == $2 || city == $1 || city == $2 | select customer_id | sort customer_id",
+      "status": "pass",
+      "expected": [
+        "ALFKI",
+        "AROUT",
+        "BSBEV"
+      ],
+      "sql": "SELECT\n  customer_id\nFROM\n  customers\nWHERE\n  city = $2\n  OR city = $1\n  OR city = $2\nORDER BY\n  customer_id\n",
+      "rows": [
+        {
+          "customer_id": "ALFKI"
+        },
+        {
+          "customer_id": "AROUT"
+        },
+        {
+          "customer_id": "BSBEV"
+        }
+      ],
+      "rowCount": 7,
+      "expectedRowCount": 7
+    },
+    {
+      "backend": "duckdb",
+      "name": "average-units-all-orders",
+      "source": "let totals = (from order_details | group order_id (aggregate {units = sum quantity}))\nfrom o=orders\njoin side:left t=totals (o.order_id == t.order_id)\nderive {units = t.units ?? 0}\naggregate {average_units = average units}",
+      "status": "pass",
+      "expected": 61.827710843373495,
+      "sql": "WITH totals AS (\n  SELECT\n    order_id,\n    COALESCE(SUM(quantity), 0) AS units\n  FROM\n    order_details\n  GROUP BY\n    order_id\n)\nSELECT\n  AVG(COALESCE(t.units, 0)) AS average_units\nFROM\n  orders AS o\n  LEFT OUTER JOIN totals AS t ON o.order_id = t.order_id\n",
+      "rows": [
+        {
+          "average_units": 61.827710843373495
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "average-units-explicit-float",
+      "source": "let totals = (from order_details | group order_id (aggregate {units = sum quantity}))\nfrom o=orders\njoin side:left t=totals (o.order_id == t.order_id)\nderive {units = t.units ?? 0}\naggregate {average_units = average (as float units)}",
+      "status": "pass",
+      "expected": 61.827710843373495,
+      "sql": "WITH totals AS (\n  SELECT\n    order_id,\n    COALESCE(SUM(quantity), 0) AS units\n  FROM\n    order_details\n  GROUP BY\n    order_id\n)\nSELECT\n  AVG(CAST(COALESCE(t.units, 0) AS float)) AS average_units\nFROM\n  orders AS o\n  LEFT OUTER JOIN totals AS t ON o.order_id = t.order_id\n",
+      "rows": [
+        {
+          "average_units": 61.827710843373495
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "window-then-filter",
+      "source": "from orders\nderive {missing_date = order_date == null}\ngroup customer_id (sort {missing_date, -order_date, -order_id} | derive {position = row_number this})\nfilter position <= 3\nselect {customer_id, order_id, position}\nsort {customer_id, position}",
+      "status": "pass",
+      "expected": [
+        {
+          "customer_id": "ALFKI",
+          "order_id": 11011,
+          "position": "1"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10952,
+          "position": "2"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10835,
+          "position": "3"
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    customer_id,\n    order_id,\n    ROW_NUMBER() OVER (\n      PARTITION BY customer_id\n      ORDER BY\n        order_date IS NULL,\n        order_date DESC,\n        order_id DESC\n    ) AS position\n  FROM\n    orders\n)\nSELECT\n  customer_id,\n  order_id,\n  position\nFROM\n  table_0\nWHERE\n  position <= 3\nORDER BY\n  customer_id,\n  position\n",
+      "rows": [
+        {
+          "customer_id": "ALFKI",
+          "order_id": 11011,
+          "position": "1"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10952,
+          "position": "2"
+        },
+        {
+          "customer_id": "ALFKI",
+          "order_id": 10835,
+          "position": "3"
+        }
+      ],
+      "rowCount": 263,
+      "expectedRowCount": 263
+    },
+    {
+      "backend": "duckdb",
+      "name": "employee-shipping",
+      "source": "from e=employees\njoin side:left o=orders (e.employee_id == o.employee_id)\nderive {\n shipped = case [o.order_id != null && o.shipped_date != null => 1, true => 0],\n unshipped = case [o.order_id != null && o.shipped_date == null => 1, true => 0]\n}\ngroup e.employee_id (aggregate {shipped = sum shipped, unshipped = sum unshipped})\nsort employee_id",
+      "status": "pass",
+      "expected": [
+        {
+          "employee_id": 1,
+          "shipped": 120,
+          "unshipped": 3
+        },
+        {
+          "employee_id": 2,
+          "shipped": 93,
+          "unshipped": 3
+        },
+        {
+          "employee_id": 3,
+          "shipped": 127,
+          "unshipped": 0
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    e.employee_id,\n    CASE\n      WHEN o.order_id IS NOT NULL\n      AND o.shipped_date IS NULL THEN 1\n      ELSE 0\n    END AS _expr_0,\n    CASE\n      WHEN o.order_id IS NOT NULL\n      AND o.shipped_date IS NOT NULL THEN 1\n      ELSE 0\n    END AS _expr_1,\n    o.order_id,\n    o.shipped_date\n  FROM\n    employees AS e\n    LEFT OUTER JOIN orders AS o ON e.employee_id = o.employee_id\n)\nSELECT\n  employee_id,\n  COALESCE(SUM(_expr_1), 0) AS shipped,\n  COALESCE(SUM(_expr_0), 0) AS unshipped\nFROM\n  table_0\nGROUP BY\n  employee_id\nORDER BY\n  employee_id\n",
+      "rows": [
+        {
+          "employee_id": 1,
+          "shipped": "120",
+          "unshipped": "3"
+        },
+        {
+          "employee_id": 2,
+          "shipped": "93",
+          "unshipped": "3"
+        },
+        {
+          "employee_id": 3,
+          "shipped": "127",
+          "unshipped": "0"
+        }
+      ],
+      "rowCount": 9,
+      "expectedRowCount": 9
+    },
+    {
+      "backend": "duckdb",
+      "name": "freight-ratio",
+      "source": "let totals = (from order_details | group order_id (aggregate {price = sum (unit_price * quantity * (1 - discount))}))\nlet priced = (from o=orders | join side:left t=totals (o.order_id == t.order_id) | select {customer_id=o.customer_id, price=t.price ?? 0, freight=o.freight ?? 0})\nfrom c=customers | join side:left p=priced (c.customer_id == p.customer_id)\ngroup c.customer_id (aggregate {freight=sum p.freight, price=sum p.price})\nselect {customer_id, freight_ratio = case [price == 0 => null, true => freight / price]}\nsort customer_id",
+      "status": "compiled-not-executed",
+      "sql": "WITH totals AS (\n  SELECT\n    order_id,\n    COALESCE(SUM(unit_price * quantity * (1 - discount)), 0) AS price\n  FROM\n    order_details\n  GROUP BY\n    order_id\n),\npriced AS (\n  SELECT\n    o.customer_id,\n    COALESCE(t.price, 0) AS price,\n    COALESCE(o.freight, 0) AS freight\n  FROM\n    orders AS o\n    LEFT OUTER JOIN totals AS t ON o.order_id = t.order_id\n),\ntable_0 AS (\n  SELECT\n    c.customer_id,\n    COALESCE(SUM(p.price), 0) AS _expr_0,\n    COALESCE(SUM(p.freight), 0) AS _expr_1\n  FROM\n    customers AS c\n    LEFT OUTER JOIN priced AS p ON c.customer_id = p.customer_id\n  GROUP BY\n    c.customer_id\n)\nSELECT\n  customer_id,\n  CASE\n    WHEN _expr_0 = 0 THEN NULL\n    ELSE (_expr_1 / _expr_0)\n  END AS freight_ratio\nFROM\n  table_0\nORDER BY\n  customer_id\n"
+    },
+    {
+      "backend": "duckdb",
+      "name": "country-percentile",
+      "source": "let totals = (from order_details | group order_id (aggregate {price = sum (unit_price * quantity * (1 - discount))}))\nlet priced = (from o=orders | join side:left t=totals (o.order_id == t.order_id) | select {customer_id=o.customer_id, price=t.price ?? 0, freight=o.freight ?? 0})\nfrom c=customers | join p=priced (c.customer_id == p.customer_id)\ngroup country (aggregate {order_price_p75 = percentile 0.75 p.price}) | sort country",
+      "status": "compile-rejected",
+      "error": "Error: {\"inner\":[{\"kind\":\"Error\",\"code\":null,\"reason\":\"expected a function, but found `this.c.percentile`\",\"hints\":[],\"span\":\"1:391-401\",\"display\":\"Error: \\n   ╭─[ :4:45 ]\\n   │\\n 4 │ group country (aggregate {order_price_p75 = percentile 0.75 p.price}) | sort country\\n   │                                             ─────┬────  \\n   │                                                  ╰────── expected a function, but found `this.c.percentile`\\n───╯\\n\",\"location\":{\"start\":[3,44],\"end\":[3,54]}}]}"
+    },
+    {
+      "backend": "duckdb",
+      "name": "sum-all-null",
+      "source": "from prql_probe_d93a5db51bb8 | filter id <= 2 | aggregate {total = sum amount}",
+      "status": "contract-mismatch",
+      "expected": [
+        {
+          "total": null
+        }
+      ],
+      "sql": "SELECT\n  COALESCE(SUM(amount), 0) AS total\nFROM\n  prql_probe_d93a5db51bb8\nWHERE\n  id <= 2\n",
+      "rows": [
+        {
+          "total": "0.0000000000"
+        }
+      ],
+      "rowCount": 1,
+      "expectedRowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "sum-empty",
+      "source": "from prql_probe_d93a5db51bb8 | filter id < 0 | aggregate {total = sum amount}",
+      "status": "contract-mismatch",
+      "expected": [
+        {
+          "total": null
+        }
+      ],
+      "sql": "SELECT\n  COALESCE(SUM(amount), 0) AS total\nFROM\n  prql_probe_d93a5db51bb8\nWHERE\n  id < 0\n",
+      "rows": [
+        {
+          "total": "0.0000000000"
+        }
+      ],
+      "rowCount": 1,
+      "expectedRowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "count-null-column",
+      "source": "from prql_probe_d93a5db51bb8 | filter id <= 2 | aggregate {n = count amount}",
+      "status": "contract-mismatch",
+      "expected": "SQL/Golden COUNT(column) excludes NULL",
+      "sql": "SELECT\n  COUNT(*) AS n\nFROM\n  prql_probe_d93a5db51bb8\nWHERE\n  id <= 2\n",
+      "rows": [
+        {
+          "n": "2"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "exact-decimal-divide-one",
+      "source": "from prql_probe_d93a5db51bb8 | filter id == 3 | select {value = amount / 1}",
+      "status": "contract-mismatch",
+      "expected": "9007199254740993.0000000000",
+      "sql": "SELECT\n  (amount / 1) AS value\nFROM\n  prql_probe_d93a5db51bb8\nWHERE\n  id = 3\n",
+      "rows": [
+        {
+          "value": 9007199254740992
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "exact-decimal-interpolation",
+      "source": "from prql_probe_d93a5db51bb8 | filter id >= 3 | aggregate {lo = min amount, hi = max amount} | select {p75 = lo + (hi - lo) * 0.75}",
+      "status": "pass",
+      "expected": "9007199254740993.0000000075",
+      "sql": "WITH table_0 AS (\n  SELECT\n    MIN(amount) AS _expr_0,\n    MAX(amount) AS _expr_1\n  FROM\n    prql_probe_d93a5db51bb8\n  WHERE\n    id >= 3\n)\nSELECT\n  _expr_0 + (_expr_1 - _expr_0) * 0.75 AS p75\nFROM\n  table_0\n",
+      "rows": [
+        {
+          "p75": "9007199254740993.000000007500"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "sql-null-aggregates",
+      "source": "Independent SQL control (no PRQL or Golden compiler)",
+      "sql": "select sum(amount) as total, count(amount) as n from \"prql_probe_d93a5db51bb8\" where id <= 2",
+      "status": "pass",
+      "rows": [
+        {
+          "total": null,
+          "n": "0"
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "backend": "duckdb",
+      "name": "sql-decimal-division",
+      "source": "Independent SQL control (no PRQL or Golden compiler)",
+      "sql": "select amount / 1 as value from \"prql_probe_d93a5db51bb8\" where id = 3",
+      "status": "contract-mismatch",
+      "rows": [
+        {
+          "value": 9007199254740992
+        }
+      ],
+      "rowCount": 1
+    }
+  ]
+}
