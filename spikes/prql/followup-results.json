@@ -1,0 +1,447 @@
+{
+  "node": "v24.19.0",
+  "prql": "0.13.14",
+  "findings": [
+    {
+      "backend": "postgres",
+      "name": "percentile-inline-groups",
+      "source": "from [\n  {g=\"four\", id=1, v=10}, {g=\"four\", id=2, v=20},\n  {g=\"four\", id=3, v=30}, {g=\"four\", id=4, v=40},\n  {g=\"single\", id=5, v=7}, {g=\"ties\", id=6, v=4},\n  {g=\"ties\", id=7, v=4}, {g=\"ties\", id=8, v=8},\n  {g=\"nulls\", id=9, v=null}, {g=\"nulls\", id=10, v=null},\n  {g=\"mixed\", id=11, v=null}, {g=\"mixed\", id=12, v=10},\n  {g=\"mixed\", id=13, v=20}\n]\nderive {missing = v == null, valid = case [v == null => 0, true => 1]}\ngroup g (\n  window rows:.. (derive {n = sum valid})\n  sort {missing, v, id}\n  derive {r = row_number this}\n)\nderive {h = 1 + 0.75 * (n - 1)}\nderive {lo = math.floor h, hi = math.ceil h, fraction = h - math.floor h}\nfilter r == lo || r == hi\ngroup g (aggregate {low = min v, high = max v, fraction = max fraction, n = max n})\nderive {p75 = case [n == 0 => null, true => low + (high-low)*fraction]}\nselect {g, p75}\nsort g",
+      "expected": [
+        {
+          "g": "four",
+          "p75": 32.5
+        },
+        {
+          "g": "mixed",
+          "p75": 17.5
+        },
+        {
+          "g": "nulls",
+          "p75": null
+        },
+        {
+          "g": "single",
+          "p75": 7
+        },
+        {
+          "g": "ties",
+          "p75": 6
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    'four' AS g,\n    1 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    2 AS id,\n    20 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    3 AS id,\n    30 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    4 AS id,\n    40 AS v\n  UNION\n  ALL\n  SELECT\n    'single' AS g,\n    5 AS id,\n    7 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    6 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    7 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    8 AS id,\n    8 AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    9 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    10 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    11 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    12 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    13 AS id,\n    20 AS v\n),\ntable_3 AS (\n  SELECT\n    g,\n    v,\n    v IS NULL AS _expr_6,\n    id,\n    CASE\n      WHEN v IS NULL THEN 0\n      ELSE 1\n    END AS _expr_7\n  FROM\n    table_0\n),\ntable_2 AS (\n  SELECT\n    g,\n    SUM(_expr_7) OVER (PARTITION BY g) AS _expr_4,\n    v,\n    ROW_NUMBER() OVER (\n      PARTITION BY g\n      ORDER BY\n        _expr_6,\n        v,\n        id\n    ) AS _expr_5,\n    _expr_6,\n    id\n  FROM\n    table_3\n),\ntable_1 AS (\n  SELECT\n    g,\n    MAX(_expr_4) AS _expr_0,\n    MIN(v) AS _expr_1,\n    MAX(v) AS _expr_2,\n    MAX(\n      1 + 0.75 * (_expr_4 - 1) - FLOOR(1 + 0.75 * (_expr_4 - 1))\n    ) AS _expr_3\n  FROM\n    table_2\n  WHERE\n    _expr_5 = FLOOR(1 + 0.75 * (_expr_4 - 1))\n    OR _expr_5 = CEIL(1 + 0.75 * (_expr_4 - 1))\n  GROUP BY\n    g\n)\nSELECT\n  g,\n  CASE\n    WHEN _expr_0 = 0 THEN NULL\n    ELSE _expr_1 + (_expr_2 - _expr_1) * _expr_3\n  END AS p75\nFROM\n  table_1\nORDER BY\n  g\n",
+      "rows": [
+        {
+          "g": "four",
+          "p75": "32.50"
+        },
+        {
+          "g": "mixed",
+          "p75": "17.50"
+        },
+        {
+          "g": "nulls",
+          "p75": null
+        },
+        {
+          "g": "single",
+          "p75": "7.00"
+        },
+        {
+          "g": "ties",
+          "p75": "6.00"
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "backend": "postgres",
+      "name": "percentile-empty-grouped",
+      "source": "from [\n  {g=\"four\", id=1, v=10}, {g=\"four\", id=2, v=20},\n  {g=\"four\", id=3, v=30}, {g=\"four\", id=4, v=40},\n  {g=\"single\", id=5, v=7}, {g=\"ties\", id=6, v=4},\n  {g=\"ties\", id=7, v=4}, {g=\"ties\", id=8, v=8},\n  {g=\"nulls\", id=9, v=null}, {g=\"nulls\", id=10, v=null},\n  {g=\"mixed\", id=11, v=null}, {g=\"mixed\", id=12, v=10},\n  {g=\"mixed\", id=13, v=20}\n]\nfilter id < 0\nderive {missing = v == null, valid = case [v == null => 0, true => 1]}\ngroup g (\n  window rows:.. (derive {n = sum valid})\n  sort {missing, v, id}\n  derive {r = row_number this}\n)\nderive {h = 1 + 0.75 * (n - 1)}\nderive {lo = math.floor h, hi = math.ceil h, fraction = h - math.floor h}\nfilter r == lo || r == hi\ngroup g (aggregate {low = min v, high = max v, fraction = max fraction, n = max n})\nderive {p75 = case [n == 0 => null, true => low + (high-low)*fraction]}\nselect {g, p75}\nsort g",
+      "expected": [],
+      "sql": "WITH table_0 AS (\n  SELECT\n    'four' AS g,\n    1 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    2 AS id,\n    20 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    3 AS id,\n    30 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    4 AS id,\n    40 AS v\n  UNION\n  ALL\n  SELECT\n    'single' AS g,\n    5 AS id,\n    7 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    6 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    7 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    8 AS id,\n    8 AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    9 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    10 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    11 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    12 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    13 AS id,\n    20 AS v\n),\ntable_3 AS (\n  SELECT\n    g,\n    v,\n    v IS NULL AS _expr_6,\n    id,\n    CASE\n      WHEN v IS NULL THEN 0\n      ELSE 1\n    END AS _expr_7\n  FROM\n    table_0\n  WHERE\n    id < 0\n),\ntable_2 AS (\n  SELECT\n    g,\n    SUM(_expr_7) OVER (PARTITION BY g) AS _expr_4,\n    v,\n    ROW_NUMBER() OVER (\n      PARTITION BY g\n      ORDER BY\n        _expr_6,\n        v,\n        id\n    ) AS _expr_5,\n    _expr_6,\n    id\n  FROM\n    table_3\n),\ntable_1 AS (\n  SELECT\n    g,\n    MAX(_expr_4) AS _expr_0,\n    MIN(v) AS _expr_1,\n    MAX(v) AS _expr_2,\n    MAX(\n      1 + 0.75 * (_expr_4 - 1) - FLOOR(1 + 0.75 * (_expr_4 - 1))\n    ) AS _expr_3\n  FROM\n    table_2\n  WHERE\n    _expr_5 = FLOOR(1 + 0.75 * (_expr_4 - 1))\n    OR _expr_5 = CEIL(1 + 0.75 * (_expr_4 - 1))\n  GROUP BY\n    g\n)\nSELECT\n  g,\n  CASE\n    WHEN _expr_0 = 0 THEN NULL\n    ELSE _expr_1 + (_expr_2 - _expr_1) * _expr_3\n  END AS p75\nFROM\n  table_1\nORDER BY\n  g\n",
+      "rows": [],
+      "status": "pass"
+    },
+    {
+      "backend": "mysql",
+      "name": "percentile-inline-groups",
+      "source": "from [\n  {g=\"four\", id=1, v=10}, {g=\"four\", id=2, v=20},\n  {g=\"four\", id=3, v=30}, {g=\"four\", id=4, v=40},\n  {g=\"single\", id=5, v=7}, {g=\"ties\", id=6, v=4},\n  {g=\"ties\", id=7, v=4}, {g=\"ties\", id=8, v=8},\n  {g=\"nulls\", id=9, v=null}, {g=\"nulls\", id=10, v=null},\n  {g=\"mixed\", id=11, v=null}, {g=\"mixed\", id=12, v=10},\n  {g=\"mixed\", id=13, v=20}\n]\nderive {missing = v == null, valid = case [v == null => 0, true => 1]}\ngroup g (\n  window rows:.. (derive {n = sum valid})\n  sort {missing, v, id}\n  derive {r = row_number this}\n)\nderive {h = 1 + 0.75 * (n - 1)}\nderive {lo = math.floor h, hi = math.ceil h, fraction = h - math.floor h}\nfilter r == lo || r == hi\ngroup g (aggregate {low = min v, high = max v, fraction = max fraction, n = max n})\nderive {p75 = case [n == 0 => null, true => low + (high-low)*fraction]}\nselect {g, p75}\nsort g",
+      "expected": [
+        {
+          "g": "four",
+          "p75": 32.5
+        },
+        {
+          "g": "mixed",
+          "p75": 17.5
+        },
+        {
+          "g": "nulls",
+          "p75": null
+        },
+        {
+          "g": "single",
+          "p75": 7
+        },
+        {
+          "g": "ties",
+          "p75": 6
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    'four' AS g,\n    1 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    2 AS id,\n    20 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    3 AS id,\n    30 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    4 AS id,\n    40 AS v\n  UNION\n  ALL\n  SELECT\n    'single' AS g,\n    5 AS id,\n    7 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    6 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    7 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    8 AS id,\n    8 AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    9 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    10 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    11 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    12 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    13 AS id,\n    20 AS v\n),\ntable_3 AS (\n  SELECT\n    g,\n    v,\n    v IS NULL AS _expr_6,\n    id,\n    CASE\n      WHEN v IS NULL THEN 0\n      ELSE 1\n    END AS _expr_7\n  FROM\n    table_0\n),\ntable_2 AS (\n  SELECT\n    g,\n    SUM(_expr_7) OVER (PARTITION BY g) AS _expr_4,\n    v,\n    ROW_NUMBER() OVER (\n      PARTITION BY g\n      ORDER BY\n        _expr_6,\n        v,\n        id\n    ) AS _expr_5,\n    _expr_6,\n    id\n  FROM\n    table_3\n),\ntable_1 AS (\n  SELECT\n    g,\n    MAX(_expr_4) AS _expr_0,\n    MIN(v) AS _expr_1,\n    MAX(v) AS _expr_2,\n    MAX(\n      1 + 0.75 * (_expr_4 - 1) - FLOOR(1 + 0.75 * (_expr_4 - 1))\n    ) AS _expr_3\n  FROM\n    table_2\n  WHERE\n    _expr_5 = FLOOR(1 + 0.75 * (_expr_4 - 1))\n    OR _expr_5 = CEIL(1 + 0.75 * (_expr_4 - 1))\n  GROUP BY\n    g\n)\nSELECT\n  g,\n  CASE\n    WHEN _expr_0 = 0 THEN NULL\n    ELSE _expr_1 + (_expr_2 - _expr_1) * _expr_3\n  END AS p75\nFROM\n  table_1\nORDER BY\n  g\n",
+      "rows": [
+        {
+          "g": "four",
+          "p75": "32.50"
+        },
+        {
+          "g": "mixed",
+          "p75": "17.50"
+        },
+        {
+          "g": "nulls",
+          "p75": null
+        },
+        {
+          "g": "single",
+          "p75": "7.00"
+        },
+        {
+          "g": "ties",
+          "p75": "6.00"
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "backend": "mysql",
+      "name": "percentile-empty-grouped",
+      "source": "from [\n  {g=\"four\", id=1, v=10}, {g=\"four\", id=2, v=20},\n  {g=\"four\", id=3, v=30}, {g=\"four\", id=4, v=40},\n  {g=\"single\", id=5, v=7}, {g=\"ties\", id=6, v=4},\n  {g=\"ties\", id=7, v=4}, {g=\"ties\", id=8, v=8},\n  {g=\"nulls\", id=9, v=null}, {g=\"nulls\", id=10, v=null},\n  {g=\"mixed\", id=11, v=null}, {g=\"mixed\", id=12, v=10},\n  {g=\"mixed\", id=13, v=20}\n]\nfilter id < 0\nderive {missing = v == null, valid = case [v == null => 0, true => 1]}\ngroup g (\n  window rows:.. (derive {n = sum valid})\n  sort {missing, v, id}\n  derive {r = row_number this}\n)\nderive {h = 1 + 0.75 * (n - 1)}\nderive {lo = math.floor h, hi = math.ceil h, fraction = h - math.floor h}\nfilter r == lo || r == hi\ngroup g (aggregate {low = min v, high = max v, fraction = max fraction, n = max n})\nderive {p75 = case [n == 0 => null, true => low + (high-low)*fraction]}\nselect {g, p75}\nsort g",
+      "expected": [],
+      "sql": "WITH table_0 AS (\n  SELECT\n    'four' AS g,\n    1 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    2 AS id,\n    20 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    3 AS id,\n    30 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    4 AS id,\n    40 AS v\n  UNION\n  ALL\n  SELECT\n    'single' AS g,\n    5 AS id,\n    7 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    6 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    7 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    8 AS id,\n    8 AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    9 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    10 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    11 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    12 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    13 AS id,\n    20 AS v\n),\ntable_3 AS (\n  SELECT\n    g,\n    v,\n    v IS NULL AS _expr_6,\n    id,\n    CASE\n      WHEN v IS NULL THEN 0\n      ELSE 1\n    END AS _expr_7\n  FROM\n    table_0\n  WHERE\n    id < 0\n),\ntable_2 AS (\n  SELECT\n    g,\n    SUM(_expr_7) OVER (PARTITION BY g) AS _expr_4,\n    v,\n    ROW_NUMBER() OVER (\n      PARTITION BY g\n      ORDER BY\n        _expr_6,\n        v,\n        id\n    ) AS _expr_5,\n    _expr_6,\n    id\n  FROM\n    table_3\n),\ntable_1 AS (\n  SELECT\n    g,\n    MAX(_expr_4) AS _expr_0,\n    MIN(v) AS _expr_1,\n    MAX(v) AS _expr_2,\n    MAX(\n      1 + 0.75 * (_expr_4 - 1) - FLOOR(1 + 0.75 * (_expr_4 - 1))\n    ) AS _expr_3\n  FROM\n    table_2\n  WHERE\n    _expr_5 = FLOOR(1 + 0.75 * (_expr_4 - 1))\n    OR _expr_5 = CEIL(1 + 0.75 * (_expr_4 - 1))\n  GROUP BY\n    g\n)\nSELECT\n  g,\n  CASE\n    WHEN _expr_0 = 0 THEN NULL\n    ELSE _expr_1 + (_expr_2 - _expr_1) * _expr_3\n  END AS p75\nFROM\n  table_1\nORDER BY\n  g\n",
+      "rows": [],
+      "status": "pass"
+    },
+    {
+      "backend": "duckdb",
+      "name": "percentile-inline-groups",
+      "source": "from [\n  {g=\"four\", id=1, v=10}, {g=\"four\", id=2, v=20},\n  {g=\"four\", id=3, v=30}, {g=\"four\", id=4, v=40},\n  {g=\"single\", id=5, v=7}, {g=\"ties\", id=6, v=4},\n  {g=\"ties\", id=7, v=4}, {g=\"ties\", id=8, v=8},\n  {g=\"nulls\", id=9, v=null}, {g=\"nulls\", id=10, v=null},\n  {g=\"mixed\", id=11, v=null}, {g=\"mixed\", id=12, v=10},\n  {g=\"mixed\", id=13, v=20}\n]\nderive {missing = v == null, valid = case [v == null => 0, true => 1]}\ngroup g (\n  window rows:.. (derive {n = sum valid})\n  sort {missing, v, id}\n  derive {r = row_number this}\n)\nderive {h = 1 + 0.75 * (n - 1)}\nderive {lo = math.floor h, hi = math.ceil h, fraction = h - math.floor h}\nfilter r == lo || r == hi\ngroup g (aggregate {low = min v, high = max v, fraction = max fraction, n = max n})\nderive {p75 = case [n == 0 => null, true => low + (high-low)*fraction]}\nselect {g, p75}\nsort g",
+      "expected": [
+        {
+          "g": "four",
+          "p75": 32.5
+        },
+        {
+          "g": "mixed",
+          "p75": 17.5
+        },
+        {
+          "g": "nulls",
+          "p75": null
+        },
+        {
+          "g": "single",
+          "p75": 7
+        },
+        {
+          "g": "ties",
+          "p75": 6
+        }
+      ],
+      "sql": "WITH table_0 AS (\n  SELECT\n    'four' AS g,\n    1 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    2 AS id,\n    20 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    3 AS id,\n    30 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    4 AS id,\n    40 AS v\n  UNION\n  ALL\n  SELECT\n    'single' AS g,\n    5 AS id,\n    7 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    6 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    7 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    8 AS id,\n    8 AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    9 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    10 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    11 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    12 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    13 AS id,\n    20 AS v\n),\ntable_3 AS (\n  SELECT\n    g,\n    v,\n    v IS NULL AS _expr_6,\n    id,\n    CASE\n      WHEN v IS NULL THEN 0\n      ELSE 1\n    END AS _expr_7\n  FROM\n    table_0\n),\ntable_2 AS (\n  SELECT\n    g,\n    SUM(_expr_7) OVER (PARTITION BY g) AS _expr_4,\n    v,\n    ROW_NUMBER() OVER (\n      PARTITION BY g\n      ORDER BY\n        _expr_6,\n        v,\n        id\n    ) AS _expr_5,\n    _expr_6,\n    id\n  FROM\n    table_3\n),\ntable_1 AS (\n  SELECT\n    g,\n    MAX(_expr_4) AS _expr_0,\n    MIN(v) AS _expr_1,\n    MAX(v) AS _expr_2,\n    MAX(\n      1 + 0.75 * (_expr_4 - 1) - FLOOR(1 + 0.75 * (_expr_4 - 1))\n    ) AS _expr_3\n  FROM\n    table_2\n  WHERE\n    _expr_5 = FLOOR(1 + 0.75 * (_expr_4 - 1))\n    OR _expr_5 = CEIL(1 + 0.75 * (_expr_4 - 1))\n  GROUP BY\n    g\n)\nSELECT\n  g,\n  CASE\n    WHEN _expr_0 = 0 THEN NULL\n    ELSE _expr_1 + (_expr_2 - _expr_1) * _expr_3\n  END AS p75\nFROM\n  table_1\nORDER BY\n  g\n",
+      "rows": [
+        {
+          "g": "four",
+          "p75": "32.50"
+        },
+        {
+          "g": "mixed",
+          "p75": "17.50"
+        },
+        {
+          "g": "nulls",
+          "p75": null
+        },
+        {
+          "g": "single",
+          "p75": "7.00"
+        },
+        {
+          "g": "ties",
+          "p75": "6.00"
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "backend": "duckdb",
+      "name": "percentile-empty-grouped",
+      "source": "from [\n  {g=\"four\", id=1, v=10}, {g=\"four\", id=2, v=20},\n  {g=\"four\", id=3, v=30}, {g=\"four\", id=4, v=40},\n  {g=\"single\", id=5, v=7}, {g=\"ties\", id=6, v=4},\n  {g=\"ties\", id=7, v=4}, {g=\"ties\", id=8, v=8},\n  {g=\"nulls\", id=9, v=null}, {g=\"nulls\", id=10, v=null},\n  {g=\"mixed\", id=11, v=null}, {g=\"mixed\", id=12, v=10},\n  {g=\"mixed\", id=13, v=20}\n]\nfilter id < 0\nderive {missing = v == null, valid = case [v == null => 0, true => 1]}\ngroup g (\n  window rows:.. (derive {n = sum valid})\n  sort {missing, v, id}\n  derive {r = row_number this}\n)\nderive {h = 1 + 0.75 * (n - 1)}\nderive {lo = math.floor h, hi = math.ceil h, fraction = h - math.floor h}\nfilter r == lo || r == hi\ngroup g (aggregate {low = min v, high = max v, fraction = max fraction, n = max n})\nderive {p75 = case [n == 0 => null, true => low + (high-low)*fraction]}\nselect {g, p75}\nsort g",
+      "expected": [],
+      "sql": "WITH table_0 AS (\n  SELECT\n    'four' AS g,\n    1 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    2 AS id,\n    20 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    3 AS id,\n    30 AS v\n  UNION\n  ALL\n  SELECT\n    'four' AS g,\n    4 AS id,\n    40 AS v\n  UNION\n  ALL\n  SELECT\n    'single' AS g,\n    5 AS id,\n    7 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    6 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    7 AS id,\n    4 AS v\n  UNION\n  ALL\n  SELECT\n    'ties' AS g,\n    8 AS id,\n    8 AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    9 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'nulls' AS g,\n    10 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    11 AS id,\n    NULL AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    12 AS id,\n    10 AS v\n  UNION\n  ALL\n  SELECT\n    'mixed' AS g,\n    13 AS id,\n    20 AS v\n),\ntable_3 AS (\n  SELECT\n    g,\n    v,\n    v IS NULL AS _expr_6,\n    id,\n    CASE\n      WHEN v IS NULL THEN 0\n      ELSE 1\n    END AS _expr_7\n  FROM\n    table_0\n  WHERE\n    id < 0\n),\ntable_2 AS (\n  SELECT\n    g,\n    SUM(_expr_7) OVER (PARTITION BY g) AS _expr_4,\n    v,\n    ROW_NUMBER() OVER (\n      PARTITION BY g\n      ORDER BY\n        _expr_6,\n        v,\n        id\n    ) AS _expr_5,\n    _expr_6,\n    id\n  FROM\n    table_3\n),\ntable_1 AS (\n  SELECT\n    g,\n    MAX(_expr_4) AS _expr_0,\n    MIN(v) AS _expr_1,\n    MAX(v) AS _expr_2,\n    MAX(\n      1 + 0.75 * (_expr_4 - 1) - FLOOR(1 + 0.75 * (_expr_4 - 1))\n    ) AS _expr_3\n  FROM\n    table_2\n  WHERE\n    _expr_5 = FLOOR(1 + 0.75 * (_expr_4 - 1))\n    OR _expr_5 = CEIL(1 + 0.75 * (_expr_4 - 1))\n  GROUP BY\n    g\n)\nSELECT\n  g,\n  CASE\n    WHEN _expr_0 = 0 THEN NULL\n    ELSE _expr_1 + (_expr_2 - _expr_1) * _expr_3\n  END AS p75\nFROM\n  table_1\nORDER BY\n  g\n",
+      "rows": [],
+      "status": "pass"
+    },
+    {
+      "name": "schema-resolution",
+      "source": "from orders | select definitely_missing_column",
+      "expectedStatus": "compiled",
+      "sql": "SELECT\n  definitely_missing_column\nFROM\n  orders\n",
+      "status": "compiled"
+    },
+    {
+      "name": "schema-resolution",
+      "source": "from [{x=1}] | select definitely_missing_column",
+      "expectedStatus": "compile-rejected",
+      "status": "compile-rejected",
+      "error": "Error: {\"inner\":[{\"kind\":\"Error\",\"code\":null,\"reason\":\"Unknown name `definitely_missing_column`\",\"hints\":[\"available columns: _literal_121.x\"],\"span\":\"1:22-47\",\"display\":\"Error: \\n   ╭─[ :1:23 ]\\n   │\\n 1 │ from [{x=1}] | select definitely_missing_column\\n   │                       ────────────┬────────────  \\n   │                                   ╰────────────── Unknown name `definitely_missing_column`\\n   │ \\n   │ Help: available columns: _literal_121.x\\n───╯\\n\",\"location\":{\"start\":[0,22],\"end\":[0,47]}}]}"
+    },
+    {
+      "name": "intermediate-roundtrip",
+      "source": "prql target:sql.mysql\nfrom orders | filter order_id == $2 || order_id == $1 | select order_id",
+      "pl": {
+        "name": "Project",
+        "stmts": [
+          {
+            "QueryDef": {
+              "version": null,
+              "other": {
+                "target": "sql.mysql"
+              }
+            },
+            "span": "1:0-22"
+          },
+          {
+            "VarDef": {
+              "kind": "Main",
+              "name": "main",
+              "value": {
+                "Pipeline": {
+                  "exprs": [
+                    {
+                      "FuncCall": {
+                        "name": {
+                          "Ident": [
+                            "from"
+                          ],
+                          "span": "1:22-26"
+                        },
+                        "args": [
+                          {
+                            "Ident": [
+                              "orders"
+                            ],
+                            "span": "1:27-33"
+                          }
+                        ]
+                      },
+                      "span": "1:22-33"
+                    },
+                    {
+                      "FuncCall": {
+                        "name": {
+                          "Ident": [
+                            "filter"
+                          ],
+                          "span": "1:36-42"
+                        },
+                        "args": [
+                          {
+                            "Binary": {
+                              "left": {
+                                "Binary": {
+                                  "left": {
+                                    "Ident": [
+                                      "order_id"
+                                    ],
+                                    "span": "1:43-51"
+                                  },
+                                  "op": "Eq",
+                                  "right": {
+                                    "Param": "2",
+                                    "span": "1:55-57"
+                                  }
+                                },
+                                "span": "1:43-57"
+                              },
+                              "op": "Or",
+                              "right": {
+                                "Binary": {
+                                  "left": {
+                                    "Ident": [
+                                      "order_id"
+                                    ],
+                                    "span": "1:61-69"
+                                  },
+                                  "op": "Eq",
+                                  "right": {
+                                    "Param": "1",
+                                    "span": "1:73-75"
+                                  }
+                                },
+                                "span": "1:61-75"
+                              }
+                            },
+                            "span": "1:43-75"
+                          }
+                        ]
+                      },
+                      "span": "1:36-75"
+                    },
+                    {
+                      "FuncCall": {
+                        "name": {
+                          "Ident": [
+                            "select"
+                          ],
+                          "span": "1:78-84"
+                        },
+                        "args": [
+                          {
+                            "Ident": [
+                              "order_id"
+                            ],
+                            "span": "1:85-93"
+                          }
+                        ]
+                      },
+                      "span": "1:78-93"
+                    }
+                  ]
+                },
+                "span": "1:22-93"
+              }
+            },
+            "span": "1:22-93"
+          }
+        ]
+      },
+      "rq": {
+        "def": {
+          "version": null,
+          "other": {
+            "target": "sql.mysql"
+          }
+        },
+        "tables": [
+          {
+            "id": 0,
+            "name": null,
+            "relation": {
+              "kind": {
+                "ExternRef": {
+                  "LocalTable": [
+                    "orders"
+                  ]
+                }
+              },
+              "columns": [
+                {
+                  "Single": "order_id"
+                },
+                "Wildcard"
+              ]
+            }
+          }
+        ],
+        "relation": {
+          "kind": {
+            "Pipeline": [
+              {
+                "From": {
+                  "source": 0,
+                  "columns": [
+                    [
+                      {
+                        "Single": "order_id"
+                      },
+                      0
+                    ],
+                    [
+                      "Wildcard",
+                      1
+                    ]
+                  ],
+                  "name": "orders",
+                  "prefer_cte": true
+                }
+              },
+              {
+                "Filter": {
+                  "kind": {
+                    "Operator": {
+                      "name": "std.or",
+                      "args": [
+                        {
+                          "kind": {
+                            "Operator": {
+                              "name": "std.eq",
+                              "args": [
+                                {
+                                  "kind": {
+                                    "ColumnRef": 0
+                                  },
+                                  "span": "1:43-51"
+                                },
+                                {
+                                  "kind": {
+                                    "Param": "2"
+                                  },
+                                  "span": "1:55-57"
+                                }
+                              ]
+                            }
+                          },
+                          "span": "1:43-57"
+                        },
+                        {
+                          "kind": {
+                            "Operator": {
+                              "name": "std.eq",
+                              "args": [
+                                {
+                                  "kind": {
+                                    "ColumnRef": 0
+                                  },
+                                  "span": "1:61-69"
+                                },
+                                {
+                                  "kind": {
+                                    "Param": "1"
+                                  },
+                                  "span": "1:73-75"
+                                }
+                              ]
+                            }
+                          },
+                          "span": "1:61-75"
+                        }
+                      ]
+                    }
+                  },
+                  "span": "1:43-75"
+                }
+              },
+              {
+                "Select": [
+                  0
+                ]
+              },
+              {
+                "Select": [
+                  0
+                ]
+              }
+            ]
+          },
+          "columns": [
+            {
+              "Single": "order_id"
+            }
+          ]
+        }
+      },
+      "sql": "SELECT\n  order_id\nFROM\n  orders\nWHERE\n  order_id = $2\n  OR order_id = $1\n\n-- Generated by PRQL compiler version:0.13.14 (https://prql-lang.org)\n"
+    }
+  ]
+}

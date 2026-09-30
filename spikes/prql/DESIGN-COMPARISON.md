@@ -2,6 +2,10 @@
 
 Research checkpoint, September 29, 2026. Related: #36, #38. **Proposal, not an accepted migration.** Production code and default semantics remain unchanged.
 
+Update: the [follow-up experiment](FOLLOWUP.md) now verifies PRQL percentile composition on bounded fixtures and identifies Isthmus/DataFusion SQL consumers. The A pipeline below is Golden's current lowering option, not the only possible way to consume Substrait. Full Northwind/exact-decimal percentile and consumer integration remain unverified.
+
+User priority clarified afterward: favor TypeScript/Node and the typed frontend. Compare the current TS implementation with in-process PRQL npm/WASM first; JVM/Python services and custom Rust bridges remain future references. Source-only PRQL is a tradeoff example, not an accepted replacement for schema-aware TypeScript.
+
 The user explicitly permits reconsidering Golden's API semantics. This comparison therefore does not require preserving every prototype behavior. The question is which existing contract to adopt, and how much compiler and integration work Golden would still own.
 
 ## Evidence and versions

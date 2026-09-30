@@ -1,5 +1,13 @@
 # AI collaboration log
 
+## September 29: deeper compiler feasibility checks
+
+- User requested more research. Added an opt-in, read-only PRQL experiment using inline fixtures: continuous percentile composition passes PostgreSQL/MySQL/DuckDB for ordinary, NULL, singleton, tied and empty-grouped cases. This is bounded numeric evidence, not arbitrary exact-decimal or full Northwind conformance.
+- Demonstrated schema-sensitive compiler behavior (unknown external-table column compiles; known inline-table missing column rejects) and PL/RQ round-trip access. Traced dollar-prefixed parameter emission to pinned upstream code; no unsafe placeholder rewrite was introduced.
+- Inspected Isthmus SubstraitToSql and DataFusion consumer/unparser APIs. Corrected the overly narrow implication that retaining Substrait necessarily requires writing all SQL lowering. These bridges were source-reviewed only, not integrated or executed.
+- Kept production code unchanged. Initial sandbox tsx execution hit the known Windows user-info lookup failure; rerun outside the sandbox succeeded.
+- User clarified TypeScript/Node is the primary platform. Prioritized the existing TS pipeline versus in-process PRQL npm/WASM with a typed frontend; deferred JVM/Python services and custom Rust bindings rather than letting the ecosystem survey expand implementation scope.
+
 ## September 29: choose an upstream semantic contract
 
 - User challenged treating Golden's prototype semantics as immutable and requested deeper comparison of an API following official Substrait definitions versus an API adopting PRQL. No production migration was authorized.

@@ -1,1 +1,1 @@
-{"name":"golden-prql-spike","private":true,"type":"module","scripts":{"probe":"tsx probe.ts"},"dependencies":{"prqlc":"0.13.14"}}
+{"name":"golden-prql-spike","private":true,"type":"module","scripts":{"probe":"tsx probe.ts","followup":"tsx followup.ts"},"dependencies":{"prqlc":"0.13.14"}}

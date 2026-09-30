@@ -4,6 +4,8 @@ Recommendation: **DEFER transparent replacement**, not rejection of PRQL. The co
 
 The [Substrait-defined versus PRQL-defined API comparison](DESIGN-COMPARISON.md) evaluates deliberately changing Golden's API contract, rather than requiring compatibility with every old choice. It audits five operation families, distinguishes PRQL source from PL/RQ, and gives separate migration gates. Business-definition ambiguity is tracked in #38.
 
+The [executed follow-up](FOLLOWUP.md) demonstrates a complete continuous-percentile pipeline on bounded fixtures across three backends, checks schema/PL/RQ behavior, traces MySQL parameters to compiler source, and identifies existing Substrait-to-SQL consumers. These are additional observations; the original matrix below is unchanged historical evidence.
+
 ## Reproduce
 
 From the worktree root, with the supplied PostgreSQL/MySQL Docker databases running:
