@@ -1,5 +1,11 @@
 # AI collaboration log
 
+## September 29: typed PRQL source feasibility
+
+- User requested continued research with TypeScript/Node prioritized. Built a local-only callback-free filter/projection source-generation slice, not a public API or custom serialized IR. Added compile-time negative checks, scope/literal/identifier rejection and independent SQL result comparisons.
+- PG/DuckDB bound London and hostile-string cases passed; MySQL's specific dollar-placeholder error remained a characterized blocker. Explicitly excluded nullable/decimal/join/aggregate/result-decoding claims from this narrow prototype.
+- Found directly relevant upstream PRQL #5699, Tybis and Teta references. Distinguished experimental prior art and a collaborator's unreleased PL-builder report from production-ready dependency evidence. No upstream messages or new dependency adoption.
+
 ## September 29: deeper compiler feasibility checks
 
 - User requested more research. Added an opt-in, read-only PRQL experiment using inline fixtures: continuous percentile composition passes PostgreSQL/MySQL/DuckDB for ordinary, NULL, singleton, tied and empty-grouped cases. This is bounded numeric evidence, not arbitrary exact-decimal or full Northwind conformance.

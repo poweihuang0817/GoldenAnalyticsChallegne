@@ -6,6 +6,8 @@ The [Substrait-defined versus PRQL-defined API comparison](DESIGN-COMPARISON.md)
 
 The [executed follow-up](FOLLOWUP.md) demonstrates a complete continuous-percentile pipeline on bounded fixtures across three backends, checks schema/PL/RQ behavior, traces MySQL parameters to compiler source, and identifies existing Substrait-to-SQL consumers. These are additional observations; the original matrix below is unchanged historical evidence.
 
+The [Node-first typed frontend experiment](TYPED-FRONTEND.md) now checks callback-free schema-aware filter/projection generation, type-negative cases, relation scope checks and real PG/DuckDB binding. MySQL remains an explicitly tested rejection; joins/aggregate typing are not implemented in this slice. Upstream PRQL #5699 and Tybis provide closely related prior art.
+
 ## Reproduce
 
 From the worktree root, with the supplied PostgreSQL/MySQL Docker databases running:
