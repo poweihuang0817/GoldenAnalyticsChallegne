@@ -332,3 +332,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
   remains observational evidence only. Investigated DuckDB freight across six
   seeded instances and two thread settings; the initial slowdown did not recur
   consistently. Preserved all measurements and did not claim a universal speedup.
+
+- PR #51 review requested compact performance evidence. Replaced full raw rows,
+  engine plans and timing samples with revision/hash/count/median-range summaries
+  and one small freight baseline SQL fixture. Raw artifacts are now ignored local
+  outputs; compiler SQL/trace snapshots remain unchanged. Re-ran 61 unit tests,
+  type checks and the six-instance investigation successfully after rewiring it.

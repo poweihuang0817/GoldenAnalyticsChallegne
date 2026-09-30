@@ -11,3 +11,4 @@ Thumbs.db
 *.duckdb
 *.duckdb.wal
 *.duckdb.tmp/
+.perf-results/

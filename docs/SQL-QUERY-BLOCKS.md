@@ -40,8 +40,8 @@ Subquery Scan -> Aggregate -> Seq Scan to Aggregate -> Seq Scan. MySQL's city
 EXPLAIN FORMAT=JSON no longer contains the outer materialized aggregate derived
 table. These observations do not establish a latency or throughput improvement.
 
-Local validation: TypeScript and documentation type checks; 60 unit tests;
-62 integration tests; one three-backend snapshot conformance test, all passed.
+Local validation: TypeScript and documentation type checks; 61 unit tests;
+74 integration tests; one three-backend snapshot conformance test, all passed.
 The new one-block regression failed on the original implementation (4 versus 1
 SELECT). Boundary tests cover nested aggregates, computed projections, fetch
 before filtering, and windows. Existing database fixtures cover NULLs, duplicates,
@@ -77,22 +77,32 @@ runs the fixed public Northwind corpus only. EXPLAIN ANALYZE executes each query
 Reports contain public sample rows and literal-bearing database explain plans;
 do not reuse this reporting policy for sensitive production datasets.
 
-Committed reports are in docs/evidence/sql-query-blocks/: before.json uses
-fa86807, after.json uses compiler cf8643c, with the same collector. Each contains
-SQL, result rows, plain/analyzed plans, seven samples and their median after one
-warm-up. A held connection excludes acquisition; timings include transfer and
-decoding. The baseline collector was temporarily pointed at the clean main
-checkout; it is not a second maintained compiler. All 24 raw result comparisons
-passed. Test/script additions were uncommitted during collection; compiler code
-was unchanged from cf8643c. These are local observations, not CI thresholds.
+Committed compact evidence is in [summary.json](evidence/sql-query-blocks/summary.json):
+exact baseline/candidate revisions, result equality and SHA-256 hashes, SELECT
+counts, and timing medians/ranges. Full raw rows, plans and timing samples are
+local artifacts in ignored .perf-results/, not regression fixtures. Engine patch
+versions missing from the original capture are explicitly marked unknown.
+The original baseline collector used clean main fa86807; candidate compiler was
+cf8643c. Compiler snapshots remain committed in test/fixtures/sql-query-blocks/.
+
+To reproduce full current evidence:
+
+```powershell
+New-Item -ItemType Directory -Force .perf-results
+npx tsx scripts/check-query-performance.ts .perf-results/current.json
+npx tsx scripts/investigate-duckdb-freight.ts
+```
+
+For a full historical baseline, run the same collector in a separately installed
+checkout of the recorded baseline revision. Do not compare engine plans as
+fixed expected outputs. The freight investigation uses one small committed
+baseline SQL/parameters fixture, so it does not need the full historical report.
 
 Initial DuckDB freight medians were 29.03 -> 37.88 ms. A follow-up on one seeded
 connection alternated old/new SQL (AB/BA), discarded three warm-up pairs and
-measured 21 pairs: 38.70 -> 40.81 ms. Results matched. This smaller remaining
-slowdown is unresolved; neither these small samples nor shorter SQL establish
+measured 21 pairs: 38.70 -> 40.81 ms. Results matched. This observation was subsequently investigated below; neither these small samples nor shorter SQL establish
 an overall performance win. Other timings are mixed and mostly close. Preserve
-both observations rather than selecting favorable runs. The paired report is
-recorded in duckdb-freight-paired.json. Future work: repeated independent runs,
+both observations rather than selecting favorable runs. The compact summary retains paired medians/ranges. Future work: repeated independent runs,
 larger fixtures, engine-version capture, and investigation of DuckDB's exact
 decimal division plan. Do not claim every backend/query is faster.
 
@@ -131,8 +141,10 @@ future compiler changes must review fixture/parameter compatibility first.
 
 DuckDB v1.5.5, six independently seeded in-memory instances, five warm-up pairs
 then 21 measured pairs per instance, alternating AB/BA; every instance checks
-exact result equality. JSON analyzed profiles and raw samples are in
-`docs/evidence/sql-query-blocks/duckdb-freight-investigation.json`.
+exact result equality. The script writes full analyzed profiles and samples to ignored
+`.perf-results/duckdb-freight-investigation.json`; committed summary.json retains
+the original six rounds of medians/ranges. Re-running does not overwrite the
+committed historical summary.
 
 | Threads | Round | Old median ms | New median ms |
 | --- | --- | ---: | ---: |
