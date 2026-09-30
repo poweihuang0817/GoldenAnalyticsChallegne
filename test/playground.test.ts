@@ -84,7 +84,7 @@ test('DuckDB walkthrough runs through HTTP and preserves real count results', as
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: 'city', backend: 'duckdb', action }) });
       assert.equal(response.status, 200);
       const result = await response.json() as { rows?: unknown[]; rowCount?: number; sql: string; parameterCount: number };
-      assert.match(result.sql, /count/); assert.equal(result.parameterCount, 2);
+      assert.match(result.sql, /count\(\*\)/); assert.equal(result.parameterCount, 1);
       if (action === 'run') { assert.deepEqual(result.rows, [{ customer_count: '2' }]); assert.equal(result.rowCount, 1); }
       else assert.equal(result.rows, undefined);
     }

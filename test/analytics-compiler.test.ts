@@ -8,6 +8,21 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createSource, count } from '../src/api.js';
 import { cityQuery, recentOrdersPerCustomer, queryExamples } from '../src/queries.js';
 
+test('row count lowers to count star while nullable column count remains an expression', async () => {
+  for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
+    const db = connect(backend, { duckdbPath: ':memory:' });
+    try {
+      const compiled = compilePlan(db, cityQuery('london').toSubstrait(), challengeCatalog);
+      assert.match(compiled.sql, /count\(\*\)/);
+      assert.deepEqual(compiled.parameters, ['london']);
+      const customers = createSource(challengeCatalog).table('customers');
+      const nullableCount = compilePlan(db, customers.aggregate({ n: customers.columns.city.count() }).toSubstrait(), challengeCatalog);
+      assert.doesNotMatch(nullableCount.sql, /count\(\*\)/);
+      assert.match(nullableCount.sql, /count\(.*city/);
+    } finally { await db.destroy(); }
+  }
+});
+
 test('generated SQL, ordered bindings and lowering trace match reviewed snapshots', async () => {
   for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
     const db = connect(backend, { duckdbPath: ':memory:' });

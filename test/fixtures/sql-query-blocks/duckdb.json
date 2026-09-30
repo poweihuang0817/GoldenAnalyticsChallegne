@@ -29,9 +29,8 @@
   },
   {
     "name": "Customers in London",
-    "sql": "select cast(count(cast($1 as double precision)) as text) as \"customer_count\" from \"customers\" where (lower(\"customers\".\"city\") = lower(cast($2 as text)))",
+    "sql": "select cast(count(*) as text) as \"customer_count\" from \"customers\" where (lower(\"customers\".\"city\") = lower(cast($1 as text)))",
     "parameters": [
-      1,
       "london"
     ],
     "trace": [
@@ -51,9 +50,8 @@
   },
   {
     "name": "Customers in Mexico D.F.",
-    "sql": "select cast(count(cast($1 as double precision)) as text) as \"customer_count\" from \"customers\" where (lower(\"customers\".\"city\") = lower(cast($2 as text)))",
+    "sql": "select cast(count(*) as text) as \"customer_count\" from \"customers\" where (lower(\"customers\".\"city\") = lower(cast($1 as text)))",
     "parameters": [
-      1,
       "mexico d.f."
     ],
     "trace": [

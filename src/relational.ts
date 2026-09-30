@@ -259,7 +259,12 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
     const aggregateValues = measures.map(({ measure, name, args }): Value => {
       if (args.length !== 1) throw invalid('Aggregate requires one argument');
       let value: Value;
-      if (name === 'count') value = { expr: sql`count(${args[0].expr})`, kind: 'i64', nullable: false };
+      if (name === 'count') {
+        // The validated literal profile contains only non-null constants.
+        // Do not drop arbitrary expressions: they may be null or raise errors.
+        const rowCount = 'literal' in measure.arguments[0].value;
+        value = { expr: rowCount ? sql`count(*)` : sql`count(${args[0].expr})`, kind: 'i64', nullable: false };
+      }
       else if (name === 'sum' || name === 'avg') {
         numeric(args);
         if (backend && name === 'avg' && args[0].kind === 'decimal') requireCapability(backend, 'exactDecimalAverage');
