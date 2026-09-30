@@ -104,11 +104,13 @@ try {
 
 The optional `compile()` call above returns SQL and bound parameters without executing the query. This could be used to check compiled SQL.
 
-## Db dialect
+## Db dialect and extension
 - postgresql
 - mysql
 - duckdb
 I added duckdb as it's asked by analyst in youtube video. It works well
+
+For sql extension, I added row number window function
 
 ## Test methodology
 - Test cases cover the six challenge query families, with additional NULL, empty-input, duplicate, join, nested-aggregate and decimal/percentile cases.
