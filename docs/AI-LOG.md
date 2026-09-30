@@ -286,3 +286,8 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Reviewer requested shrinking the generated artifact and removing repeated SQL. Added compact per-variant fingerprints/population summaries with exact ALFKI/Germany contrasts; baseline rows now have raw driver-result hashes instead of SQL.
 - Added --full stdout output for reproducing all reference rows without committing them. Documented that raw driver hashes are representation-sensitive, not a cross-backend equality oracle.
 - Validation: code and audit typechecks passed; 54 unit tests (4 focused reference/artifact tests) passed; compact and full audits each matched all 21 baseline executions across PostgreSQL/MySQL/DuckDB; reference fingerprints agreed. Artifact reduced from 727,661 bytes / 21,709 lines to 24,803 bytes / 824 lines. Whitespace check passed. No production semantics or candidate README changed.
+
+## Reviewer navigation guide (September 30, 2026)
+
+- User requested a company-friendly guide in its own PR mapping each challenge deliverable to files and commands. Added root REVIEWER_GUIDE.md with driver/extension/test/design/AI/future-work links and an explicit pending video/version/access section.
+- Guide is labelled AI-assisted supporting navigation; no README or candidate AI record modifications in this PR. No claim of final submission or new runtime validation.
