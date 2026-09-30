@@ -5,6 +5,7 @@ import { connect, type Backend } from '../backend.js';
 import { compilePlan } from '../compiler.js';
 import { challengeCatalog } from '../challenge.js';
 import { cityQuery, averageUnitsQuery, percentileQuery } from '../queries.js';
+import { sqlPreview, planOutline } from './preview.js';
 
 const source = readFileSync(new URL('../queries.ts', import.meta.url), 'utf8');
 function definition(name: string) {
@@ -26,8 +27,9 @@ export async function executeExample(request: Request, options: { duckdbPath?: s
   try {
     const compiled = compilePlan(db, plan, challengeCatalog);
     const rows = request.action === 'run' ? (await db.executeQuery(compiled)).rows : undefined;
-    return { sql: compiled.sql, parameterCount: compiled.parameters.length, plan,
-      rows: rows?.slice(0, 100), rowCount: rows?.length, elapsedMs: Math.round((performance.now() - start) * 10) / 10 };
+    const elapsedMs = Math.round((performance.now() - start) * 10) / 10;
+    return { sql: compiled.sql, sqlPreview: sqlPreview(compiled.sql, request.backend), planOutline: planOutline(plan), parameterCount: compiled.parameters.length, plan,
+      rows: rows?.slice(0, 100), rowCount: rows?.length, elapsedMs };
   } finally { await db.destroy(); }
 }
 const assets: Record<string, [string, string]> = {

@@ -296,3 +296,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 
 - Candidate explicitly requested a separate PR to organize the manually started AI record. Preserved the recorded prompt topics and grounded redirects/outcomes in conversation and repository history; labelled summaries and AI-assisted organization rather than claiming verbatim prompts or sole human authorship of the revision.
 - Clarified async execution vs synchronous compilation and implemented functionality vs deferred semantic/compiler research. No candidate review or elapsed time invented. README unchanged in this PR.
+
+## Walkthrough readability (September 30, 2026)
+
+- User requested a vertical Typed API/Substrait/backend diagram, consistent green for DuckDB, formatted SQL and a more readable Substrait view for filming.
+- Added display-only dialect formatting with original SQL retained and an operator outline with authoritative raw JSON retained. No compiler or execution semantics changed. Diagram is shared by UI and architecture documentation.
+- Validation: 57 unit tests, code/docs typechecks, nine fixed-example dialect formatting combinations, XML parse and visual SVG review passed. SQL Formatter is a pinned display dependency; raw SQL remains the execution input. No new full remote integration run claimed.

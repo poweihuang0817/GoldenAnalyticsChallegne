@@ -54,3 +54,9 @@ A one-off headless Edge check ran three compile-only paths and all three example
 An initial Windows text-encoding defect prevented SVG rendering. It was reproduced with a failing strict UTF-8 decoding test, repaired, and checked in the browser. Static assets now have a regression check. The diagram uses presentation attributes compatible with the page's Content Security Policy.
 
 Before recording, start a fresh server from the selected revision and verify its port. The default port is 4317; verification used separate ephemeral ports without stopping an existing user server. The final selected revision still requires green hosted fresh-clone CI and human review before merging.
+
+## Readable inspection views
+
+Generated SQL is formatted for the selected dialect for display only; the original compiled SQL is still executed and available under Original SQL. Formatting failure falls back to the original text. The formatter never receives bound parameter values.
+
+Substrait operator tree summarizes the actual plan, with output at the top and inputs below. Function anchors are shown by name; field# references remain positional within each input relation. This is a navigation aid, not a full semantic explanation: types, emit mappings and some expressions are omitted. Raw Substrait JSON remains the authoritative plan view. Architecture now flows top-to-bottom and uses the same green for all three backend boxes.

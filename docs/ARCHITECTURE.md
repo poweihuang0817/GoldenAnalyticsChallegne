@@ -2,9 +2,9 @@
 
 Status: ACCEPTED on September 26, 2026: a constrained Substrait profile compiled through Kysely, selected explicitly by the user. The lower layer now covers all six sample query families; see `CHALLENGE-COVERAGE.md` for semantics and evidence.
 
-![Substrait validation, Kysely compilation, and remote database execution](diagrams/architecture.png)
+![Substrait validation, Kysely compilation, and remote database execution](../src/playground/architecture.svg)
 
-Diagram source: [`diagrams/render-architecture.ps1`](diagrams/render-architecture.ps1). Run it on Windows to regenerate the PNG.
+Diagram source: [`src/playground/architecture.svg`](../src/playground/architecture.svg), shared with the walkthrough UI.
 
 ## Retained IR checkpoint
 
