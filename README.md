@@ -16,6 +16,8 @@ The last piece is metadata. I only finish metadata discovery by runtime fetch. B
 
 So, overall the architecture is typed API -> IR by substrait -> Kysely dialect in typescript.
 
+For design rationale and tradeoffs, see [API design](docs/api/design.md). For usage and reference, see [API documentation](docs/api/README.md).
+
 ## Implementation details
 During implementation, I reuse my knowledge from power bi to ensure it have the characteristic of production service.
 
@@ -27,7 +29,7 @@ During implementation, I reuse my knowledge from power bi to ensure it have the 
 - Debugging - framework to isolate issue. remote issue or our issue.
 
 ### For typed API
-- Compile to generate query for debugging. Execute as async in API
+- Compile is synchronous and generates SQL for debugging. Execute is asynchronous.
 - Each component as type, instead of callback.
 - type and spelling check due to pre-load schema.
 
@@ -39,28 +41,26 @@ During implementation, I reuse my knowledge from power bi to ensure it have the 
 The flows follow how we construct SQL. Get schema. Build query. Execute. Below are each step.
 ### Define catalog
 Firstly we define table to be used in this query. This allows us to do type check and spelling check.
-```
-export const challengeCatalog = {
-  orders: [
-    { name: 'order_id', type: 'i32', nullable: false },
-    { name: 'order_date', type: 'date', nullable: true },
-    { name: 'customer_id', type: 'string', nullable: true },
-    { name: 'employee_id', type: 'i32', nullable: true },
-    { name: 'shipped_date', type: 'date', nullable: true },
-    { name: 'freight', type: 'decimal', nullable: true },
-  ],
-  // customers、employees、order_details ...
-} as const satisfies Catalog;
+
+This example reuses the complete [Northwind catalog](src/challenge.ts). Combine the following TypeScript blocks in an `example.ts` file at the repository root. After database setup, run `npx tsx example.ts`.
+
+```ts
+import { createSource, count, literal } from './src/api.js';
+import { createClient } from './src/client.js';
+import { challengeCatalog } from './src/challenge.js';
 ```
 
 ### Get table from that
+
+```ts
 const source = createSource(challengeCatalog);
 const customers = source.table('customers');
+```
 
 ### Build query
 Typed predicate and aggregation
 
-```
+```ts
 const query = customers
   .filter(
     customers.columns.city
@@ -73,10 +73,15 @@ const query = customers
 ```
 
 ### Select dialect and execute
-```
+
+```ts
 const client = createClient('postgres', challengeCatalog);
 
 try {
+  // Optional: preview SQL without executing the query.
+  const preview = client.compile(query);
+  console.log(preview.sql);
+
   const { rows } = await client.execute(query);
   console.table(rows);
 } finally {
@@ -85,8 +90,8 @@ try {
 ```
 
 ### For debugging, preview query
-const preview = client.compile(query);
-console.log(preview.sql)
+
+The optional `compile()` call above returns SQL and bound parameters without executing the query. Call it before `destroy()`. `execute()` compiles automatically, so a separate preview is not required.
 
 ## Db dialect
 - postgresql
@@ -95,17 +100,19 @@ console.log(preview.sql)
 I added duckdb as it's asked by analyst in youtube video. It works well
 
 ## Test methodology
-- Test case- 6 cases in challenge. Enlarge it with more SQL cases (total 50).
+- Test cases cover the six challenge query families, with additional NULL, empty-input, duplicate, join, nested-aggregate and decimal/percentile cases.
 - Comparison between each database
 - Component test in each layer
 - Equivalence test - filter (A and B) = filter A then filter B.
-- Independent test
+- Independent raw-data and BigInt reference calculations check expected results separately from the compiler.
 - CI to check fresh clone and basic test in github action
+
+See [test methodology](docs/TEST-METHODOLOGY.md) for coverage and limits.
 
 
 ## Tools and setup commands
 I implemented an UI to drive API
-Please check doc folder for setup commands.
+See [Setup, driver, UI and tests](docs/RUNNING.md) for prerequisites and commands.
 
 ## AI usage
 
