@@ -40,3 +40,20 @@ test('NULL country is a group, while unmatched customers are excluded; trimming 
   const city=r.cities.find(c=>c.city==='London')!;
   assert.equal(city.caseInsensitive,0);assert.equal(city.trimAndCaseInsensitive,1);
 });
+
+test('compact evidence retains each variant fingerprint and exact named contrasts without full populations', async()=>{
+  const {compactResults,resultHash}=await import('../scripts/semantics/artifact.js');
+  const full=calculate(fixture);
+  const branch=full.money['net/allOrders'] as any;
+  branch.ratios[0].customer_id='ALFKI';branch.countries[0].country='Germany';
+  const compact=compactResults(full);
+  const summary=compact.money['net/allOrders'];
+  assert.equal(summary.fullBranchSha256,resultHash(branch));
+  assert.deepEqual(summary.representativeRatios,[branch.ratios[0]]);
+  assert.deepEqual(summary.representativeCountries,[branch.countries[0]]);
+  assert.deepEqual(summary.customerIdsWithoutOrders,['b']);
+  assert.equal(summary.customerCount,2);
+  assert.equal('ratios' in summary,false);
+  assert.equal(Object.keys(compact.money).length,6);
+  assert.equal((full.money['net/allOrders'] as any).ratios.length,2);
+});

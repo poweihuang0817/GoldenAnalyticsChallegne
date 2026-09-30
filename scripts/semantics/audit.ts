@@ -8,6 +8,7 @@ import {compilePlan} from '../../src/compiler.js';
 import {challengeCatalog} from '../../src/challenge.js';
 import {queryExamples} from '../../src/queries.js';
 import {calculate,scaled,type Data,type Row} from './oracle.js';
+import {compactResults,resultHash} from './artifact.js';
 
 const evidence: Record<string,unknown>[]=[];
 let reference: ReturnType<typeof calculate> | undefined;
@@ -35,15 +36,20 @@ for(const backend of ['postgres','mysql','duckdb'] as const){
       else if(i===4)assert.deepEqual(rows.map(r=>({employee_id:r.employee_id,shipped:Number(r.shipped),unshipped:Number(r.unshipped)})),results.employees.all.map(({employee_id,shipped,unshipped})=>({employee_id,shipped,unshipped})));
       else if(i===5){const wanted=baseline.ratios.map((r:any)=>({customer_id:r.customer_id,freight_ratio:r.ratio?.decimal10??null}));assert.deepEqual(normalizedMoney(rows,'freight_ratio'),normalizedMoney(wanted,'freight_ratio'));}
       else if(i===6){const wanted=baseline.countries.map((r:any)=>({country:r.country,order_price_p75:r.continuous?.decimal10??null}));assert.deepEqual(normalizedMoney(rows,'order_price_p75'),normalizedMoney(wanted,'order_price_p75'));}
-      api.push({name:example.name,status:'matches-independent-reference',rowCount:rows.length,sql:compiled.sql,parameterCount:compiled.parameters.length});
+      api.push({name:example.name,status:'matches-independent-reference',rowCount:rows.length,driverRowsSha256:resultHash(rows),parameterCount:compiled.parameters.length});
     }
     evidence.push({backend,seed,counts:results.counts,rawSnapshotSha256:createHash('sha256').update(JSON.stringify(data)).digest('hex'),referenceResultsSha256:createHash('sha256').update(JSON.stringify(results)).digest('hex'),api});
-    console.log(`${backend}: all seven driver examples match; all variant references agree`);
+    console.error(`${backend}: all seven driver examples match; all variant references agree`);
   } finally {await db.destroy();}
 }
-writeFileSync(new URL('../../docs/semantic-results.json',import.meta.url),JSON.stringify({
+assert.ok(reference);
+const artifact = {
   scope:'Raw-row reference calculations for named alternatives; only current baseline executed through Golden API. No claim of API support for every alternative.',
   sourceRevision:'5737fe26f5d398a9c25c91293a29274cdc578d5f',node:process.version,image:'goldenbeers/golden-query-challenge:1.0',
   numericPolicy:'Money exact rational arithmetic from cent prices/freight and hundredth discounts, checked without truncation; display rounded half away from zero to 10 places. Average API comparison tolerance 1e-12.',
-  evidence,results:reference,
-},null,2)+'\n');
+  artifactPolicy:'Compact reference evidence: all variant hashes and named ALFKI/Germany contrasts. driverRowsSha256 fingerprints raw driver encodings, not cross-backend normalized values. Use --full for the complete reference matrix on stdout; SQL remains available through client.compile().',
+  evidence,results:process.argv.includes('--full') ? reference : compactResults(reference),
+};
+const output=JSON.stringify(artifact,null,2)+'\n';
+if(process.argv.includes('--full'))process.stdout.write(output);
+else writeFileSync(new URL('../../docs/semantic-results.json',import.meta.url),output);

@@ -31,7 +31,7 @@ The audit reads Northwind without changing it; DuckDB uses a private in-memory s
 
 **Alternative definitions are reference calculations, not claims that every variant is implemented by the public API.** The current baseline runs remotely on PostgreSQL/MySQL as required; the audit does not replace application query execution with local evaluation. Adding API variants such as accent folding, WITH TIES or discrete percentile is outside this task.
 
-Full outputs, formulas as exact numerator/denominator pairs, SQL for the baseline, dataset hashes and row counts are in [semantic-results.json](semantic-results.json). The inspected application base is `5737fe26f5d398a9c25c91293a29274cdc578d5f`; audit code is committed alongside the artifact. Execution used Node 24.19.0 Windows, PostgreSQL/MySQL from `goldenbeers/golden-query-challenge:1.0`, and the installed DuckDB dependency. This is local audit evidence, not a new hosted CI claim.
+Compact evidence is in [semantic-results.json](semantic-results.json): dataset hashes/counts, baseline verification and raw driver-result hashes, all six money-variant fingerprints, and exact ALFKI/Germany contrasts. Raw driver hashes may differ across backends because representations differ; assertions, not hash equality, establish baseline conformance. Full SQL is available through `client.compile()` and is not persisted in this artifact. The inspected application base is `5737fe26f5d398a9c25c91293a29274cdc578d5f`; audit code is committed alongside the artifact. Execution used Node 24.19.0 Windows, PostgreSQL/MySQL from `goldenbeers/golden-query-challenge:1.0`, and the installed DuckDB dependency. This is local audit evidence, not a new hosted CI claim.
 
 The reference requires price/freight to fit exact cents and discount to fit hundredths, and rejects additional nonzero precision rather than truncating it. It uses BigInt rational arithmetic for money, ratios and percentile; decimal10 is a rounded display. Average API comparison alone uses a 1e-12 numeric tolerance. No claim of arbitrary-data rational conformance by the SQL compiler is made.
 
@@ -81,7 +81,7 @@ For customer ALFKI:
 | Discounted merchandise (current) | 0.0527919495 | 0.0579161870 |
 | Discounted merchandise + freight | 0.0501447123 | 0.0539647057 |
 
-The two customer populations differ: **FISSA and PARIS have no orders**. Current output includes them with NULL ratios; omitting no-order customers removes those rows. Each matrix entry records IDs with orders, numerator/denominator, mean valid-order ratio and its denominator, plus alternate NULL-freight policies (drop unknown-freight orders or mark the whole ratio unknown). NULL freight as zero is a chosen policy, not proof freight was free.
+The two customer populations differ: **FISSA and PARIS have no orders**. Current output includes them with NULL ratios; omitting no-order customers removes those rows. Each full matrix entry records IDs with orders, numerator/denominator, mean valid-order ratio and its denominator, plus alternate NULL-freight policies (drop unknown-freight orders or mark the whole ratio unknown). NULL freight as zero is a chosen policy, not proof freight was free.
 
 ### Country percentile
 
@@ -97,7 +97,7 @@ For `[10,20,30,40]`, continuous is 32.5; discrete inverse-CDF (ceil(.75*n)) is 3
 
 ## Finite variant matrix and limits
 
-The audit calculates recent-N/null/tie/ID contrasts; seven city inputs under four matching policies; four average metrics; all/active employee populations and unassigned orders; and six money branches (three price definitions times all-orders/with-details populations). Every money branch includes customer ratios and both country-percentile definitions. Customer exclusion is represented by the accompanying customerIdsWithOrders list. Full Cartesian combinations of unrelated changes are deliberately not enumerated.
+The audit calculates recent-N/null/tie/ID contrasts; seven city inputs under four matching policies; four average metrics; all/active employee populations and unassigned orders; and six money branches (three price definitions times all-orders/with-details populations). Every calculated money branch includes customer ratios and both country-percentile definitions. The compact artifact retains population counts, no-order customer IDs and named exact contrasts; the full output includes the customerIdsWithOrders list. Full Cartesian combinations of unrelated changes are deliberately not enumerated. To reproduce the complete reference matrix without enlarging the committed artifact, run `npx tsx scripts/semantics/audit.ts --full > semantic-results-full.json` (keep this local output uncommitted). Progress goes to stderr and JSON to stdout; this does not overwrite the compact artifact.
 
 The synthetic tests cover NULL city/country/freight, zero-detail orders, zero-order employees/customers, unmatched IDs, duplicate detail rows, exact rational division, cutoff ties, N=0, empty input, singleton/tied percentile and invalid extra precision. Existing [percentile integration tests](../test/percentile.test.ts) separately cover NULL/all-NULL groups and large exact decimals through the actual compiler. This audit's synthetic variant checks run in the reference evaluator, not a new remote alternative-query engine.
 

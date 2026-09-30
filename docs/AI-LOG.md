@@ -268,3 +268,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Added four inspectable capability keys and stable compiler rejection codes/stages, preserving causes for profile-validation errors and allowing unexpected errors to propagate unchanged. Separated invalid declarations from unsupported implementation choices at explicit rejection sites, without parsing message strings.
 - Full-standard Substrait classification, public API-construction error normalization and a generic capability planner remain out of scope. Root coordinated package.json test-script ownership; separate agents own execution controls and metadata.
 - Added focused tests for native/rewrite/unsupported behavior, contextual restrictions, validation causes and propagation. Two initial test failures exposed a test that hit the public API before compilation and a declaration split that had not applied; corrected the fixture and explicit classifier before final validation.
+
+## PR #42 review: compact semantic evidence
+
+- Reviewer requested shrinking the generated artifact and removing repeated SQL. Added compact per-variant fingerprints/population summaries with exact ALFKI/Germany contrasts; baseline rows now have raw driver-result hashes instead of SQL.
+- Added --full stdout output for reproducing all reference rows without committing them. Documented that raw driver hashes are representation-sensitive, not a cross-backend equality oracle.
+- Validation: code and audit typechecks passed; 54 unit tests (4 focused reference/artifact tests) passed; compact and full audits each matched all 21 baseline executions across PostgreSQL/MySQL/DuckDB; reference fingerprints agreed. Artifact reduced from 727,661 bytes / 21,709 lines to 24,803 bytes / 824 lines. Whitespace check passed. No production semantics or candidate README changed.
