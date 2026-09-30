@@ -287,6 +287,11 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Added --full stdout output for reproducing all reference rows without committing them. Documented that raw driver hashes are representation-sensitive, not a cross-backend equality oracle.
 - Validation: code and audit typechecks passed; 54 unit tests (4 focused reference/artifact tests) passed; compact and full audits each matched all 21 baseline executions across PostgreSQL/MySQL/DuckDB; reference fingerprints agreed. Artifact reduced from 727,661 bytes / 21,709 lines to 24,803 bytes / 824 lines. Whitespace check passed. No production semantics or candidate README changed.
 
+## Reviewer navigation guide (September 30, 2026)
+
+- User requested a company-friendly guide in its own PR mapping each challenge deliverable to files and commands. Added root REVIEWER_GUIDE.md with driver/extension/test/design/AI/future-work links and an explicit pending video/version/access section.
+- Guide is labelled AI-assisted supporting navigation; no README or candidate AI record modifications in this PR. No claim of final submission or new runtime validation.
+
 ## AI usage record organization (September 30, 2026)
 
 - Candidate explicitly requested a separate PR to organize the manually started AI record. Preserved the recorded prompt topics and grounded redirects/outcomes in conversation and repository history; labelled summaries and AI-assisted organization rather than claiming verbatim prompts or sole human authorship of the revision.
