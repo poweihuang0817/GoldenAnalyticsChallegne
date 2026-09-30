@@ -55,8 +55,6 @@ export const challengeCatalog = {
 } as const satisfies Catalog;
 ```
 
-The catalog above is an illustrative excerpt. For the runnable example, import the complete [Northwind catalog](src/challenge.ts) below instead of copying that excerpt. Combine the following TypeScript blocks in an `example.ts` file at the repository root. After database setup, run `npx tsx example.ts`.
-
 ```ts
 import { createSource, count, literal } from './src/api.js';
 import { createClient } from './src/client.js';
