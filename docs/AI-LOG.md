@@ -261,3 +261,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Added four inspectable capability keys and stable compiler rejection codes/stages, preserving causes for profile-validation errors and allowing unexpected errors to propagate unchanged. Separated invalid declarations from unsupported implementation choices at explicit rejection sites, without parsing message strings.
 - Full-standard Substrait classification, public API-construction error normalization and a generic capability planner remain out of scope. Root coordinated package.json test-script ownership; separate agents own execution controls and metadata.
 - Added focused tests for native/rewrite/unsupported behavior, contextual restrictions, validation causes and propagation. Two initial test failures exposed a test that hit the public API before compilation and a declaration split that had not applied; corrected the fixture and explicit classifier before final validation.
+## September 30: close the PRQL/Ossie research round for submission
+
+- User requested a background agent to finish research while the main agent handles #38 and the candidate writes the README. Used a fresh, independent docs/research-closeout worktree; preserved existing research branches and the candidate's untracked README.
+- Recorded a bounded DEFER decision, historical PRQL experiment limits, pinned Ossie model/tooling evidence and source-reviewed Malloy Node runtime/connectors. No claim of a verified semantic bridge or complete adoption experiment.
+- Retained TypeScript/Node and Substrait/Kysely for submission. Future work has explicit restart gates rather than another open-ended architecture survey.
+- Documentation only: source/link/diff review; no new packages, database tests, production changes or candidate README text.
