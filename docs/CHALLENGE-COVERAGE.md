@@ -1,5 +1,7 @@
 # Lower-layer challenge coverage
 
+For submission definitions, measured alternative interpretations and the independent three-backend audit, see [Query semantics](QUERY-SEMANTICS.md). Those alternatives are reference calculations, not an expansion of public API support.
+
 The lower layer now compiles all six sample query families. The public fluent API remains a separate task. Plans use generated Substrait types and the standard function-extension mechanism; the extension URI is resolved only through an allowlisted local registry, never fetched or executed dynamically.
 
 | Requirement | Implementation | Validation |
