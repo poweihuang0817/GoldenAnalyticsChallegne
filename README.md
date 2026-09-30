@@ -28,12 +28,65 @@ During implementation, I reuse my knowledge from power bi. I make sure these top
 ### For typed API
 - Compile and Execute as async in API
 - Each component as type, instead of callback.
+- type and spelling check due to pre-load schema.
 
 ### For compiling
 - In target generation, ensure tree traversal has clear context object. 
 
 
 ## API usage
+The flows follow how we construct SQL. Get schema. Build query. Execute. Below are each step.
+### Define catalog
+Firstly we define table to be used in this query. This allows us to do type check and spelling check.
+```
+export const challengeCatalog = {
+  orders: [
+    { name: 'order_id', type: 'i32', nullable: false },
+    { name: 'order_date', type: 'date', nullable: true },
+    { name: 'customer_id', type: 'string', nullable: true },
+    { name: 'employee_id', type: 'i32', nullable: true },
+    { name: 'shipped_date', type: 'date', nullable: true },
+    { name: 'freight', type: 'decimal', nullable: true },
+  ],
+  // customers、employees、order_details ...
+} as const satisfies Catalog;
+```
+
+### Get table from that
+const source = createSource(challengeCatalog);
+const orders = source.table('orders');
+
+### Build query
+Typed predicate and aggregation
+
+```
+const customers = source.table('customers');
+
+const londonCustomers = customers
+  .filter(
+    customers.columns.city
+      .lower()
+      .eq(literal('london').lower()),
+  )
+  .aggregate({
+    customer_count: count(),
+  });
+```
+
+### Select dialect and execute
+```
+const client = createClient('postgres', challengeCatalog);
+
+try {
+  const { rows } = await client.execute(query);
+  console.table(rows);
+} finally {
+  await client.destroy();
+}
+```
+
+### Compiling query for debugging
+
 
 ## Db extension
 I added duckdb as it's asked by analyst in youtube video. It works well
