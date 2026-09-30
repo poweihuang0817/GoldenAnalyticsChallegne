@@ -291,3 +291,8 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 
 - User requested a company-friendly guide in its own PR mapping each challenge deliverable to files and commands. Added root REVIEWER_GUIDE.md with driver/extension/test/design/AI/future-work links and an explicit pending video/version/access section.
 - Guide is labelled AI-assisted supporting navigation; no README or candidate AI record modifications in this PR. No claim of final submission or new runtime validation.
+
+## AI usage record organization (September 30, 2026)
+
+- Candidate explicitly requested a separate PR to organize the manually started AI record. Preserved the recorded prompt topics and grounded redirects/outcomes in conversation and repository history; labelled summaries and AI-assisted organization rather than claiming verbatim prompts or sole human authorship of the revision.
+- Clarified async execution vs synchronous compilation and implemented functionality vs deferred semantic/compiler research. No candidate review or elapsed time invented. README unchanged in this PR.

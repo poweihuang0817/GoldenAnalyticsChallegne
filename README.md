@@ -88,11 +88,13 @@ try {
 const preview = client.compile(query);
 console.log(preview.sql)
 
-## Db dialect
+## Db dialect and extension
 - postgresql
 - mysql
 - duckdb
 I added duckdb as it's asked by analyst in youtube video. It works well
+
+For sql extension, I added row number window function
 
 ## Test methodology
 - Test case- 6 cases in challenge. Enlarge it with more SQL cases (total 50).
