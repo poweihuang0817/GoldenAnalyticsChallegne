@@ -102,7 +102,7 @@ try {
 
 ### For debugging, preview query
 
-The optional `compile()` call above returns SQL and bound parameters without executing the query. Call it before `destroy()`. `execute()` compiles automatically, so a separate preview is not required.
+The optional `compile()` call above returns SQL and bound parameters without executing the query. This could be used to check compiled SQL.
 
 ## Db dialect
 - postgresql
