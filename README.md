@@ -41,8 +41,21 @@ During implementation, I reuse my knowledge from power bi to ensure it have the 
 The flows follow how we construct SQL. Get schema. Build query. Execute. Below are each step.
 ### Define catalog
 Firstly we define table to be used in this query. This allows us to do type check and spelling check.
+```
+export const challengeCatalog = {
+  orders: [
+    { name: 'order_id', type: 'i32', nullable: false },
+    { name: 'order_date', type: 'date', nullable: true },
+    { name: 'customer_id', type: 'string', nullable: true },
+    { name: 'employee_id', type: 'i32', nullable: true },
+    { name: 'shipped_date', type: 'date', nullable: true },
+    { name: 'freight', type: 'decimal', nullable: true },
+  ],
+  // customers、employees、order_details ...
+} as const satisfies Catalog;
+```
 
-This example reuses the complete [Northwind catalog](src/challenge.ts). Combine the following TypeScript blocks in an `example.ts` file at the repository root. After database setup, run `npx tsx example.ts`.
+The catalog above is an illustrative excerpt. For the runnable example, import the complete [Northwind catalog](src/challenge.ts) below instead of copying that excerpt. Combine the following TypeScript blocks in an `example.ts` file at the repository root. After database setup, run `npx tsx example.ts`.
 
 ```ts
 import { createSource, count, literal } from './src/api.js';
