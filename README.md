@@ -107,6 +107,10 @@ I added duckdb as it's asked by analyst in youtube video. It works well
 I implemented an UI to drive API
 Please check doc folder for setup commands.
 
+## AI usage
+
+See my [manually written AI usage record](Manual_Record_AI_Usage.md).
+
 ## Future work
 - Enlarge test suite by TPC-H or substrait consumer test
 - Adopt apache ossie or figure out a place for semantic view
