@@ -287,14 +287,6 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Added --full stdout output for reproducing all reference rows without committing them. Documented that raw driver hashes are representation-sensitive, not a cross-backend equality oracle.
 - Validation: code and audit typechecks passed; 54 unit tests (4 focused reference/artifact tests) passed; compact and full audits each matched all 21 baseline executions across PostgreSQL/MySQL/DuckDB; reference fingerprints agreed. Artifact reduced from 727,661 bytes / 21,709 lines to 24,803 bytes / 824 lines. Whitespace check passed. No production semantics or candidate README changed.
 
-## Candidate README targeted corrections (September 30, 2026)
-
-- Candidate explicitly requested AI edits to the small README issues identified in review and a separate PR. Preserved their architecture narrative, future-work choices and manual AI record; this is targeted assistance to a candidate-authored draft, not an AI-authored replacement README.
-- Corrected the executable API example (imports, complete catalog, fenced snippets, SQL preview before destroy), clarified synchronous compile/asynchronous execute, linked design/reference/setup/testing docs, and replaced an unsupported test count with named coverage and an independent-oracle explanation.
-- Validation: installed locked dependencies in the dedicated worktree; extracted and combined the exact README TypeScript blocks, typechecked them with repository settings, and executed against PostgreSQL (London customer_count = '6'). Checked relative links and git diff --check. Temporary validation files removed; no runtime changes or full-suite rerun.
-
-- PR #46 candidate review requested retaining the original challengeCatalog code. Restored that excerpt verbatim and labelled it illustrative; the runnable blocks still import the complete catalog. All other targeted corrections remain.
-
 ## Reviewer navigation guide (September 30, 2026)
 
 - User requested a company-friendly guide in its own PR mapping each challenge deliverable to files and commands. Added root REVIEWER_GUIDE.md with driver/extension/test/design/AI/future-work links and an explicit pending video/version/access section.
