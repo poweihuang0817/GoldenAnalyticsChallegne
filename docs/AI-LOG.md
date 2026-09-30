@@ -261,3 +261,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Added four inspectable capability keys and stable compiler rejection codes/stages, preserving causes for profile-validation errors and allowing unexpected errors to propagate unchanged. Separated invalid declarations from unsupported implementation choices at explicit rejection sites, without parsing message strings.
 - Full-standard Substrait classification, public API-construction error normalization and a generic capability planner remain out of scope. Root coordinated package.json test-script ownership; separate agents own execution controls and metadata.
 - Added focused tests for native/rewrite/unsupported behavior, contextual restrictions, validation causes and propagation. Two initial test failures exposed a test that hit the public API before compilation and a declaration split that had not applied; corrected the fixture and explicit classifier before final validation.
+
+## README setup reference (September 30, 2026)
+
+- User requested saving setup, driver, UI and test instructions into a document to reference from their own README.
+- Updated docs/RUNNING.md in a separate worktree; removed obsolete pre-merge branch instructions and documented DuckDB seeding, the fixed-example UI, test commands and cleanup.
+- Checked commands and UI port against package.json, compose.yaml and server source, and checked relative links and whitespace. Documentation-only change; no new runtime validation claimed. Candidate README left untouched.
