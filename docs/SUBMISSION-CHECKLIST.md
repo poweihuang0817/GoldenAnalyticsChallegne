@@ -52,9 +52,9 @@ Candidate notes / final CI URL and SHA:
 - [ ] Finalize the API design explanation in your own words: typed Table/Expr -> constrained Substrait -> Golden lowering -> Kysely -> backend.
 - [ ] Add major AI prompts and where you redirected the AI. The current README does not yet have this account. Use [AI-LOG.md](AI-LOG.md) as supporting evidence; choose the decisions you personally want to explain.
 - [ ] Confirm future work reflects your priorities and distinguishes researched options from selected dependencies.
-- [ ] Replace "check doc folder" with a direct [setup, driver, UI and tests](RUNNING.md) link. The refreshed guide is in PR #43 until merged.
+- [ ] Replace "check doc folder" with a direct [setup, driver, UI and tests](RUNNING.md) link. The refreshed guide was merged in PR #43.
 - [ ] Make the API example coherent: include imports or a complete-example link; label the partial catalog as illustrative; preview SQL before destroying the client; put source/preview snippets inside TypeScript code fences.
-- [ ] State the chosen query interpretations and link the semantic notes after PR #42 is merged. Continuous P75, discounted merchandise, accent-sensitive city matching and order population are choices, not uniquely mandated by the prompt.
+- [ ] State the chosen query interpretations and link the [semantic notes](QUERY-SEMANTICS.md), merged in PR #42. Continuous P75, discounted merchandise, accent-sensitive city matching and order population are choices, not uniquely mandated by the prompt.
 - [ ] Keep claims bounded: no implemented Malloy/Parquet/Ossie bridge; current Golden function semantics are not automatic full official Substrait conformance; timeout/cancel is not an end-to-end hard deadline.
 - [ ] Add the final video link.
 
@@ -86,7 +86,7 @@ Video URL / candidate notes:
 
 ## 5. Final delivery checks
 
-- [ ] Review/merge submission-relevant documentation: #42 semantics and #43 setup reference. Do not assume open PR content is already on main.
+- [x] Submission-relevant documentation merged: #42 semantics and #43 setup reference. Final-version verification remains below.
 - [ ] Commit and push the final candidate README and any approved submission files.
 - [ ] Record the final commit SHA (a tag is optional); verify that CI and demo evidence apply to it.
 - [ ] Verify README/doc links against the final tree.
