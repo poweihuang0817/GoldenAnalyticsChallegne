@@ -102,3 +102,56 @@ null orderings, nested offset/limit and replacement sort, zero-row aggregate,
 and ranking aggregated outputs then aggregating filtered ranks. Integration
 suite increased from 62 to 74 tests; all passed, alongside 60 unit tests and the
 three-backend conformance test.
+
+## Compiler snapshots (not database optimizer snapshots)
+
+The normal unit suite compares exact compiler-generated SQL, ordered parameters
+and lowering decisions for eight examples on each backend (24 snapshots).
+Fixtures live in test/fixtures/sql-query-blocks/. No EXPLAIN plan or timing is an
+assertion: engine upgrades, statistics and cost estimates may legitimately change
+those. Snapshot changes require SQL/trace review plus semantic integration tests;
+matching snapshots alone do not prove correctness. To explicitly regenerate:
+
+```powershell
+$env:UPDATE_SQL_SNAPSHOTS = '1'
+npx tsx --test test/analytics-compiler.test.ts
+Remove-Item Env:UPDATE_SQL_SNAPSHOTS
+npm test
+```
+
+Snapshots contain only fixed public sample parameters. Do not capture user data.
+The expanded unit suite now has 61 passing tests.
+
+## DuckDB freight deeper investigation
+
+Reproduce with `npx tsx scripts/investigate-duckdb-freight.ts`. This investigation
+uses the committed before SQL and checks the known fixed parameter order [0,0,1].
+It does not load a second compiler. The baseline is specific to this change;
+future compiler changes must review fixture/parameter compatibility first.
+
+DuckDB v1.5.5, six independently seeded in-memory instances, five warm-up pairs
+then 21 measured pairs per instance, alternating AB/BA; every instance checks
+exact result equality. JSON analyzed profiles and raw samples are in
+`docs/evidence/sql-query-blocks/duckdb-freight-investigation.json`.
+
+| Threads | Round | Old median ms | New median ms |
+| --- | --- | ---: | ---: |
+| 22 (default) | 1 | 20.27 | 18.55 |
+| 22 (default) | 2 | 20.77 | 20.95 |
+| 22 (default) | 3 | 27.58 | 26.07 |
+| 1 | 1 | 18.98 | 18.93 |
+| 1 | 2 | 15.61 | 14.86 |
+| 1 | 3 | 15.54 | 15.65 |
+
+The earlier slowdown did not reproduce consistently. This supports treating it
+as an inconclusive timing observation, not an established regression or speedup.
+Single-thread testing is diagnostic only; production settings are unchanged.
+
+In the first captured plan pair, the new plan has 15 projection nodes versus 16.
+Both have the same counts of scans (3), hash joins (3), hash groups (2), perfect
+hash groups (1), and LEFT_DELIM_JOIN (1). Counts do not prove plan equivalence.
+The correlated exact-decimal division remains in both plans; its delim join is
+not newly introduced by the simplification. Operator timings vary across runs,
+and parallel CPU totals are not wall-clock duration. Decimal arithmetic and
+correlated division are possible future optimization targets, not demonstrated
+causes of this initial timing difference. No precision relaxation is proposed.

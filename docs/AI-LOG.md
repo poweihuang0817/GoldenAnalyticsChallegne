@@ -326,3 +326,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
   plan/timing collector and before/after evidence. Investigated DuckDB freight
   with alternating execution; retained the unresolved small slowdown in docs.
   No universal speedup or formal proof claimed.
+
+- User clarified optimizer plans must not be regression snapshots. Added 24
+  compiler SQL/ordered-parameter/trace snapshots (61 unit tests pass); EXPLAIN
+  remains observational evidence only. Investigated DuckDB freight across six
+  seeded instances and two thread settings; the initial slowdown did not recur
+  consistently. Preserved all measurements and did not claim a universal speedup.

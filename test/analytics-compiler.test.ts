@@ -4,9 +4,29 @@ import { connect } from '../src/backend.js';
 import { compilePlan, type LoweringDecision } from '../src/compiler.js';
 import { challengeCatalog, customersInCity } from '../src/challenge.js';
 import { FUNCTIONS } from '../src/relational.js';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createSource, count } from '../src/api.js';
-import { cityQuery, recentOrdersPerCustomer } from '../src/queries.js';
+import { cityQuery, recentOrdersPerCustomer, queryExamples } from '../src/queries.js';
+
+test('generated SQL, ordered bindings and lowering trace match reviewed snapshots', async () => {
+  for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
+    const db = connect(backend, { duckdbPath: ':memory:' });
+    try {
+      const snapshots = [...queryExamples, { name: 'Window top N', query: recentOrdersPerCustomer() }].map(({name, query}) => {
+        const trace: LoweringDecision[] = [];
+        const compiled = compilePlan(db, query.toSubstrait(), challengeCatalog, { trace });
+        return { name, sql: compiled.sql, parameters: compiled.parameters, trace };
+      });
+      const directory = new URL('./fixtures/sql-query-blocks/', import.meta.url);
+      const path = new URL(`${backend}.json`, directory);
+      if (process.env.UPDATE_SQL_SNAPSHOTS === '1') {
+        mkdirSync(directory, { recursive: true });
+        writeFileSync(path, JSON.stringify(snapshots, null, 2) + '\n');
+      }
+      assert.deepEqual(snapshots, JSON.parse(readFileSync(path, 'utf8')), `${backend}: review SQL/trace changes; update snapshots explicitly`);
+    } finally { await db.destroy(); }
+  }
+});
 
 test('query blocks retain aggregate, computed projection, fetch and window boundaries', async () => {
   for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
