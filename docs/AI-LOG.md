@@ -1,5 +1,12 @@
 # AI collaboration log
 
+## September 30: resolve challenge-query ambiguity (#38)
+
+- User requested completing #38 while personally writing the README, and authorized a separate agent to close out PRQL/Ossie research. Root used an isolated query-semantics worktree; candidate README left untouched.
+- Added independent raw-row rational calculations for a finite variant matrix, adversarial reference fixtures, and baseline Golden execution on PostgreSQL/MySQL/private in-memory DuckDB. Kept alternative-reference results distinct from API-supported queries; no compiler or default semantic changes.
+- Observed concrete differences for date cutoff ties, city accents, order-versus-line averages, freight ratio grain and percentile definition. Some populations coincide on Northwind, so fixtures establish their distinction. Exact monetary inputs are validated before integer arithmetic; no blanket floating normalization.
+- Initial typecheck caught a reference-helper row spread losing indexed properties; corrected the type annotation before execution. All baseline driver results and alternative-reference matrices agreed across three backends. This is local evidence and not a claim of final-release CI or a candidate-authored README.
+
 ## Initial setup
 
 - User supplied the challenge and directed the assistant to start by checking the Docker image.
@@ -261,3 +268,21 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Added four inspectable capability keys and stable compiler rejection codes/stages, preserving causes for profile-validation errors and allowing unexpected errors to propagate unchanged. Separated invalid declarations from unsupported implementation choices at explicit rejection sites, without parsing message strings.
 - Full-standard Substrait classification, public API-construction error normalization and a generic capability planner remain out of scope. Root coordinated package.json test-script ownership; separate agents own execution controls and metadata.
 - Added focused tests for native/rewrite/unsupported behavior, contextual restrictions, validation causes and propagation. Two initial test failures exposed a test that hit the public API before compilation and a declaration split that had not applied; corrected the fixture and explicit classifier before final validation.
+
+## Submission deliverable checklist (September 30, 2026)
+
+- User asked whether the driver exists, whether their README omits test descriptions, and requested a Markdown checklist to annotate themselves.
+- Inspected the current candidate README and CLI driver; recorded existing deliverables separately from final-run, video, access and submission evidence. Flagged missing AI-prompt/redirect account and imprecise test-count wording without editing the candidate README.
+- Added docs/SUBMISSION-CHECKLIST.md with candidate note fields. Documentation checks only; no new runtime/CI success claimed.
+
+## README setup reference (September 30, 2026)
+
+- User requested saving setup, driver, UI and test instructions into a document to reference from their own README.
+- Updated docs/RUNNING.md in a separate worktree; removed obsolete pre-merge branch instructions and documented DuckDB seeding, the fixed-example UI, test commands and cleanup.
+- Checked commands and UI port against package.json, compose.yaml and server source, and checked relative links and whitespace. Documentation-only change; no new runtime validation claimed. Candidate README left untouched.
+
+## PR #42 review: compact semantic evidence
+
+- Reviewer requested shrinking the generated artifact and removing repeated SQL. Added compact per-variant fingerprints/population summaries with exact ALFKI/Germany contrasts; baseline rows now have raw driver-result hashes instead of SQL.
+- Added --full stdout output for reproducing all reference rows without committing them. Documented that raw driver hashes are representation-sensitive, not a cross-backend equality oracle.
+- Validation: code and audit typechecks passed; 54 unit tests (4 focused reference/artifact tests) passed; compact and full audits each matched all 21 baseline executions across PostgreSQL/MySQL/DuckDB; reference fingerprints agreed. Artifact reduced from 727,661 bytes / 21,709 lines to 24,803 bytes / 824 lines. Whitespace check passed. No production semantics or candidate README changed.
