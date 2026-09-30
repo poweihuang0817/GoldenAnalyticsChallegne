@@ -261,3 +261,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Added four inspectable capability keys and stable compiler rejection codes/stages, preserving causes for profile-validation errors and allowing unexpected errors to propagate unchanged. Separated invalid declarations from unsupported implementation choices at explicit rejection sites, without parsing message strings.
 - Full-standard Substrait classification, public API-construction error normalization and a generic capability planner remain out of scope. Root coordinated package.json test-script ownership; separate agents own execution controls and metadata.
 - Added focused tests for native/rewrite/unsupported behavior, contextual restrictions, validation causes and propagation. Two initial test failures exposed a test that hit the public API before compilation and a declaration split that had not applied; corrected the fixture and explicit classifier before final validation.
+
+## Submission deliverable checklist (September 30, 2026)
+
+- User asked whether the driver exists, whether their README omits test descriptions, and requested a Markdown checklist to annotate themselves.
+- Inspected the current candidate README and CLI driver; recorded existing deliverables separately from final-run, video, access and submission evidence. Flagged missing AI-prompt/redirect account and imprecise test-count wording without editing the candidate README.
+- Added docs/SUBMISSION-CHECKLIST.md with candidate note fields. Documentation checks only; no new runtime/CI success claimed.
