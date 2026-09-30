@@ -269,6 +269,12 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Full-standard Substrait classification, public API-construction error normalization and a generic capability planner remain out of scope. Root coordinated package.json test-script ownership; separate agents own execution controls and metadata.
 - Added focused tests for native/rewrite/unsupported behavior, contextual restrictions, validation causes and propagation. Two initial test failures exposed a test that hit the public API before compilation and a declaration split that had not applied; corrected the fixture and explicit classifier before final validation.
 
+## README setup reference (September 30, 2026)
+
+- User requested saving setup, driver, UI and test instructions into a document to reference from their own README.
+- Updated docs/RUNNING.md in a separate worktree; removed obsolete pre-merge branch instructions and documented DuckDB seeding, the fixed-example UI, test commands and cleanup.
+- Checked commands and UI port against package.json, compose.yaml and server source, and checked relative links and whitespace. Documentation-only change; no new runtime validation claimed. Candidate README left untouched.
+
 ## PR #42 review: compact semantic evidence
 
 - Reviewer requested shrinking the generated artifact and removing repeated SQL. Added compact per-variant fingerprints/population summaries with exact ALFKI/Germany contrasts; baseline rows now have raw driver-result hashes instead of SQL.
