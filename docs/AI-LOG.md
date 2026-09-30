@@ -320,3 +320,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
   checks: 60 unit tests, 62 integration tests, three-backend conformance and code/
   documentation type checks passed. See SQL-QUERY-BLOCKS.md for before/after
   evidence and limitations; no formal proof or performance benchmark claimed.
+
+- Follow-up request: expand #51 tests and record per-backend plans/performance.
+  Added 12 database regression cases (74 integration tests total), a fixed-corpus
+  plan/timing collector and before/after evidence. Investigated DuckDB freight
+  with alternating execution; retained the unresolved small slowdown in docs.
+  No universal speedup or formal proof claimed.

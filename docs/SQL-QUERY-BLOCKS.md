@@ -69,3 +69,36 @@ exhaustive event log. Function-free dispatch reports detailed tracing unavailabl
 Playground shows it under Generated SQL > Compilation details. Tests confirm
 tracing preserves SQL and bindings. Execution timing and EXPLAIN automation are
 separate future work.
+## Performance evidence follow-up
+
+Run `npx tsx scripts/check-query-performance.ts <output.json>` with the provided
+PostgreSQL/MySQL services available. It seeds an in-memory DuckDB snapshot and
+runs the fixed public Northwind corpus only. EXPLAIN ANALYZE executes each query.
+Reports contain public sample rows and literal-bearing database explain plans;
+do not reuse this reporting policy for sensitive production datasets.
+
+Committed reports are in docs/evidence/sql-query-blocks/: before.json uses
+fa86807, after.json uses compiler cf8643c, with the same collector. Each contains
+SQL, result rows, plain/analyzed plans, seven samples and their median after one
+warm-up. A held connection excludes acquisition; timings include transfer and
+decoding. The baseline collector was temporarily pointed at the clean main
+checkout; it is not a second maintained compiler. All 24 raw result comparisons
+passed. Test/script additions were uncommitted during collection; compiler code
+was unchanged from cf8643c. These are local observations, not CI thresholds.
+
+Initial DuckDB freight medians were 29.03 -> 37.88 ms. A follow-up on one seeded
+connection alternated old/new SQL (AB/BA), discarded three warm-up pairs and
+measured 21 pairs: 38.70 -> 40.81 ms. Results matched. This smaller remaining
+slowdown is unresolved; neither these small samples nor shorter SQL establish
+an overall performance win. Other timings are mixed and mostly close. Preserve
+both observations rather than selecting favorable runs. The paired report is
+recorded in duckdb-freight-paired.json. Future work: repeated independent runs,
+larger fixtures, engine-version capture, and investigation of DuckDB's exact
+decimal division plan. Do not claim every backend/query is faster.
+
+Additional hand-calculated regressions run on all three databases: filters
+before/after window, renamed window inputs with null partitions/ties and both
+null orderings, nested offset/limit and replacement sort, zero-row aggregate,
+and ranking aggregated outputs then aggregating filtered ranks. Integration
+suite increased from 62 to 74 tests; all passed, alongside 60 unit tests and the
+three-backend conformance test.
