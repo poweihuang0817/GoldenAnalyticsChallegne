@@ -26,7 +26,7 @@ flowchart LR
   D --> E[Selected database]
 ```
 
-Constructing a query does not fetch rows. `client.execute(query)` validates, compiles and executes it. Optional `client.compile(query)` previews SQL and bound parameters. Advanced callers can still use `toSubstrait()`, `compilePlan()` and `db.executeQuery()` separately. PostgreSQL/MySQL run remotely. DuckDB runs against a separately seeded local file, with no automatic fallback or federation.
+Constructing a query does not fetch rows. `client.execute(query)` validates, compiles and executes it. Optional `await client.compile(query)` previews SQL and bound parameters. Advanced callers can still use `toSubstrait()`, `compilePlanSync()` and `db.executeQuery()` separately. PostgreSQL/MySQL run remotely. DuckDB runs against a separately seeded local file, with no automatic fallback or federation.
 
 ## Run the documented examples
 
@@ -54,7 +54,7 @@ Execution needs both remote databases and the seeded DuckDB file. It runs only f
 | --- | --- |
 | [src/api.ts](../../src/api.ts) | `createSource`, `Table`, `Expr`, `Measure`, `Sort`, `literal`, `integer`, `caseWhen`, `count`, `eq`, `and` |
 | [src/client.ts](../../src/client.ts) | `createClient`, `QueryPreview`: execute, preview SQL and release resources |
-| [src/compiler.ts](../../src/compiler.ts) | `compilePlan`, `Catalog`, `Database` |
+| [src/compiler.ts](../../src/compiler.ts) | `compilePlanSync`, `Catalog`, `Database` |
 | [src/backend.ts](../../src/backend.ts) | `connect`, `Backend` |
 | [src/plan.ts](../../src/plan.ts) | `SupportedPlanJson`, `encodePlan`, `decodePlan`; lower-level profile/conversion utilities |
 | [src/challenge.ts](../../src/challenge.ts) | `challengeCatalog` for Northwind |

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { sql } from 'kysely';
 import { connect } from '../src/backend.js';
-import { compilePlan, type Catalog } from '../src/compiler.js';
+import { compilePlanSync, type Catalog } from '../src/compiler.js';
 import { createSource, caseWhen, count, integer, type Table } from '../src/api.js';
 
 // Same public-API corpus and hand-written expected rows on all engines.
@@ -31,7 +31,7 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
             (3, 'B', 20, 0), (4, 'B', 20, 1),
             (5, null, null, null), (6, null, 5, 0), (7, 'C', null, 1)`.execute(connection);
           const base = createSource(catalog).table(name);
-          const run = async (q: Table) => (await connection.executeQuery(compilePlan(connection, q.toSubstrait(), catalog))).rows;
+          const run = async (q: Table) => (await connection.executeQuery(compilePlanSync(connection, q.toSubstrait(), catalog))).rows;
 
           await t.test('terminal fetch preserves null placement, tied values, aliases and zero offset', async () => {
             const projected = base.select({ key: base.columns.id, amount: base.columns.qty });
@@ -302,7 +302,7 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
         await sql`create table ${sql.id(name)} (id integer not null, grp integer, qty integer)`.execute(connection);
         try {
           const base = createSource(catalog).table(name);
-          const run = async (q: Table) => (await connection.executeQuery(compilePlan(connection, q.toSubstrait(), catalog))).rows;
+          const run = async (q: Table) => (await connection.executeQuery(compilePlanSync(connection, q.toSubstrait(), catalog))).rows;
           const grouped = base.groupBy('grp').aggregate({
             n: count(), valued: base.columns.qty.count(), total: base.columns.qty.sum(),
           }).orderBy({ column: 'grp', nulls: 'last' });

@@ -96,7 +96,7 @@ const client = createClient('postgres', challengeCatalog);
 
 try {
   // Optional: no data query is executed here.
-  const preview = client.compile(query);
+  const preview = await client.compile(query);
   console.log(preview.sql);
   // preview.parameters contains ordered values.
 

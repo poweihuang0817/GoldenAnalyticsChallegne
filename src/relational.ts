@@ -17,7 +17,7 @@ type QueryBlock = { source: RawBuilder<unknown>; sourceFor?: (expressions: RawBu
 type Relation = { query: RawBuilder<unknown>; fields: Omit<Value, 'expr'>[]; order?: { index: number; direction: string }[]; block?: QueryBlock };
 
 /**
- * Internal lowering entry: callers must pass a profile-validated plan via compilePlan.
+ * Internal lowering entry: callers must pass a profile-validated plan via compilePlanSync.
  * SupportedPlanJson is a TypeScript shape, not proof of runtime validation.
  * In particular, planSchema enforces window arity/output/phase/frame restrictions.
  * Combine compatible SQL clauses, retaining aggregate/window/fetch boundaries.

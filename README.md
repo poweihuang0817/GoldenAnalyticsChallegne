@@ -90,7 +90,7 @@ const client = createClient('postgres', challengeCatalog);
 
 try {
   // Optional: preview SQL without executing the query.
-  const preview = client.compile(query);
+  const preview = await client.compile(query);
   console.log(preview.sql);
 
   const { rows } = await client.execute(query);

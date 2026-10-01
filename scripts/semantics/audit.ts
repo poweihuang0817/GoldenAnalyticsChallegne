@@ -4,7 +4,7 @@ import {writeFileSync} from 'node:fs';
 import {sql} from 'kysely';
 import {connect} from '../../src/backend.js';
 import {seedDuckDB} from '../../src/duckdb-seed.js';
-import {compilePlan} from '../../src/compiler.js';
+import {compilePlanSync} from '../../src/compiler.js';
 import {challengeCatalog} from '../../src/challenge.js';
 import {queryExamples} from '../../src/queries.js';
 import {calculate,scaled,type Data,type Row} from './oracle.js';
@@ -28,7 +28,7 @@ for(const backend of ['postgres','mysql','duckdb'] as const){
     if(reference)assert.deepEqual(results,reference,`${backend}: all alternative reference results agree`);else reference=results;
     const api:Record<string,unknown>[]=[];
     for(const [i,example] of queryExamples.entries()){
-      const compiled=compilePlan(db,example.query.toSubstrait(),challengeCatalog);
+      const compiled=compilePlanSync(db,example.query.toSubstrait(),challengeCatalog);
       const rows=(await db.executeQuery<Row>(compiled)).rows;
       if(i===0)assert.deepEqual(rows.map(r=>r.order_id),results.recent.exactN);
       else if(i===1||i===2){const city=i===1?'london':'mexico d.f.';assert.equal(String(rows[0].customer_count),String(results.cities.find(c=>c.city===city)!.caseInsensitive));}

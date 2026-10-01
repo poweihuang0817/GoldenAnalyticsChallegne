@@ -18,15 +18,15 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
     try {
       delete catalog.customers;
       const input = "London' OR 1=1 --";
-      const preview = client.compile(cityQuery(input));
+      const preview = await client.compile(cityQuery(input));
       assert.ok(!preview.sql.includes(input));
       assert.ok(preview.parameters.includes(input));
       assert.match(preview.sql, backend === 'mysql' ? /\?/ : /\$1/);
       const bad = createSource({ missing: challengeCatalog.customers }).table('missing');
-      assert.throws(() => client.compile(bad), /table/i);
+      await assert.rejects(client.compile(bad), /table/i);
       await assert.rejects(client.execute(bad), /table/i);
     } finally { await client.destroy(); }
-    assert.throws(() => client.compile(cityQuery('London')), /closed/);
+    await assert.rejects(client.compile(cityQuery('London')), /closed/);
     await assert.rejects(client.execute(cityQuery('London')), /closed/);
   });
 }
@@ -43,7 +43,7 @@ test('predicate helpers run at construction and are not rerun by compile or exec
   assert.equal(calls, 1);
   const client = createClient('duckdb', { missing: challengeCatalog.customers }, { duckdbPath: ':memory:' });
   try {
-    client.compile(query); // No physical table exists; compilation still succeeds.
+    await client.compile(query); // No physical table exists; compilation still succeeds.
     assert.equal(calls, 1);
     await assert.rejects(client.execute(query), (error: unknown) => error instanceof Error && 'code' in error && error.code === 'EXECUTION_FAILED' && error.cause instanceof Error && /missing/i.test(error.cause.message)); // Actual database execution fails.
     assert.equal(calls, 1);
@@ -62,10 +62,30 @@ test('execute returns real DuckDB results and preview mutation cannot change exe
     const client = createClient('duckdb', challengeCatalog, options);
     try {
       const query = cityQuery('London');
-      const preview = client.compile(query);
+      const preview = await client.compile(query);
       (preview.parameters as unknown[]).fill('Paris');
       assert.deepEqual(await client.execute(query), { rows: [{ customer_count: '2' }] });
       assert.deepEqual(await client.execute(cityQuery("' OR 1=1 --")), { rows: [{ customer_count: '0' }] });
     } finally { await client.destroy(); }
   } finally { await rm(directory, { recursive: true }); }
+});
+
+test('destroy rejects in-flight compilation, is idempotent, and prevents execution', async () => {
+  const client = createClient('duckdb', challengeCatalog, { duckdbPath: ':memory:' });
+  const compiling = assert.rejects(client.compile(cityQuery('London')), /closed/);
+  const executing = assert.rejects(client.execute(cityQuery('London')), /closed/);
+  const closing = client.destroy();
+  assert.equal(client.destroy(), closing);
+  await Promise.all([compiling, executing, closing]);
+});
+
+test('abort during compilation prevents database execution after the worker responds', async () => {
+  const client = createClient('duckdb', challengeCatalog, { duckdbPath: ':memory:' });
+  const controller = new AbortController();
+  try {
+    const result = client.execute(cityQuery('London'), { signal: controller.signal });
+    controller.abort();
+    await assert.rejects(result, (error: any) => error.code === 'QUERY_CANCELLED');
+    assert.ok((await client.compile(cityQuery('London'))).sql);
+  } finally { await client.destroy(); }
 });

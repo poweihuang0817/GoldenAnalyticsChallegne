@@ -139,3 +139,14 @@ function presentationConstraints() {
   projected.columns.customer_id;
   void lowered; void renamed;
 }
+
+// Compilation is Promise-based even though query construction is synchronous.
+async function compilePreviewType() {
+  const client = createClient('postgres', challengeCatalog);
+  const query = createSource(challengeCatalog).table('customers');
+  const preview: Promise<import('../src/client.js').QueryPreview> = client.compile(query);
+  // @ts-expect-error SQL is available only after awaiting compilation.
+  preview.sql;
+  (await preview).sql satisfies string;
+  await client.destroy();
+}

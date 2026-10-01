@@ -388,6 +388,13 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Types shows the actual lower receiver constraint plus valid/invalid calls. Projection shows input/output rows, rename/omission, result-schema checks and the real select signature. No compiler/API behavior changed; candidate README unchanged.
 - Added compile-only positive/negative examples and a signature/source consistency check. Navigation tests now cover nine topics and Catalog initial selection.
 
+## Async compilation worker (issue #60; September 30, 2026)
+
+- User explicitly requested asynchronous public compilation and transparent reusable worker isolation, retaining Substrait, synchronous internal compilePlan, the current catalog API and backend-owned database execution. Worked independently from the compiler optimization task on base 683c5cc; no relational compiler or SQL snapshot changes.
+- Added one lazy compiler worker per client, a 32-request bound, correlation, fatal-error/exit handling and destroy cleanup. Public compile returns Promise<QueryPreview>; execute awaits the same service. Workers receive plans/catalogs/backend names and use DummyDriver; database URLs and credentials are not inherited. Updated callers, executable examples and API lifecycle documentation.
+- Added real three-dialect SQL/binding equivalence and compiler-error checks plus deterministic queue, startup, serialization, exit, destroy and cancellation-boundary tests. Characterized 10/20/31 join operators without wall-clock pass/fail assertions; measurements and limitations are in QUERY-CLIENT.md. No compilation speedup or end-to-end deadline claim.
+- Local validation: code/docs typechecks; 76 unit tests; 74 serial integration tests against provided PostgreSQL/MySQL plus isolated DuckDB fixtures; one three-backend seeded conformance test; 21 documentation examples compiled and executed on all three backends. Final bootstrap/client checks and unsupported-capability transport were rerun after their respective changes. These are local results, not hosted CI or final-submission fresh-clone evidence.
+
 ## SQL audit findings follow-up (September 30, 2026)
 
 - User requested resolving the SQL complexity findings from #53, using agents and learning from Calcite. Kept Substrait/Kysely and the existing compiler; no new optimizer or IR.
@@ -395,3 +402,8 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Implemented guarded block absorption, column demand, physical cast provenance, non-null sort simplification, and shared percentile position. Parameterized computed grouping retains a boundary to avoid distinct bind positions changing PostgreSQL grouping validity.
 - Rejected a more aggressive DuckDB decimal rewrite after correlated alias/binder/precision failures; retained exact arithmetic and added regression fixtures. No universal latency benefit claimed.
 - Local code/docs checks, 68 unit tests, 98 integration tests and one three-backend conformance test passed. Regenerated the 24 display SQL files from exact SQL/parameter/trace fixtures. Candidate README unchanged; async compiler workers are separate issue #60.
+
+## Explicit synchronous compiler naming (September 30, 2026)
+
+- User requested a clear async naming contract. Renamed the low-level compiler to compilePlanSync, retaining await client.compile as the public worker-backed API. Updated source, tests, instrumentation scripts and current documentation references; historical log entries remain historical.
+- Fixed the missing await in the candidate README example as a narrow user-authorized API correction. Playground still explicitly uses compilePlanSync for trace output; moving that route to the worker requires trace transport and remains separate work.

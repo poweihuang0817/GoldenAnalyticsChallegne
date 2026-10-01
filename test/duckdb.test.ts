@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { sql } from 'kysely';
 import { connect } from '../src/backend.js';
 import { createSource } from '../src/api.js';
-import { compilePlan, type Catalog } from '../src/compiler.js';
+import { compilePlanSync, type Catalog } from '../src/compiler.js';
 import { queryExamples } from '../src/queries.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { duckdbDecimalDivide } from '../src/duckdb-decimal.js';
@@ -59,7 +59,7 @@ test('DuckDB decimal division retains digits beyond JavaScript precision', async
     await sql`insert into amounts values ('9007199254740993.0000000000', 3)`.execute(db);
     const amounts = createSource(catalog).table('amounts');
     const query = amounts.select({ ratio: amounts.col('a').div(amounts.col('b')) });
-    assert.deepEqual((await db.executeQuery(compilePlan(db, query.toSubstrait(), catalog))).rows, [{ ratio: '3002399751580331.0000000000' }]);
+    assert.deepEqual((await db.executeQuery(compilePlanSync(db, query.toSubstrait(), catalog))).rows, [{ ratio: '3002399751580331.0000000000' }]);
   } finally { await db.destroy(); }
 });
 
@@ -77,13 +77,13 @@ test('DuckDB decimal division rounds signs and ties, preserves nulls, rejects ov
     const source = createSource(catalog);
     const amounts = source.table('amounts');
     const query = amounts.select({ id: amounts.col('id'), ratio: amounts.col('a').div(amounts.col('b')) }).orderBy({ column: 'id' });
-    assert.deepEqual((await db.executeQuery(compilePlan(db, query.toSubstrait(), catalog))).rows.map(r => r.ratio), [
+    assert.deepEqual((await db.executeQuery(compilePlanSync(db, query.toSubstrait(), catalog))).rows.map(r => r.ratio), [
       '0.3333333333', '-0.3333333333', '-0.3333333333', '0.3333333333', '0.0000000001', '-0.0000000001', null, null, null, '0.0000000000', null, null,
     ]);
     await sql`insert into amounts values (11, '100000000000000000000.0000000000', 1)`.execute(db);
-    await assert.rejects(db.executeQuery(compilePlan(db, query.toSubstrait(), catalog)), /overflow/i);
+    await assert.rejects(db.executeQuery(compilePlanSync(db, query.toSubstrait(), catalog)), /overflow/i);
     const avg = amounts.aggregate({ average: amounts.col('a').avg() });
-    assert.throws(() => compilePlan(db, avg.toSubstrait(), catalog), /exact decimal average is unsupported/);
+    assert.throws(() => compilePlanSync(db, avg.toSubstrait(), catalog), /exact decimal average is unsupported/);
   } finally { await db.destroy(); }
 });
 
@@ -99,14 +99,14 @@ test('DuckDB percentile preserves null groups, ties and large decimal interpolat
     const source = createSource(catalog);
     const amounts = source.table('amounts');
     const query = amounts.groupBy('category').aggregate({ p: amounts.col('amount').percentile(0.75) }).orderBy({ column: 'category' });
-    assert.deepEqual((await db.executeQuery(compilePlan(db, query.toSubstrait(), catalog))).rows, [
+    assert.deepEqual((await db.executeQuery(compilePlanSync(db, query.toSubstrait(), catalog))).rows, [
       { category: 'a', p: '32.5000000000' }, { category: 'b', p: null },
       { category: 'big', p: '9007199254740993.0000000075' }, { category: 'c', p: '7.0000000000' }, { category: 'd', p: '1.0000000000' },
     ]);
     await sql`delete from amounts`.execute(db);
-    assert.deepEqual((await db.executeQuery(compilePlan(db, query.toSubstrait(), catalog))).rows, []);
+    assert.deepEqual((await db.executeQuery(compilePlanSync(db, query.toSubstrait(), catalog))).rows, []);
     const global = amounts.aggregate({ p: amounts.col('amount').percentile(0.75) });
-    assert.deepEqual((await db.executeQuery(compilePlan(db, global.toSubstrait(), catalog))).rows, [{ p: null }]);
+    assert.deepEqual((await db.executeQuery(compilePlanSync(db, global.toSubstrait(), catalog))).rows, [{ p: null }]);
   } finally { await db.destroy(); }
 });
 
@@ -130,7 +130,7 @@ test('DuckDB six sample families match hand-calculated fixture results', async (
       [{ country: 'X', order_price_p75: '19.0000000000' }, { country: 'Y', order_price_p75: '0.0000000000' }],
     ];
     for (const [i, example] of queryExamples.entries()) {
-      assert.deepEqual((await db.executeQuery(compilePlan(db, example.query.toSubstrait(), challengeCatalog))).rows, expected[i], example.name);
+      assert.deepEqual((await db.executeQuery(compilePlanSync(db, example.query.toSubstrait(), challengeCatalog))).rows, expected[i], example.name);
     }
   } finally { await db.destroy(); }
 });

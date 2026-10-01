@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { sql } from 'kysely';
 import { connect } from '../src/backend.js';
-import { compilePlan, type Catalog } from '../src/compiler.js';
+import { compilePlanSync, type Catalog } from '../src/compiler.js';
 import { countryPercentile } from '../src/challenge.js';
 import { ref, type Rel, encodePlan, decodePlan } from '../src/plan.js';
 
@@ -38,7 +38,7 @@ for (const backend of ['postgres', 'mysql'] as const) {
           for (const [category, amount] of [['a','10'],['a','20'],['a','30'],['a','40'],['a',null],['b',null],['c','7'],['d','1'],['d','1'],['big','9007199254740993.0000000000'],['big','9007199254740993.0000000100']]) {
             await sql`insert into ${sql.id(table)} values (${category}, ${amount})`.execute(connection);
           }
-          const run = async (fraction: number, grouped = true) => (await connection.executeQuery(compilePlan(connection, decodePlan(encodePlan(fixturePlan(table, fraction, grouped))), catalog))).rows;
+          const run = async (fraction: number, grouped = true) => (await connection.executeQuery(compilePlanSync(connection, decodePlan(encodePlan(fixturePlan(table, fraction, grouped))), catalog))).rows;
           assert.deepEqual(await run(0.75), [
             { category: 'a', p: '32.5000000000' }, { category: 'b', p: null },
             { category: 'big', p: '9007199254740993.0000000075' },
@@ -49,7 +49,7 @@ for (const backend of ['postgres', 'mysql'] as const) {
           await sql`delete from ${sql.id(table)}`.execute(connection);
           assert.deepEqual(await run(0.75), []);
           assert.deepEqual(await run(0.75, false), [{ p: null }]);
-          assert.throws(() => compilePlan(connection, fixturePlan(table, 1.01), catalog), /fraction/);
+          assert.throws(() => compilePlanSync(connection, fixturePlan(table, 1.01), catalog), /fraction/);
         } finally { await sql`drop table ${sql.id(table)}`.execute(connection); }
       });
     } finally { await db.destroy(); }

@@ -6,7 +6,7 @@ for (const backend of backends) {
   const client = createClient(backend, challengeCatalog);
   try {
     for (const { name, query } of [...queryExamples, { name: 'Extension: most recent three orders per customer', query: recentOrdersPerCustomer() }]) {
-      const compiled = client.compile(query);
+      const compiled = await client.compile(query);
       console.log({ backend, name, sql: compiled.sql, parameterCount: compiled.parameters.length });
       console.table((await client.execute(query)).rows);
     }

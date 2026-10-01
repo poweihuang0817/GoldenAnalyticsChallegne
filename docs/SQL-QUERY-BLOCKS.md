@@ -62,7 +62,7 @@ The initial 24-way before/after comparison preceded the additional window-input
 merge (then 3 SELECTs). The final two-SELECT window form passes the independent
 window oracles and three-backend conformance suite.
 
-Pass a fresh LoweringDecision[] as compilePlan's fourth argument, { trace }, to
+Pass a fresh LoweringDecision[] as compilePlanSync's fourth argument, { trace }, to
 collect unary-operation merge/boundary decisions. Relation IDs identify traversal
 nodes, not SQL blocks. This bounded diagnostic omits literals and is not an
 exhaustive event log. Function-free dispatch reports detailed tracing unavailable.

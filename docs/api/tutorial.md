@@ -31,7 +31,7 @@ try {
 3. These methods construct a query; they do not fetch data.
 4. `createClient` selects the backend and owns its connection resources. Use `'mysql'`, or `'duckdb'` after seeding, with the same query.
 5. `client.execute(query)` exports, validates and compiles the plan, then executes it. `rows` is inferred as objects with `customer_count: string`, preserving i64 precision.
-6. Optional `client.compile(query)` previews SQL and parameters without executing a database query. A preview is not required before execution.
+6. Optional `await client.compile(query)` previews SQL and parameters without executing a database query. A preview is not required before execution.
 7. `client.destroy()` releases resources, including when execution fails.
 
 ## Named expressions and projections

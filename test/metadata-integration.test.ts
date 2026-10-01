@@ -35,7 +35,7 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
       const client = createClient(backend, catalog, options);
       try {
         const query = source.select({ id: source.columns.id, label: source.columns.label, amount: source.columns.amount, large: source.columns.large });
-        const preview = client.compile(query);
+        const preview = await client.compile(query);
         assert.ok(preview.sql.includes(name));
         const rows = (await client.execute(query)).rows;
         assert.equal(rows[0].id, 7); assert.equal(rows[0].label, 'northwind');

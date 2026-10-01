@@ -16,7 +16,7 @@ writeFileSync(lock, 'Capture in progress; do not run other commands in this work
 writeFileSync(resolve(directory, 'compiler.ts.backup'), original);
 const wrapper = `
 import {appendFileSync as appendCapture} from 'node:fs';
-export function compilePlan(...args: Parameters<typeof captureOriginalCompilePlan>) {
+export function compilePlanSync(...args: Parameters<typeof captureOriginalCompilePlan>) {
   const trace: LoweringDecision[] = args[3]?.trace ?? [];
   const start = trace.length;
   const origin = new Error().stack?.split('\\n').slice(2, 7);
@@ -34,8 +34,8 @@ export function compilePlan(...args: Parameters<typeof captureOriginalCompilePla
 const runs=[];
 try {
   const source=original.toString('utf8');
-  if(!source.includes('export function compilePlan(')) throw Error('Compiler entry point changed; update capture tool.');
-  writeFileSync(compiler,source.replace('export function compilePlan(', 'function captureOriginalCompilePlan(')+wrapper);
+  if(!source.includes('export function compilePlanSync(')) throw Error('Compiler entry point changed; update capture tool.');
+  writeFileSync(compiler,source.replace('export function compilePlanSync(', 'function captureOriginalCompilePlan(')+wrapper);
   for(const name of ['test','test:integration','test:duckdb','docs:examples','demo']) {
     const child=spawnSync(process.platform==='win32'?'cmd.exe':'npm',process.platform==='win32'?['/d','/c',`npm run ${name}`]:['run',name],
       {encoding:'utf8',env:{...process.env,GOLDEN_SQL_CAPTURE:directory},maxBuffer:32*1024*1024});
@@ -58,7 +58,7 @@ for(const event of events.filter(e=>e.status==='compiled')) {
   const entry=unique.get(key);entry.occurrences++;entry.origins.push(event.origin);
 }
 const summary={revision:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),runs,totalCompilations:events.filter(e=>e.status==='compiled').length,uniqueOutputs:unique.size,rejections:events.filter(e=>e.status==='rejected').length,
-  scope:'Observed compilePlan calls in runtime tests, docs compilation and default driver; not all possible queries, type-only negatives or raw reference SQL. Random fixture names remain unnormalized. Full local artifacts may include synthetic secret-test values; do not publish blindly.'};
+  scope:'Observed compilePlanSync calls in runtime tests, docs compilation and default driver; not all possible queries, type-only negatives or raw reference SQL. Random fixture names remain unnormalized. Full local artifacts may include synthetic secret-test values; do not publish blindly.'};
 writeFileSync(resolve(directory,'summary.json'),JSON.stringify(summary,null,2)+'\n');
 writeFileSync(resolve(directory,'index.json'),JSON.stringify([...unique.values()],null,2)+'\n');
 writeFileSync(resolve(directory,'INDEX.md'), '# Captured Golden SQL\n\nEach file includes ordered fixture parameters and lowering trace. See index.json for caller locations.\n\n'+[...unique.values()].map(e=>`- [${e.file}](${e.file}) — ${e.occurrences} compilation(s)`).join('\n')+'\n');

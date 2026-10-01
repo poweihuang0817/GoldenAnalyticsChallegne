@@ -11,7 +11,7 @@ const customers = source.table('customers');
 const london = customers.filter(customers.columns.city.lower().eq('london'));
 const query = london.select({ customer: london.columns.customer_id, city: london.columns.city });
 const { rows } = await client.execute(query);
-const preview = client.compile(query); // optional SQL inspection, no database I/O
+const preview = await client.compile(query); // optional SQL inspection, no database I/O
 ```
 
 Every transformation creates a new relation scope. Use the resulting table's columns in the next operation. TypeScript checks names, logical kinds, scalar/measure categories and nullability; runtime scope checks enforce relation identity. Neither construction nor predicates execute database queries.

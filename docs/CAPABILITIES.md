@@ -21,7 +21,7 @@ Only these four capability keys are modeled. No promise is made about arbitrary 
 
 ## Compiler error contract
 
-`compilePlan` throws `CompileQueryError` for recognized profile-validation and compiler rejection paths:
+`compilePlanSync` throws `CompileQueryError` for recognized profile-validation and compiler rejection paths:
 
 - `code`: `INVALID_QUERY` or `UNSUPPORTED_CAPABILITY`.
 - `stage`: `validation` (JSON/profile or size/depth rejection) or `compile` (catalog, semantic checks, or lowering limitations).

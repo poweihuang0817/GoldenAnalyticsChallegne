@@ -42,7 +42,7 @@ for (const backend of backends) {
   const client = createClient(backend, challengeCatalog, execute ? undefined : { duckdbPath: ':memory:' });
   try {
     for (const { name, query } of examples) {
-      const compiled = client.compile(query);
+      const compiled = await client.compile(query);
       if (execute) {
         const { rows } = await client.execute(query);
         console.log({ backend, name, rowCount: rows.length, preview: rows.slice(0, 2) });
