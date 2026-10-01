@@ -39,7 +39,7 @@ After setup and seeding:
 npm run demo:ui
 ```
 
-Open **http://127.0.0.1:4317**. Live driver offers three fixed examples and all three backends. Compile previews SQL/plan; Run displays real database results. API guide and Architecture pages support the walkthrough. This is a local demonstration, not an arbitrary-query editor. See [UI details](docs/DEMO-PAGE.md).
+Open **http://127.0.0.1:4317**. Live driver offers eight fixed examples and all three backends. Compile previews SQL/plan; Run displays real database results. API guide and Architecture pages support the walkthrough. This is a local demonstration, not an arbitrary-query editor. See [UI details](docs/DEMO-PAGE.md).
 
 ## Verification
 

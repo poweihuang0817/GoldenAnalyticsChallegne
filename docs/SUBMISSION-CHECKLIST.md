@@ -1,105 +1,99 @@
 # Submission checklist
 
-Supporting checklist for the candidate, inspected September 30, 2026. Checked implementation items mean the code exists; they do not certify the final submission revision or reviewer access. Fill in the notes and final evidence yourself. Target submission: October 1; deadline: October 2, 2026.
+Supporting checklist refreshed September 30, 2026 (America/Los_Angeles).
+Checked items below have repository or CI evidence. Video completion, uploads,
+reviewer access and actual submission are not inferred from code or CI.
+
+## Verified repository checkpoint
+
+- Inspected revision: `b563e5aa91060ad693aca4fe3d3ab2a6f75b04ee` (candidate README update, after merged #61 and #62).
+- [Fresh clone CI 36815228059](https://github.com/poweihuang0817/GoldenAnalytics/actions/runs/36815228059) passed for that exact revision.
+- Passed steps: lockfile install, code/docs type checks, unit tests, documentation compilation, supplied PostgreSQL/MySQL integration, three-backend conformance, and driver/documentation execution smoke.
+- This checklist update is documentation-only and will have a different commit. Confirm CI for whichever revision is actually packaged; do not label the checkpoint above as proof for a later revision.
 
 ## 1. Driver application — required
 
-- [x] CLI driver exists: [src/demo.ts](../src/demo.ts) builds on the public client API and the [Northwind queries](../src/queries.ts).
-- [x] `npm run demo` executes on PostgreSQL and MySQL and prints SQL, parameter counts and results.
-- [x] Driver includes all six challenge query families (two city examples), plus per-customer row-number ranking.
-- [x] Third-backend extension exists: `npm run seed:duckdb`, then `npm run demo:duckdb` executes the same examples on the local snapshot.
-- [x] Optional UI exists: `npm run demo:ui`, then http://127.0.0.1:4317. It offers three fixed examples, three backends, Compile/Run, API guide and architecture diagram.
-- [ ] Run the driver on the final chosen revision and record the outcome below.
-- [ ] Explain DuckDB as the selected extension: separately seeded snapshot, no federation or automatic local fallback.
-
-Candidate notes / final run evidence:
-
-> Checkpoint verified September 30, 2026 on f43e3708e75297da63b5e4d0162524be362d8ce1 (PR #44 before this evidence-only edit): fresh worktree npm ci; npm run demo passed all 8 examples on PostgreSQL and MySQL; a newly created isolated DuckDB snapshot was seeded, then npm run demo:duckdb passed all 8 examples (24 executions total). Snapshot counts: 830 orders, 91 customers, 9 employees, 2,155 details; SHA-256 83925750f4c70d986bd4efc86ae3e939a4e29efea4b20364a44ebdeabfe01803. This verifies the current candidate's driver; final submission revision remains to be selected.
+- [x] [CLI driver](../src/demo.ts) uses the public API and [Northwind queries](../src/queries.ts).
+- [x] Eight examples cover all six challenge families (including two city inputs), plus per-customer row-number ranking.
+- [x] `npm run demo` runs PostgreSQL/MySQL; `npm run seed:duckdb` then `npm run demo:duckdb` runs the separately seeded DuckDB snapshot.
+- [x] The verified CI checkpoint passed driver/documentation execution smoke.
+- [x] UI: `npm run demo:ui`, then http://127.0.0.1:4317. Eight fixed examples and PostgreSQL/MySQL/DuckDB; SQL and bound parameters, results, architecture and API design pages.
+- [x] Extensions are documented: [row-number window ranking](WINDOW-EXTENSION.md) and [third backend DuckDB](DUCKDB.md). The video can demonstrate either or both; no federation or arbitrary window support is claimed.
 
 ## 2. Test suite — required
 
-- [x] Type checks and API type-negative cases exist.
-- [x] Component tests cover API, compiler/profile and backend-related boundaries.
-- [x] Integration tests use the supplied PostgreSQL/MySQL databases, including challenge queries and edge fixtures.
-- [x] Three-backend conformance includes DuckDB.
-- [x] Independent raw-data / BigInt reference calculations and bounded seeded metamorphic checks exist.
-- [x] Fresh-clone GitHub Actions workflow is configured.
-- [ ] Run or confirm green CI for the exact final commit; record the URL and SHA, not only an older successful run.
+- [x] Type checks and API type-negative cases.
+- [x] Component tests for API, profile/compiler, worker lifecycle and backend boundaries.
+- [x] Supplied PostgreSQL/MySQL integration and real DuckDB conformance.
+- [x] Independent raw-data / BigInt reference calculations and bounded metamorphic tests.
+- [x] NULL, empty-input, duplicate, join, nested-aggregate, decimal and percentile coverage.
+- [x] Exact generated SQL, ordered parameters and lowering-trace regression snapshots.
+- [x] Latest inspected main checkpoint has green fresh-clone CI (linked above).
+- [x] README describes test methodology and links [the detailed methodology](TEST-METHODOLOGY.md).
 
-```sh
-npm run check
-npm run check:docs
-npm test
-npm run test:integration
-npm run test:duckdb
-```
-
-README already has a Test methodology section. Clarify these points in your own words:
-
-- [ ] Replace or substantiate "total 50": test-runner counts are not the number of distinct SQL cases, and counts vary by suite/revision. Prefer named coverage unless a precise count and command are recorded.
-- [ ] Explain "Independent test": expected answers are calculated separately from the compiler, including exact monetary reference arithmetic; backend agreement alone can miss shared bugs.
-- [ ] Explain metamorphic checks: compound vs sequential filters, and bounded integer grouped results under reversed insertion order. These are selected properties, not arbitrary SQL equivalence proofs.
-- [ ] Mention NULLs, empty inputs, duplicates, joins/nested aggregates and decimal/percentile boundaries.
-- [ ] Link [test methodology](TEST-METHODOLOGY.md) and [CI instructions](CI.md). Keep large fuzzing, shrinking, mutation tests, TPC-H and formal solvers marked future work.
-
-Candidate notes / final CI URL and SHA:
-
-> Current candidate checkpoint: [Fresh clone run 36741924009](https://github.com/poweihuang0817/GoldenAnalytics/actions/runs/36741924009) passed for PR #44 head f43e3708e75297da63b5e4d0162524be362d8ce1. The workflow includes code/docs typechecks, unit tests, PostgreSQL/MySQL integration, three-backend conformance, drivers and executed documentation examples. This is not evidence for later commits; check the final submitted revision separately.
+Commands and scope are in [RUNNING.md](RUNNING.md) and [CI.md](CI.md).
+Metamorphic checks exercise selected valid equivalences; they are not arbitrary SQL
+proofs. TPC-H, broader fuzzing, mutation testing and formal solvers remain future work.
 
 ## 3. Candidate-authored README — required
 
-- [x] Candidate-authored README exists with architecture, API usage, testing and future-work sections.
-- [ ] Finalize the API design explanation in your own words: typed Table/Expr -> constrained Substrait -> Golden lowering -> Kysely -> backend.
-- [ ] Add major AI prompts and where you redirected the AI. The current README does not yet have this account. Use [AI-LOG.md](AI-LOG.md) as supporting evidence; choose the decisions you personally want to explain.
-- [ ] Confirm future work reflects your priorities and distinguishes researched options from selected dependencies.
-- [ ] Replace "check doc folder" with a direct [setup, driver, UI and tests](RUNNING.md) link. The refreshed guide was merged in PR #43.
-- [ ] Make the API example coherent: include imports or a complete-example link; label the partial catalog as illustrative; preview SQL before destroying the client; put source/preview snippets inside TypeScript code fences.
-- [ ] State the chosen query interpretations and link the [semantic notes](QUERY-SEMANTICS.md), merged in PR #42. Continuous P75, discounted merchandise, accent-sensitive city matching and order population are choices, not uniquely mandated by the prompt.
-- [ ] Keep claims bounded: no implemented Malloy/Parquet/Ossie bridge; current Golden function semantics are not automatic full official Substrait conformance; timeout/cancel is not an end-to-end hard deadline.
-- [ ] Add the final video link.
+- [x] [README](../README.md) contains architecture/design, API usage, testing, setup links and future work.
+- [x] Design rationale links to [API design](api/design.md) and [API documentation](api/README.md).
+- [x] Major prompts and human redirects are linked through [AI usage record](../Manual_Record_AI_Usage.md); its AI-assisted organization is disclosed. [AI-LOG.md](AI-LOG.md) preserves development history.
+- [x] Future work is explicitly listed; researched tools are not installed integrations.
+- [x] Public example uses `await client.compile(query)` and closes the client in `finally`.
+- [x] [Reviewer guide](../REVIEWER_GUIDE.md) maps each requested deliverable to its location, including [query semantics](QUERY-SEMANTICS.md).
+- [ ] Candidate gives the final README a last read and confirms the wording represents their decisions.
 
-Candidate account of major prompts / redirects:
+Current API: public compile/execute are asynchronous; low-level `compilePlanSync`
+is synchronous. The Playground trace path still uses that low-level synchronous
+compiler. Worker isolation is not a compilation speedup or an end-to-end deadline.
+Substrait support is constrained and uses Golden function definitions; future
+Malloy/PRQL/Ossie integration is not implemented.
 
-> TODO — describe the original request, what the AI proposed, your correction, and the resulting decision. Do not invent elapsed time.
+## 4. Approximately five-minute video — required
 
-## 4. Five-minute video — required
+Candidate reports the recording is nearly finished; final playback/upload has not
+been independently confirmed.
 
-- [ ] Record a walkthrough of the API and why you designed it this way.
-- [ ] Show an actual API query, SQL preview and real results.
-- [ ] Show the extension, preferably by switching the same query to DuckDB.
-- [ ] Briefly explain testing, current limits and what more time would enable.
-- [ ] Play back the uploaded video: readable text, understandable audio, roughly five minutes, correct share permissions.
+- [ ] Final video walks through API usage and why it was designed this way.
+- [ ] Shows an actual query, SQL/bindings and results, plus an extension.
+- [ ] Briefly explains testing and relevant limitations/future work.
+- [ ] Playback confirms readable text, understandable audio, complete ending and roughly five-minute duration.
+- [ ] Upload completes; the uploaded video can be played or downloaded by reviewers.
 
-Suggested outline (adjust in your own words):
+Video filename / link: **to be filled in**.
 
-| Time | Topic |
-| --- | --- |
-| 0:00–0:40 | Problem and supported backends |
-| 0:40–2:00 | Catalog, typed expressions and execute |
-| 2:00–3:00 | UI: SQL/results and DuckDB extension |
-| 3:00–4:00 | Architecture and design tradeoffs |
-| 4:00–5:00 | Correctness evidence, limitations and future work |
+## 5. Package and submit
 
-Video URL / candidate notes:
+- [x] README and implemented submission work are committed on the verified checkpoint above.
+- [ ] Select the final submission commit and confirm its CI run is green.
+- [ ] Create a clean source ZIP from that commit; inspect its README, source, tests, docs and lockfile.
+- [ ] Upload the source ZIP and final video to the recipient's Google Drive folder.
+- [ ] Confirm upload completion and reviewer access. If also sharing the private GitHub repository, confirm repository access separately.
+- [ ] Record the source commit alongside the delivered files or in the handoff message.
+- [ ] Send the handoff and record completion; preparing files is not submitting them.
 
-> TODO
+From a clean, up-to-date main checkout, the following packages tracked contents:
 
-## 5. Final delivery checks
+```powershell
+git status --short
+git rev-parse HEAD
+git archive --format=zip --output=..\GoldenAnalytics-submission.zip HEAD
+```
 
-- [x] Submission-relevant documentation merged: #42 semantics and #43 setup reference. Final-version verification remains below.
-- [ ] Commit and push the final candidate README and any approved submission files.
-- [ ] Record the final commit SHA (a tag is optional); verify that CI and demo evidence apply to it.
-- [ ] Verify README/doc links against the final tree.
-- [ ] Confirm reviewers have access to the private repository and video.
-- [ ] Submit repository/version/video links through the location specified in the invitation.
-- [ ] Record that submission completed; do not equate preparing links with sending them.
+`git archive` includes committed files only. Inspect archive contents; do not assume
+an ignored/untracked README edit or local recording is included. Upload the video
+separately. A tracked rehearsal folder, if later merged, would also be included
+unless explicitly excluded during packaging.
 
-No new feature or broad architecture research is required to complete this checklist. PRQL/Ossie/Malloy research and production reliability work can remain deferred.
+Final source commit: **to be selected**.
 
-Final repository/version link:
+Final CI URL: **to be confirmed for the selected commit**.
 
-> TODO
+Recipient Drive folder / uploaded files: **to be filled in**.
 
-Submission date / confirmation:
+Submission date / confirmation: **not yet confirmed**.
 
-> TODO
+No new feature, compiler optimization or architecture research is required to
+finish this checklist. Keep remaining research/production issues deferred.
