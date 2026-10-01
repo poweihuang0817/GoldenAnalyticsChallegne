@@ -1,4 +1,4 @@
-﻿# Setup, driver, UI and tests
+# Setup, driver, UI and tests
 
 These are AI-maintained execution notes that the candidate-authored README can reference. Run commands from the repository root after cloning.
 
@@ -57,7 +57,7 @@ npm run demo:ui
 
 Open **http://127.0.0.1:4317** using this exact host. Stop the server with Ctrl+C.
 
-- **Live driver:** choose one of three fixed Northwind examples and PostgreSQL, MySQL or DuckDB.
+- **Live driver:** choose one of eight fixed Northwind examples (six challenge families, two city values, and the row-number extension) and PostgreSQL, MySQL or DuckDB.
 - **Compile:** inspect generated SQL and the Substrait plan without executing the data query.
 - **Run:** execute on the selected backend and display real results. At most 100 rows are displayed; the full row count is reported.
 - **API guide:** walk through API usage.

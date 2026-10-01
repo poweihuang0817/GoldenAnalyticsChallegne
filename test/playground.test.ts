@@ -21,7 +21,12 @@ test('demo serves actual examples and validates every request before execution',
   try {
     const home = await fetch(base); assert.equal(home.status, 200); assert.match(home.headers.get('content-security-policy')!, /frame-ancestors 'none'/);
     const examples = await (await fetch(`${base}/examples`)).json() as any[];
-    assert.equal(examples.length, 3); assert.match(examples[0].code, /export function cityQuery/); assert.match(examples[2].code, /function pricedOrders/);
+    assert.deepEqual(examples.map(e => e.id), ['recent','city','city-mexico','units','shipping','freight','percentile','window']);
+    assert.match(examples.find(e => e.id === 'city').code, /export function cityQuery/);
+    assert.match(examples.find(e => e.id === 'city-mexico').code, /cityQuery\('mexico d.f.'\)/);
+    for (const id of ['freight','percentile']) assert.match(examples.find(e => e.id === id).code, /function pricedOrders/);
+    assert.match(examples.find(e => e.id === 'window').code, /withRowNumber/);
+    for (const example of examples) assert.equal((await post({ ...valid, query: example.id })).status, 200);
     assert.equal((await fetch(`${base}/query`)).status, 405);
     assert.equal((await fetch(`${base}/other`)).status, 404);
     assert.equal((await fetch(`${base}/query`, { method: 'POST', body: '{}' })).status, 415);
@@ -32,11 +37,16 @@ test('demo serves actual examples and validates every request before execution',
       req.on('error', reject); req.end();
     });
     assert.equal(wrongHost, 403);
-    assert.equal(calls, 0);
-    assert.equal((await post(valid)).status, 200); assert.equal(calls, 1);
+    assert.equal(calls, 8);
+    assert.equal((await post(valid)).status, 200); assert.equal(calls, 9);
     assert.equal((await post({ ...valid, backend: 'duckdb' })).status, 200);
-    assert.equal(calls, 2);
+    assert.equal(calls, 10);
     const html = await home.text();
+    assert.match(html, /data-page="architecture" aria-pressed="true"/);
+    assert.ok(html.indexOf('data-page="architecture"') < html.indexOf('data-page="driver"'));
+    assert.ok(html.indexOf('data-page="driver"') < html.indexOf('data-page="api"'));
+    assert.match(html, /<section id="driver-page" hidden>/);
+    assert.match(html, /<section id="architecture-page" aria-labelledby/);
     assert.match(html, /value="duckdb"/); assert.match(html, /id="api-page"/); assert.match(html, /id="architecture-page"/);
     const diagram = await fetch(base + '/architecture.svg');
     assert.equal(diagram.status, 200); assert.equal(diagram.headers.get('content-type'), 'image/svg+xml');
@@ -153,12 +163,12 @@ test('plan outline uses actual operators, function anchors and both join inputs 
 });
 
 test('all fixed walkthrough queries have formatted previews on each backend',async()=>{
-  for(const backend of ['postgres','mysql','duckdb'] as const)for(const query of ['city','units','percentile']) {
+  for(const backend of ['postgres','mysql','duckdb'] as const)for(const query of ['recent','city','city-mexico','units','shipping','freight','percentile','window']) {
     const preview=await executeExample({backend,query,action:'compile'},{duckdbPath:':memory:'});
     assert.equal(preview.sqlPreview.formatted,true,`${backend}/${query}`);
     assert.match(preview.sqlPreview.text,/\n/);
     assert.match(preview.planOutline,/Output:/);
-    assert.ok(!preview.sql.includes('\n')); // Original compiler output remains distinct.
+    if (query === 'city') assert.ok(!preview.sql.includes('\n')); // Some compiler templates (DuckDB freight) already contain newlines.
     assert.equal(preview.rows,undefined);
   }
 });
