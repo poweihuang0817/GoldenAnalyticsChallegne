@@ -74,7 +74,7 @@ try {
 } finally {
   await client.destroy();
 }</pre></article><article class="panel"><h3>Why defer execution?</h3><p>Building expressions describes work without fetching data. Queries can be composed and reused before choosing where to execute them.</p><p>execute() compiles and runs asynchronously. A separate compile() call is optional: it provides SQL and parameters for debugging and database-free compiler tests.</p><h3>SQL and values travel together</h3><pre>SQL:        … lower(cast($1 as text))
-Parameters: ['london']</pre><p>The driver receives SQL plus ordered values. PostgreSQL binds $n parameters; the current mysql2.query path escapes and formats ? values client-side. The application does not manually substitute values.</p><p class="footnote">Parameter values can be sensitive. Inspect deliberately; do not log them by default. Destroy the client after outstanding queries finish.</p></article></div>
+Parameters: ['london']</pre><p>The driver receives SQL plus ordered values. PostgreSQL uses $n placeholders; MySQL uses ? placeholders through the driver. Application code does not manually interpolate values.</p><p class="footnote">Parameter values can be sensitive. Inspect deliberately; do not log them by default. Destroy the client after outstanding queries finish.</p></article></div>
 </section>
 <section id="design-layers" hidden aria-labelledby="design-layers-heading">
 <h3 id="design-layers-heading">Separate the public API from SQL construction</h3>
