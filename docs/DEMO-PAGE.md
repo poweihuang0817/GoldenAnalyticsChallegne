@@ -66,3 +66,9 @@ Substrait operator tree summarizes the actual plan, with output at the top and i
 The menu covers recent orders (N=5), London and Mexico D.F. customer counts, average units per order, employee shipping status, customer freight ratio, country P75, and the window extension: latest three orders per customer. All use existing functions in src/queries.ts on each of the three backends. N is fixed for this demo. The window uses ROW_NUMBER with a date/ID tie-breaker; results show at most 100 rows with the complete row count reported. Freight and percentile source previews include their shared price helper.
 
 Navigation is Architecture, Live driver, API design; Architecture is selected on first load. The API design tab retains the step-by-step API guide.
+
+## API design presentation
+
+The API design page is split into eight topic views: Flow, Usage, Types, Composition, Execution, Boundaries, Precision, and Semantics. Flow opens first; native buttons support keyboard activation and expose their selected state. Switching topics preserves the main Architecture/Live driver/API design selection.
+
+Body and code text use 18px presentation sizing. The city and average-units helpers are loaded from the existing examples endpoint; explanatory snippets are labeled separately. Precision explains string transport, decimal(38,10) limits and caller arithmetic responsibilities. Boundaries explains both the reason for retaining Substrait and the cost of owning lowering. No new query behavior is introduced.
