@@ -15,6 +15,7 @@ function reset() {
   el('sql').textContent = 'Compile or run a query to inspect SQL.';
   el('plan').textContent = 'Compile or run a query to inspect the supported plan.';
   el('parameters').textContent = '';
+  el('bound-parameters').textContent = '';
   el('sql-raw').textContent = '';
   el('lowering-trace').textContent = '';
   el('plan-tree').textContent = 'Compile or run a query to inspect the operator tree.';
@@ -44,6 +45,12 @@ async function submit(action) {
     el('sql').textContent = result.sqlPreview.text;
     el('lowering-trace').textContent = result.loweringTrace.map(e => e.relationId + ' ' + e.operation + ': ' + e.decision + ' - ' + e.reason).join('\n');
     el('sql-raw').textContent = result.sql;
+    el('bound-parameters').textContent = result.parameters.length
+      ? result.parameters.map((value, index) => {
+        const label = el('backend').value === 'mysql' ? `? (parameter ${index + 1})` : `$${index + 1}`;
+        return `${label} = ${JSON.stringify(value)}`;
+      }).join('\n')
+      : 'No bound parameters.';
     el('sql-note').textContent = result.sqlPreview.formatted ? 'Display formatting only; the original SQL is executed.' : 'Formatting unavailable; showing original SQL.';
     el('plan-tree').textContent = result.planOutline;
     el('plan').textContent = JSON.stringify(result.plan, null, 2);
@@ -59,6 +66,7 @@ async function submit(action) {
   el('lowering-trace').textContent = '';
     el('plan-tree').textContent = 'No plan available for this failed request.';
     el('plan').textContent = 'No plan available for this failed request.'; el('parameters').textContent = '';
+    el('bound-parameters').textContent = '';
   } finally { for (const id of ['compile','run','example','backend']) el(id).disabled = false; }
 }
 for (const button of document.querySelectorAll('[data-page]')) {

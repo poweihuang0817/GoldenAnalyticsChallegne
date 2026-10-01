@@ -60,3 +60,9 @@ Before recording, start a fresh server from the selected revision and verify its
 Generated SQL is formatted for the selected dialect for display only; the original compiled SQL is still executed and available under Original SQL. Formatting failure falls back to the original text. The formatter never receives bound parameter values.
 
 Substrait operator tree summarizes the actual plan, with output at the top and inputs below. Function anchors are shown by name; field# references remain positional within each input relation. This is a navigation aid, not a full semantic explanation: types, emit mappings and some expressions are omitted. Raw Substrait JSON remains the authoritative plan view. Architecture now flows top-to-bottom and uses the same green for all three backend boxes.
+
+## Bound parameter inspection
+
+Generated SQL now shows a separate Bound parameters panel for the fixed Northwind examples. PostgreSQL/DuckDB labels use $1, $2, ...; MySQL labels each ? by its one-based occurrence. Values come from the compiled parameter array, not SQL parsing or interpolation. Changing the example/backend or encountering an error clears the previous bindings. This demo display is not production parameter logging; lowering traces still omit values.
+
+Execution passes the compiled SQL and ordered parameters to Kysely's executeQuery. The PostgreSQL adapter calls pg.query(sql, parameters). The current MySQL adapter calls mysql2.query(sql, parameters), which escapes/formats values client-side; it does not use mysql2.execute's server-side prepared statements. The application never needs to manually substitute values into SQL.
