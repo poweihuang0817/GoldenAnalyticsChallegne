@@ -12,3 +12,5 @@ Thumbs.db
 *.duckdb.wal
 *.duckdb.tmp/
 .perf-results/
+.sql-audit-all/
+.sql-capture.lock

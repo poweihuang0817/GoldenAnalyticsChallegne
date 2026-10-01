@@ -1,0 +1,29 @@
+{
+  "revision": "34439322d535be4a74a0648fb1de21b9825a6d4e",
+  "runs": [
+    {
+      "command": "npm run test",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run test:integration",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run test:duckdb",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run docs:examples",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run demo",
+      "exitCode": 0
+    }
+  ],
+  "totalCompilations": 527,
+  "uniqueOutputs": 254,
+  "rejections": 52,
+  "scope": "Observed compilePlan calls in runtime tests, docs compilation and default driver; not all possible queries, type-only negatives or raw reference SQL. Random fixture names remain unnormalized. Full local artifacts may include synthetic secret-test values; do not publish blindly."
+}
