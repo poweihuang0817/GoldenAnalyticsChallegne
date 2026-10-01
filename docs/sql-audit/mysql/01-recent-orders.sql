@@ -3,47 +3,20 @@
 -- Ordered sample parameters: [5,0]
 -- r2 project: merged; Compatible row-level input block
 -- r1 sort: merged; Track output ordering without a new query block
--- r0 fetch: boundary; Preserve sort input scope or specialized lowering boundary
+-- r0 fetch: merged; Compatible row-level input block
 select
-  `r4`.`c0` as `order_id`,
-  `r4`.`c1` as `order_date`
+  `orders`.`order_id` as `order_id`,
+  `orders`.`order_date` as `order_date`
 from
-  (
-    select
-      `r0`.`c0` as `c0`,
-      `r0`.`c1` as `c1`
-    from
-      (
-        select
-          `orders`.`order_id` as `c0`,
-          `orders`.`order_date` as `c1`
-        from
-          `orders`
-      ) as `r0`
-    order by
-      case
-        when `r0`.`c1` is null then 1
-        else 0
-      end asc,
-      `r0`.`c1` desc,
-      case
-        when `r0`.`c0` is null then 1
-        else 0
-      end asc,
-      `r0`.`c0` desc
-    limit
-      ?
-    offset
-      ?
-  ) as `r4`
+  `orders`
 order by
   case
-    when `r4`.`c1` is null then 1
+    when `orders`.`order_date` is null then 1
     else 0
   end asc,
-  `r4`.`c1` desc,
-  case
-    when `r4`.`c0` is null then 1
-    else 0
-  end asc,
-  `r4`.`c0` desc;
+  `orders`.`order_date` desc,
+  `orders`.`order_id` desc
+limit
+  ?
+offset
+  ?;

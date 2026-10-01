@@ -25,10 +25,6 @@ from
             else 0
           end asc,
           `orders`.`order_date` desc,
-          case
-            when `orders`.`order_id` is null then 1
-            else 0
-          end asc,
           `orders`.`order_id` desc
       ) as `c3`
     from
@@ -42,8 +38,4 @@ order by
     else 0
   end asc,
   `r1`.`c0` asc,
-  case
-    when `r1`.`c3` is null then 1
-    else 0
-  end asc,
   `r1`.`c3` asc;

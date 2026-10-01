@@ -1,7 +1,7 @@
 [
   {
     "name": "Most recent orders",
-    "sql": "select \"r4\".\"c0\" as \"order_id\", \"r4\".\"c1\" as \"order_date\" from (select \"r0\".\"c0\" as \"c0\", \"r0\".\"c1\" as \"c1\" from (select \"orders\".\"order_id\" as \"c0\", \"orders\".\"order_date\" as \"c1\" from \"orders\") as \"r0\" order by case when \"r0\".\"c1\" is null then 1 else 0 end asc, \"r0\".\"c1\" desc, case when \"r0\".\"c0\" is null then 1 else 0 end asc, \"r0\".\"c0\" desc limit $1 offset $2) as \"r4\" order by case when \"r4\".\"c1\" is null then 1 else 0 end asc, \"r4\".\"c1\" desc, case when \"r4\".\"c0\" is null then 1 else 0 end asc, \"r4\".\"c0\" desc",
+    "sql": "select \"orders\".\"order_id\" as \"order_id\", \"orders\".\"order_date\" as \"order_date\" from \"orders\" order by case when \"orders\".\"order_date\" is null then 1 else 0 end asc, \"orders\".\"order_date\" desc, \"orders\".\"order_id\" desc limit $1 offset $2",
     "parameters": [
       5,
       0
@@ -22,8 +22,8 @@
       {
         "relationId": "r0",
         "operation": "fetch",
-        "decision": "boundary",
-        "reason": "Preserve sort input scope or specialized lowering boundary"
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
       }
     ]
   },
@@ -71,7 +71,7 @@
   },
   {
     "name": "Average units per order",
-    "sql": "select cast(cast(avg(cast(\"r0\".\"c0\" as double precision)) as double precision) as double precision) as \"average_units\" from (select coalesce(\"r1\".\"c7\", cast($1 as double precision)) as \"c0\" from (select \"r2\".\"c0\" as \"c0\", \"r2\".\"c1\" as \"c1\", \"r2\".\"c2\" as \"c2\", \"r2\".\"c3\" as \"c3\", \"r2\".\"c4\" as \"c4\", \"r2\".\"c5\" as \"c5\", \"r6\".\"c0\" as \"c6\", \"r6\".\"c1\" as \"c7\" from (select \"orders\".\"order_id\" as \"c0\", \"orders\".\"order_date\" as \"c1\", \"orders\".\"customer_id\" as \"c2\", \"orders\".\"employee_id\" as \"c3\", \"orders\".\"shipped_date\" as \"c4\", cast(\"orders\".\"freight\" as decimal(38, 10)) as \"c5\" from \"orders\") as \"r2\" left join (select \"order_details\".\"order_id\" as \"c0\", cast(sum(cast(\"order_details\".\"quantity\" as double precision)) as double precision) as \"c1\" from \"order_details\" group by \"order_details\".\"order_id\") as \"r6\" on (\"r2\".\"c0\" = \"r6\".\"c0\")) as \"r1\") as \"r0\"",
+    "sql": "select cast(avg(cast(coalesce(\"r6\".\"c1\", cast($1 as double precision)) as double precision)) as double precision) as \"average_units\" from \"orders\" as \"r2\" left join (select \"order_details\".\"order_id\" as \"c0\", cast(sum(cast(\"order_details\".\"quantity\" as double precision)) as double precision) as \"c1\" from \"order_details\" group by \"order_details\".\"order_id\") as \"r6\" on (\"r2\".\"order_id\" = \"r6\".\"c0\")",
     "parameters": [
       0
     ],
@@ -85,20 +85,20 @@
       {
         "relationId": "r1",
         "operation": "project",
-        "decision": "boundary",
-        "reason": "Preserve join input scope or specialized lowering boundary"
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
       },
       {
         "relationId": "r0",
         "operation": "aggregate",
-        "decision": "boundary",
-        "reason": "Preserve project input scope or specialized lowering boundary"
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
       }
     ]
   },
   {
     "name": "Employee shipped/unshipped orders",
-    "sql": "select \"r1\".\"c0\" as \"employee_id\", cast(cast(sum(cast(\"r1\".\"c1\" as double precision)) as double precision) as double precision) as \"shipped\", cast(cast(sum(cast(\"r1\".\"c2\" as double precision)) as double precision) as double precision) as \"unshipped\" from (select \"r2\".\"c0\" as \"c0\", case when ((\"r2\".\"c1\" is not null) and (\"r2\".\"c5\" is not null)) then cast($1 as double precision) else cast($2 as double precision) end as \"c1\", case when ((\"r2\".\"c1\" is not null) and (\"r2\".\"c5\" is null)) then cast($3 as double precision) else cast($4 as double precision) end as \"c2\" from (select \"r3\".\"c0\" as \"c0\", \"r6\".\"c0\" as \"c1\", \"r6\".\"c1\" as \"c2\", \"r6\".\"c2\" as \"c3\", \"r6\".\"c3\" as \"c4\", \"r6\".\"c4\" as \"c5\", \"r6\".\"c5\" as \"c6\" from (select \"employees\".\"employee_id\" as \"c0\" from \"employees\") as \"r3\" left join (select \"orders\".\"order_id\" as \"c0\", \"orders\".\"order_date\" as \"c1\", \"orders\".\"customer_id\" as \"c2\", \"orders\".\"employee_id\" as \"c3\", \"orders\".\"shipped_date\" as \"c4\", cast(\"orders\".\"freight\" as decimal(38, 10)) as \"c5\" from \"orders\") as \"r6\" on (\"r3\".\"c0\" = \"r6\".\"c3\")) as \"r2\") as \"r1\" group by \"r1\".\"c0\" order by case when \"r1\".\"c0\" is null then 1 else 0 end asc, \"r1\".\"c0\" asc",
+    "sql": "select \"r3\".\"employee_id\" as \"employee_id\", cast(sum(cast(case when ((\"r6\".\"order_id\" is not null) and (\"r6\".\"shipped_date\" is not null)) then cast($1 as double precision) else cast($2 as double precision) end as double precision)) as double precision) as \"shipped\", cast(sum(cast(case when ((\"r6\".\"order_id\" is not null) and (\"r6\".\"shipped_date\" is null)) then cast($3 as double precision) else cast($4 as double precision) end as double precision)) as double precision) as \"unshipped\" from \"employees\" as \"r3\" left join \"orders\" as \"r6\" on (\"r3\".\"employee_id\" = \"r6\".\"employee_id\") group by \"r3\".\"employee_id\" order by \"r3\".\"employee_id\" asc",
     "parameters": [
       1,
       0,
@@ -109,14 +109,14 @@
       {
         "relationId": "r2",
         "operation": "project",
-        "decision": "boundary",
-        "reason": "Preserve join input scope or specialized lowering boundary"
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
       },
       {
         "relationId": "r1",
         "operation": "aggregate",
-        "decision": "boundary",
-        "reason": "Preserve project input scope or specialized lowering boundary"
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
       },
       {
         "relationId": "r0",
@@ -128,7 +128,7 @@
   },
   {
     "name": "Customer freight/order-price ratio",
-    "sql": "select \"r1\".\"c0\" as \"customer_id\", cast(cast((select cast(\n    (case when sign(n) * sign(d) < 0 then '-' else '' end) ||\n    cast(q // 10000000000 as varchar) || '.' || lpad(cast(q % 10000000000 as varchar), 10, '0')\n    as decimal(38,10))\n    from (select n, d, case when n is null or d is null then null else\n      (abs(n) * 10000000000) // abs(d) +\n      case when (abs(n) * 10000000000) % abs(d) >= abs(d) // 2 + abs(d) % 2 then 1 else 0 end end as q\n      from (select cast(replace(cast(cast(\"r1\".\"c1\" as decimal(38, 10)) as varchar), '.', '') as hugeint) as n,\n        nullif(cast(replace(cast(cast(\"r1\".\"c2\" as decimal(38, 10)) as varchar), '.', '') as hugeint), 0) as d) as golden_div_input\n    ) as golden_div_rounded) as decimal(38, 10)) as decimal(38, 10)) as \"freight_ratio\" from (select \"r3\".\"c0\" as \"c0\", cast(sum(cast(\"r3\".\"c5\" as decimal(38, 10))) as decimal(38, 10)) as \"c1\", cast(sum(cast(\"r3\".\"c4\" as decimal(38, 10))) as decimal(38, 10)) as \"c2\" from (select \"r4\".\"c0\" as \"c0\", \"r4\".\"c1\" as \"c1\", \"r4\".\"c2\" as \"c2\", \"r12\".\"c0\" as \"c3\", \"r12\".\"c1\" as \"c4\", \"r12\".\"c2\" as \"c5\" from (select \"customers\".\"customer_id\" as \"c0\", \"customers\".\"city\" as \"c1\", \"customers\".\"country\" as \"c2\" from \"customers\") as \"r4\" left join (select \"r6\".\"c2\" as \"c0\", cast(coalesce(\"r6\".\"c7\", cast($1 as integer)) as decimal(38, 10)) as \"c1\", cast(coalesce(\"r6\".\"c5\", cast($2 as integer)) as decimal(38, 10)) as \"c2\" from (select \"r7\".\"c0\" as \"c0\", \"r7\".\"c1\" as \"c1\", \"r7\".\"c2\" as \"c2\", \"r7\".\"c3\" as \"c3\", \"r7\".\"c4\" as \"c4\", \"r7\".\"c5\" as \"c5\", \"r11\".\"c0\" as \"c6\", \"r11\".\"c1\" as \"c7\" from (select \"orders\".\"order_id\" as \"c0\", \"orders\".\"order_date\" as \"c1\", \"orders\".\"customer_id\" as \"c2\", \"orders\".\"employee_id\" as \"c3\", \"orders\".\"shipped_date\" as \"c4\", cast(\"orders\".\"freight\" as decimal(38, 10)) as \"c5\" from \"orders\") as \"r7\" left join (select \"order_details\".\"order_id\" as \"c0\", cast(sum(cast(cast((cast(cast((cast(cast(\"order_details\".\"unit_price\" as decimal(38, 10)) as decimal(38, 10)) * cast(\"order_details\".\"quantity\" as decimal(38, 10))) as decimal(38, 10)) as decimal(38, 10)) * cast(cast((cast(cast($3 as integer) as decimal(38, 10)) - cast(cast(\"order_details\".\"discount\" as decimal(38, 10)) as decimal(38, 10))) as decimal(38, 10)) as decimal(38, 10))) as decimal(38, 10)) as decimal(38, 10))) as decimal(38, 10)) as \"c1\" from \"order_details\" group by \"order_details\".\"order_id\") as \"r11\" on (\"r7\".\"c0\" = \"r11\".\"c0\")) as \"r6\") as \"r12\" on (\"r4\".\"c0\" = \"r12\".\"c0\")) as \"r3\" group by \"r3\".\"c0\") as \"r1\" order by case when \"r1\".\"c0\" is null then 1 else 0 end asc, \"r1\".\"c0\" asc",
+    "sql": "select \"r1\".\"c0\" as \"customer_id\", cast((select cast(\n    (case when sign(n) * sign(d) < 0 then '-' else '' end) ||\n    cast(q // 10000000000 as varchar) || '.' || lpad(cast(q % 10000000000 as varchar), 10, '0')\n    as decimal(38,10))\n    from (select n, d, case when n is null or d is null then null else\n      (abs(n) * 10000000000) // abs(d) +\n      case when (abs(n) * 10000000000) % abs(d) >= abs(d) // 2 + abs(d) % 2 then 1 else 0 end end as q\n      from (select cast(replace(cast(\"r1\".\"c1\" as varchar), '.', '') as hugeint) as n,\n        nullif(cast(replace(cast(\"r1\".\"c2\" as varchar), '.', '') as hugeint), 0) as d) as golden_div_input\n    ) as golden_div_rounded) as decimal(38, 10)) as \"freight_ratio\" from (select \"r4\".\"customer_id\" as \"c0\", cast(sum(\"r12\".\"c2\") as decimal(38, 10)) as \"c1\", cast(sum(\"r12\".\"c1\") as decimal(38, 10)) as \"c2\" from \"customers\" as \"r4\" left join (select \"r7\".\"customer_id\" as \"c0\", cast(coalesce(\"r11\".\"c1\", cast($1 as integer)) as decimal(38, 10)) as \"c1\", cast(coalesce(cast(\"r7\".\"freight\" as decimal(38, 10)), cast($2 as integer)) as decimal(38, 10)) as \"c2\" from \"orders\" as \"r7\" left join (select \"order_details\".\"order_id\" as \"c0\", cast(sum(cast((cast((cast(\"order_details\".\"unit_price\" as decimal(38, 10)) * cast(\"order_details\".\"quantity\" as decimal(38, 10))) as decimal(38, 10)) * cast((cast(cast($3 as integer) as decimal(38, 10)) - cast(\"order_details\".\"discount\" as decimal(38, 10))) as decimal(38, 10))) as decimal(38, 10))) as decimal(38, 10)) as \"c1\" from \"order_details\" group by \"order_details\".\"order_id\") as \"r11\" on (\"r7\".\"order_id\" = \"r11\".\"c0\")) as \"r12\" on (\"r4\".\"customer_id\" = \"r12\".\"c0\") group by \"r4\".\"customer_id\") as \"r1\" order by \"r1\".\"c0\" asc",
     "parameters": [
       0,
       0,
@@ -144,14 +144,14 @@
       {
         "relationId": "r6",
         "operation": "project",
-        "decision": "boundary",
-        "reason": "Preserve join input scope or specialized lowering boundary"
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
       },
       {
         "relationId": "r3",
         "operation": "project",
-        "decision": "boundary",
-        "reason": "Preserve join input scope or specialized lowering boundary"
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
       },
       {
         "relationId": "r2",
@@ -175,14 +175,9 @@
   },
   {
     "name": "75th percentile of order price by customer country",
-    "sql": "select \"r13\".\"c0\" as \"country\", cast(\"r13\".\"c1\" as decimal(38, 10)) as \"order_price_p75\" from (select \"r12\".\"c0\" as \"c0\", cast((max(case when \"r12\".\"rn\" = floor((1 + cast($1 as decimal(38, 10)) * (\"r12\".\"n\" - 1))) and \"r12\".\"n\" > 0 then \"r12\".\"v\" end) + (max(case when \"r12\".\"rn\" = ceil((1 + cast($2 as decimal(38, 10)) * (\"r12\".\"n\" - 1))) and \"r12\".\"n\" > 0 then \"r12\".\"v\" end) - max(case when \"r12\".\"rn\" = floor((1 + cast($3 as decimal(38, 10)) * (\"r12\".\"n\" - 1))) and \"r12\".\"n\" > 0 then \"r12\".\"v\" end)) * max((1 + cast($4 as decimal(38, 10)) * (\"r12\".\"n\" - 1)) - floor((1 + cast($5 as decimal(38, 10)) * (\"r12\".\"n\" - 1))))) as decimal(38, 10)) as \"c1\" from (select \"r1\".\"c0\" as \"c0\", cast(\"r1\".\"c1\" as decimal(38, 10)) as v, row_number() over (partition by \"r1\".\"c0\" order by case when cast(\"r1\".\"c1\" as decimal(38, 10)) is null then 1 else 0 end, cast(\"r1\".\"c1\" as decimal(38, 10))) as rn, count(cast(\"r1\".\"c1\" as decimal(38, 10))) over (partition by \"r1\".\"c0\") as n from (select \"r2\".\"c2\" as \"c0\", \"r2\".\"c4\" as \"c1\" from (select \"r3\".\"c0\" as \"c0\", \"r3\".\"c1\" as \"c1\", \"r3\".\"c2\" as \"c2\", \"r11\".\"c0\" as \"c3\", \"r11\".\"c1\" as \"c4\", \"r11\".\"c2\" as \"c5\" from (select \"customers\".\"customer_id\" as \"c0\", \"customers\".\"city\" as \"c1\", \"customers\".\"country\" as \"c2\" from \"customers\") as \"r3\" inner join (select \"r5\".\"c2\" as \"c0\", cast(coalesce(\"r5\".\"c7\", cast($6 as integer)) as decimal(38, 10)) as \"c1\", cast(coalesce(\"r5\".\"c5\", cast($7 as integer)) as decimal(38, 10)) as \"c2\" from (select \"r6\".\"c0\" as \"c0\", \"r6\".\"c1\" as \"c1\", \"r6\".\"c2\" as \"c2\", \"r6\".\"c3\" as \"c3\", \"r6\".\"c4\" as \"c4\", \"r6\".\"c5\" as \"c5\", \"r10\".\"c0\" as \"c6\", \"r10\".\"c1\" as \"c7\" from (select \"orders\".\"order_id\" as \"c0\", \"orders\".\"order_date\" as \"c1\", \"orders\".\"customer_id\" as \"c2\", \"orders\".\"employee_id\" as \"c3\", \"orders\".\"shipped_date\" as \"c4\", cast(\"orders\".\"freight\" as decimal(38, 10)) as \"c5\" from \"orders\") as \"r6\" left join (select \"order_details\".\"order_id\" as \"c0\", cast(sum(cast(cast((cast(cast((cast(cast(\"order_details\".\"unit_price\" as decimal(38, 10)) as decimal(38, 10)) * cast(\"order_details\".\"quantity\" as decimal(38, 10))) as decimal(38, 10)) as decimal(38, 10)) * cast(cast((cast(cast($8 as integer) as decimal(38, 10)) - cast(cast(\"order_details\".\"discount\" as decimal(38, 10)) as decimal(38, 10))) as decimal(38, 10)) as decimal(38, 10))) as decimal(38, 10)) as decimal(38, 10))) as decimal(38, 10)) as \"c1\" from \"order_details\" group by \"order_details\".\"order_id\") as \"r10\" on (\"r6\".\"c0\" = \"r10\".\"c0\")) as \"r5\") as \"r11\" on (\"r3\".\"c0\" = \"r11\".\"c0\")) as \"r2\") as \"r1\") as \"r12\" group by \"r12\".\"c0\") as \"r13\" order by case when \"r13\".\"c0\" is null then 1 else 0 end asc, \"r13\".\"c0\" asc",
+    "sql": "select \"r12\".\"c0\" as \"country\", cast((max(case when \"r12\".\"rn\" = floor(\"r12\".\"pos\") and \"r12\".\"n\" > 0 then \"r12\".\"v\" end) + (max(case when \"r12\".\"rn\" = ceil(\"r12\".\"pos\") and \"r12\".\"n\" > 0 then \"r12\".\"v\" end) - max(case when \"r12\".\"rn\" = floor(\"r12\".\"pos\") and \"r12\".\"n\" > 0 then \"r12\".\"v\" end)) * max(\"r12\".\"pos\" - floor(\"r12\".\"pos\"))) as decimal(38, 10)) as \"order_price_p75\" from (select \"r1\".\"c0\" as \"c0\", \"r1\".\"c1\" as v, row_number() over (partition by \"r1\".\"c0\" order by case when \"r1\".\"c1\" is null then 1 else 0 end, \"r1\".\"c1\") as rn, count(\"r1\".\"c1\") over (partition by \"r1\".\"c0\") as n, (1 + cast($1 as decimal(38, 10)) * (count(\"r1\".\"c1\") over (partition by \"r1\".\"c0\") - 1)) as pos from (select \"r3\".\"country\" as \"c0\", \"r11\".\"c1\" as \"c1\" from \"customers\" as \"r3\" inner join (select \"r6\".\"customer_id\" as \"c0\", cast(coalesce(\"r10\".\"c1\", cast($2 as integer)) as decimal(38, 10)) as \"c1\" from \"orders\" as \"r6\" left join (select \"order_details\".\"order_id\" as \"c0\", cast(sum(cast((cast((cast(\"order_details\".\"unit_price\" as decimal(38, 10)) * cast(\"order_details\".\"quantity\" as decimal(38, 10))) as decimal(38, 10)) * cast((cast(cast($3 as integer) as decimal(38, 10)) - cast(\"order_details\".\"discount\" as decimal(38, 10))) as decimal(38, 10))) as decimal(38, 10))) as decimal(38, 10)) as \"c1\" from \"order_details\" group by \"order_details\".\"order_id\") as \"r10\" on (\"r6\".\"order_id\" = \"r10\".\"c0\")) as \"r11\" on (\"r3\".\"customer_id\" = \"r11\".\"c0\")) as \"r1\") as \"r12\" group by \"r12\".\"c0\" order by case when \"r12\".\"c0\" is null then 1 else 0 end asc, \"r12\".\"c0\" asc",
     "parameters": [
       0.75,
-      0.75,
-      0.75,
-      0.75,
-      0.75,
-      0,
       0,
       1
     ],
@@ -196,14 +191,14 @@
       {
         "relationId": "r5",
         "operation": "project",
-        "decision": "boundary",
-        "reason": "Preserve join input scope or specialized lowering boundary"
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
       },
       {
         "relationId": "r2",
         "operation": "project",
-        "decision": "boundary",
-        "reason": "Preserve join input scope or specialized lowering boundary"
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
       },
       {
         "relationId": "r1",
@@ -221,7 +216,7 @@
   },
   {
     "name": "Window top N",
-    "sql": "select \"r1\".\"c0\" as \"customer_id\", \"r1\".\"c1\" as \"order_id\", \"r1\".\"c2\" as \"order_date\", cast(\"r1\".\"c3\" as text) as \"position\" from (select \"orders\".\"customer_id\" as \"c0\", \"orders\".\"order_id\" as \"c1\", \"orders\".\"order_date\" as \"c2\", row_number() over (partition by \"orders\".\"customer_id\" order by case when \"orders\".\"order_date\" is null then 1 else 0 end asc, \"orders\".\"order_date\" desc, case when \"orders\".\"order_id\" is null then 1 else 0 end asc, \"orders\".\"order_id\" desc) as \"c3\" from \"orders\") as \"r1\" where (\"r1\".\"c3\" <= cast($1 as integer)) order by case when \"r1\".\"c0\" is null then 1 else 0 end asc, \"r1\".\"c0\" asc, case when \"r1\".\"c3\" is null then 1 else 0 end asc, \"r1\".\"c3\" asc",
+    "sql": "select \"r1\".\"c0\" as \"customer_id\", \"r1\".\"c1\" as \"order_id\", \"r1\".\"c2\" as \"order_date\", cast(\"r1\".\"c3\" as text) as \"position\" from (select \"orders\".\"customer_id\" as \"c0\", \"orders\".\"order_id\" as \"c1\", \"orders\".\"order_date\" as \"c2\", row_number() over (partition by \"orders\".\"customer_id\" order by case when \"orders\".\"order_date\" is null then 1 else 0 end asc, \"orders\".\"order_date\" desc, \"orders\".\"order_id\" desc) as \"c3\" from \"orders\") as \"r1\" where (\"r1\".\"c3\" <= cast($1 as integer)) order by case when \"r1\".\"c0\" is null then 1 else 0 end asc, \"r1\".\"c0\" asc, \"r1\".\"c3\" asc",
     "parameters": [
       3
     ],

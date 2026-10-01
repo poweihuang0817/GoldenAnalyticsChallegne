@@ -1,5 +1,70 @@
 # Generated SQL audit
 
+## Implemented audit follow-up (September 30, 2026)
+
+The user approved addressing the findings below. The compiler now absorbs compatible
+terminal pagination, inlines simple scan/projection join inputs, merges safe
+CASE/COALESCE projections into aggregates, prunes unused intermediate columns,
+removes casts only with explicit physical-type provenance, and omits null-order
+CASE expressions only for fields still known non-null at that stage. Percentile
+rank position is computed in its existing ranking block and its fraction is bound
+once. SQL semantics and public result representations are unchanged.
+
+The 24 linked SQL files now show the updated compiler. The original findings below
+remain historical context; their old counts are not the current generated SQL.
+
+| Family | Previous SELECTs PG/MySQL/DuckDB | Current SELECTs PG/MySQL/DuckDB |
+| --- | --- | --- |
+| Recent orders | 3/3/3 | 1/1/1 |
+| London / Mexico count (each) | 1/1/1 | 1/1/1 |
+| Average units | 5/5/5 | 2/2/2 |
+| Shipping status | 5/5/5 | 1/1/1 |
+| Freight ratio | 8/8/11 | 4/4/7 |
+| Percentile | 10/10/10 | 5/5/5 |
+| Window top-N | 2/2/2 | 2/2/2 |
+
+These count SELECT tokens, including scalar subqueries; they are not plan costs or
+latency measurements. No general runtime speedup or arbitrary-plan correctness is
+claimed. Current fixtures protect exact SQL, parameters and lowering trace.
+
+### Disposition and retained boundaries
+
+All eight demo families were reviewed. The actionable structural findings above
+are implemented; these remaining structures are intentional:
+
+- City output casts preserve i64 strings; MySQL binary comparisons preserve the
+  declared accent-sensitive semantics. Schema/index tuning is separate work.
+- Nested aggregation, computed grouping keys with parameters, pagination before
+  filtering/re-sorting, and filtering a window result retain necessary boundaries.
+- DuckDB freight retains three scalar stages for exact scaled-integer division.
+  Attempts to reuse aliases in fewer stages exposed correlated-name resolution,
+  binder failures and floating-point results. Regression fixtures now cover outer
+  columns named n/d/q and large exact decimals; DOUBLE division is not a substitute.
+- Window top-N retains two blocks for ranking then filtering. Nullable date/customer
+  sort keys retain null ranking; required order_id/rank keys do not.
+- Native percentile, DuckDB QUALIFY, global common-expression elimination and a
+  general optimizer remain future options, not missing fixes in this change.
+
+### Verification and design reference
+
+Local validation: code/docs type checks, 68 unit tests, 98 integration tests, and
+one real three-backend conformance test passed. Tests include independent raw-data
+oracles, PostgreSQL native percentile comparison, NULLs, duplicates, empty groups,
+decimal boundaries, pagination and alias scopes. New fixtures specifically protect
+ON-only grandchild keys, WHERE-only columns, hidden window dependencies, and
+parameterized CASE/literal grouping. A failing recent-orders shape regression was
+observed before implementation. These local results are not hosted CI results.
+
+The design follows Calcite's principle of combining compatible SQL clauses while
+preserving semantic boundaries, rather than blindly flattening every relation:
+[SqlImplementor](https://github.com/apache/calcite/blob/main/core/src/main/java/org/apache/calcite/rel/rel2sql/SqlImplementor.java)
+and [RelToSqlConverter](https://github.com/apache/calcite/blob/main/core/src/main/java/org/apache/calcite/rel/rel2sql/RelToSqlConverter.java).
+No Calcite runtime dependency or general optimizer was introduced. Column demand
+uses structured Kysely references; pinned-library changes must retain these tests.
+
+## Original audit (historical)
+# Generated SQL audit
+
 Reviewed source: `13db90a9e14f2d97c35f3f89ca349918329d092d` (after #52).
 Scope: all seven `queryExamples` entries (six challenge families, two city inputs)
 plus `recentOrdersPerCustomer(3)`, each on three backends. This is not every query

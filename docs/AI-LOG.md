@@ -387,3 +387,11 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - User requested actual API constraint code and a clearer explanation of projection, then asked to replace the prose-heavy initial flow with the catalog definition. Added Catalog first, kept Usage next, and split Types/Projection into separate pages.
 - Types shows the actual lower receiver constraint plus valid/invalid calls. Projection shows input/output rows, rename/omission, result-schema checks and the real select signature. No compiler/API behavior changed; candidate README unchanged.
 - Added compile-only positive/negative examples and a signature/source consistency check. Navigation tests now cover nine topics and Catalog initial selection.
+
+## SQL audit findings follow-up (September 30, 2026)
+
+- User requested resolving the SQL complexity findings from #53, using agents and learning from Calcite. Kept Substrait/Kysely and the existing compiler; no new optimizer or IR.
+- Separate agents reviewed SQL-block boundaries, added cross-backend composition fixtures, and investigated exact DuckDB division. The parent integrated and validated their changes.
+- Implemented guarded block absorption, column demand, physical cast provenance, non-null sort simplification, and shared percentile position. Parameterized computed grouping retains a boundary to avoid distinct bind positions changing PostgreSQL grouping validity.
+- Rejected a more aggressive DuckDB decimal rewrite after correlated alias/binder/precision failures; retained exact arithmetic and added regression fixtures. No universal latency benefit claimed.
+- Local code/docs checks, 68 unit tests, 98 integration tests and one three-backend conformance test passed. Regenerated the 24 display SQL files from exact SQL/parameter/trace fixtures. Candidate README unchanged; async compiler workers are separate issue #60.
