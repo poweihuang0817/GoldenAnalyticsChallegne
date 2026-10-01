@@ -23,7 +23,7 @@ run the same example. Expand SQL and Substrait when explaining the boundaries.
 Timings measure compilation/execution, not browser/network overhead. Results are
 real and uncached; at most 100 rows are displayed, with full row count reported.
 
-Only three fixed examples, three backends and Compile/Run are accepted. There is no
+Only eight fixed examples, three backends and Compile/Run are accepted. There is no
 arbitrary SQL, plan submission, code evaluation or editable query. Server binds
 loopback, checks Host/Origin, limits JSON to 1024 bytes and concurrent work to one
 request. Returned failures omit driver errors/credentials. UI renders data using
@@ -60,3 +60,9 @@ Before recording, start a fresh server from the selected revision and verify its
 Generated SQL is formatted for the selected dialect for display only; the original compiled SQL is still executed and available under Original SQL. Formatting failure falls back to the original text. The formatter never receives bound parameter values.
 
 Substrait operator tree summarizes the actual plan, with output at the top and inputs below. Function anchors are shown by name; field# references remain positional within each input relation. This is a navigation aid, not a full semantic explanation: types, emit mappings and some expressions are omitted. Raw Substrait JSON remains the authoritative plan view. Architecture now flows top-to-bottom and uses the same green for all three backend boxes.
+
+## Complete example menu
+
+The menu covers recent orders (N=5), London and Mexico D.F. customer counts, average units per order, employee shipping status, customer freight ratio, country P75, and the window extension: latest three orders per customer. All use existing functions in src/queries.ts on each of the three backends. N is fixed for this demo. The window uses ROW_NUMBER with a date/ID tie-breaker; results show at most 100 rows with the complete row count reported. Freight and percentile source previews include their shared price helper.
+
+Navigation is Architecture, Live driver, API design; Architecture is selected on first load. The API design tab retains the step-by-step API guide.
