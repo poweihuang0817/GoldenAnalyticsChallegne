@@ -381,3 +381,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - User requested each API design decision in the UI, then clarified the order: flow, usage, design decisions, with larger text and separate pages. Added eight topic views under API design and retained the existing primary navigation.
 - Covered typed expressions, relation composition, lazy execution/optional compilation, Substrait/Kysely boundaries, decimal/i64 string transport and explicit semantics/testing. Callback syntax is not portrayed as inherently untyped; future semantic interoperability is not claimed as implemented.
 - Code/docs typechecks and 63 unit tests pass, including navigation isolation, unique element IDs, initial visibility and selected states. Existing tests compile all eight examples on three backends and execute a DuckDB HTTP fixture. No compiler changes or browser visual QA claimed.
+
+## Explain constraints and projection visually (September 30, 2026)
+
+- User requested actual API constraint code and a clearer explanation of projection, then asked to replace the prose-heavy initial flow with the catalog definition. Added Catalog first, kept Usage next, and split Types/Projection into separate pages.
+- Types shows the actual lower receiver constraint plus valid/invalid calls. Projection shows input/output rows, rename/omission, result-schema checks and the real select signature. No compiler/API behavior changed; candidate README unchanged.
+- Added compile-only positive/negative examples and a signature/source consistency check. Navigation tests now cover nine topics and Catalog initial selection.

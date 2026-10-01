@@ -122,3 +122,20 @@ function contracts() {
   void nullable; void required;
 }
 void contracts;
+
+// The accepted/rejected expressions shown on the UI Types and Projection pages.
+function presentationConstraints() {
+  const source = createSource(challengeCatalog);
+  const customers = source.table('customers');
+  const orders = source.table('orders');
+  const lowered: Expr<'string', true> = customers.columns.city.lower();
+  // @ts-expect-error lower requires a string receiver
+  orders.columns.order_id.lower();
+  const projected = customers.select({ customer_city: customers.columns.city });
+  const renamed: Expr<'string', true> = projected.columns.customer_city;
+  // @ts-expect-error projection renamed this column
+  projected.columns.city;
+  // @ts-expect-error projection omitted this column
+  projected.columns.customer_id;
+  void lowered; void renamed;
+}

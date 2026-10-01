@@ -75,6 +75,8 @@ Navigation is Architecture, Live driver, API design; Architecture is selected on
 
 ## API design presentation
 
-The API design page is split into eight topic views: Flow, Usage, Types, Composition, Execution, Boundaries, Precision, and Semantics. Flow opens first; native buttons support keyboard activation and expose their selected state. Switching topics preserves the main Architecture/Live driver/API design selection.
+The API design page is split into nine topic views: Catalog, Usage, Types, Projection, Composition, Execution, Boundaries, Precision, and Semantics. Catalog opens first; native buttons support keyboard activation and expose their selected state. Switching topics preserves the main Architecture/Live driver/API design selection.
 
 Body and code text use 18px presentation sizing. The city and average-units helpers are loaded from the existing examples endpoint; explanatory snippets are labeled separately. Precision explains string transport, decimal(38,10) limits and caller arithmetic responsibilities. Boundaries explains both the reason for retaining Substrait and the cost of owning lowering. No new query behavior is introduced.
+
+Types shows the actual lower() receiver constraint with accepted/rejected calls. Projection separately illustrates selecting and renaming columns, input/output rows, and the select() signature. A unit check compares the displayed signatures to src/api.ts; compile-only cases protect the examples. Catalog replaces the prose flow overview with the actual customers schema excerpt.
