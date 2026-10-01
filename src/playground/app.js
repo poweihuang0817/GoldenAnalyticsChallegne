@@ -78,12 +78,22 @@ for (const button of document.querySelectorAll('[data-page]')) {
     }
   };
 }
+for (const button of document.querySelectorAll('[data-design]')) {
+  button.onclick = () => {
+    for (const other of document.querySelectorAll('[data-design]')) {
+      const active = other === button;
+      other.setAttribute('aria-pressed', String(active));
+      el(`design-${other.dataset.design}`).hidden = !active;
+    }
+  };
+}
 el('compile').onclick = () => submit('compile'); el('run').onclick = () => submit('run');
 el('example').onchange = reset; el('backend').onchange = reset;
 fetch('/examples').then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(items => {
   examples = items;
   for (const item of items) { const option = document.createElement('option'); option.value = item.id; option.textContent = item.title; el('example').append(option); }
   el('api-code').textContent = items.find(item => item.id === 'city').code;
+  el('composition-code').textContent = items.find(item => item.id === 'units').code;
   el('compile').disabled = false; el('run').disabled = false;
   reset();
 }).catch(() => { el('status').textContent = 'Unable to load examples. Restart the local demo server.'; });

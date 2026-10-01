@@ -23,7 +23,7 @@ run the same example. Expand SQL and Substrait when explaining the boundaries.
 Timings measure compilation/execution, not browser/network overhead. Results are
 real and uncached; at most 100 rows are displayed, with full row count reported.
 
-Only three fixed examples, three backends and Compile/Run are accepted. There is no
+Only eight fixed examples, three backends and Compile/Run are accepted. There is no
 arbitrary SQL, plan submission, code evaluation or editable query. Server binds
 loopback, checks Host/Origin, limits JSON to 1024 bytes and concurrent work to one
 request. Returned failures omit driver errors/credentials. UI renders data using
@@ -66,3 +66,15 @@ Substrait operator tree summarizes the actual plan, with output at the top and i
 Generated SQL now shows a separate Bound parameters panel for the fixed Northwind examples. PostgreSQL/DuckDB labels use $1, $2, ...; MySQL labels each ? by its one-based occurrence. Values come from the compiled parameter array, not SQL parsing or interpolation. Changing the example/backend or encountering an error clears the previous bindings. This demo display is not production parameter logging; lowering traces still omit values.
 
 Execution passes the compiled SQL and ordered parameters to Kysely's executeQuery. The PostgreSQL adapter calls pg.query(sql, parameters). The current MySQL adapter calls mysql2.query(sql, parameters), which escapes/formats values client-side; it does not use mysql2.execute's server-side prepared statements. The application never needs to manually substitute values into SQL.
+
+## Complete example menu
+
+The menu covers recent orders (N=5), London and Mexico D.F. customer counts, average units per order, employee shipping status, customer freight ratio, country P75, and the window extension: latest three orders per customer. All use existing functions in src/queries.ts on each of the three backends. N is fixed for this demo. The window uses ROW_NUMBER with a date/ID tie-breaker; results show at most 100 rows with the complete row count reported. Freight and percentile source previews include their shared price helper.
+
+Navigation is Architecture, Live driver, API design; Architecture is selected on first load. The API design tab retains the step-by-step API guide.
+
+## API design presentation
+
+The API design page is split into eight topic views: Flow, Usage, Types, Composition, Execution, Boundaries, Precision, and Semantics. Flow opens first; native buttons support keyboard activation and expose their selected state. Switching topics preserves the main Architecture/Live driver/API design selection.
+
+Body and code text use 18px presentation sizing. The city and average-units helpers are loaded from the existing examples endpoint; explanatory snippets are labeled separately. Precision explains string transport, decimal(38,10) limits and caller arithmetic responsibilities. Boundaries explains both the reason for retaining Substrait and the cost of owning lowering. No new query behavior is introduced.

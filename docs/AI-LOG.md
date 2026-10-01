@@ -368,3 +368,16 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 
 - User asked to see the London value alongside compiled SQL and understand driver binding. Added a separate ordered parameter display for the fixed demo examples, retaining SQL placeholders and value-free lowering traces.
 - Verified the new response assertion failed before implementation. Code/docs typechecks and 63 unit tests pass, including real DuckDB HTTP compile/run. Documented PostgreSQL binding versus the current mysql2.query client-side formatting path; no compiler semantics changed.
+
+## Complete video demo menu (September 30, 2026)
+
+- User requested all six challenge query families plus the window extension in the UI. Reused existing API helpers for eight entries, including two city values; no query/compiler changes. User then requested Architecture, Live driver, API design tab order with Architecture first.
+- Code/docs typechecks and 62 unit tests pass before the final tab-order assertions; the expanded formatting check exposed an invalid old assumption that all original SQL is single-line (DuckDB freight templates contain newlines). Kept that assertion scoped to the original city example.
+- All 24 real HTTP executions succeeded across PostgreSQL, MySQL and DuckDB. An initial smoke assertion incorrectly expected five for unaccented mexico d.f.; corrected the test expectation to the documented accent-sensitive result zero, without changing semantics. Window returns 263 rows, with the UI's existing 100-row display cap.
+- After adding the tab-order assertions, code/docs typechecks and all 62 unit tests passed again. Browser visual inspection has not been performed for this change.
+
+## API design presentation pages (September 30, 2026)
+
+- User requested each API design decision in the UI, then clarified the order: flow, usage, design decisions, with larger text and separate pages. Added eight topic views under API design and retained the existing primary navigation.
+- Covered typed expressions, relation composition, lazy execution/optional compilation, Substrait/Kysely boundaries, decimal/i64 string transport and explicit semantics/testing. Callback syntax is not portrayed as inherently untyped; future semantic interoperability is not claimed as implemented.
+- Code/docs typechecks and 63 unit tests pass, including navigation isolation, unique element IDs, initial visibility and selected states. Existing tests compile all eight examples on three backends and execute a DuckDB HTTP fixture. No compiler changes or browser visual QA claimed.

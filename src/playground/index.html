@@ -2,8 +2,8 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Golden · Query walkthrough</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
 <body><main>
 <header><span class="brand">GOLDEN / QUERY ENGINEERING</span><span class="badge">Northwind walkthrough</span><h1>One API. Three databases.</h1><p class="intro">Describe a query. Inspect the SQL. Run it on PostgreSQL, MySQL or DuckDB.</p></header>
-<nav aria-label="Walkthrough sections" class="navigation"><button type="button" data-page="driver" aria-pressed="true">01 · Live driver</button><button type="button" data-page="api" aria-pressed="false">02 · API guide</button><button type="button" data-page="architecture" aria-pressed="false">03 · Architecture</button></nav>
-<section id="driver-page">
+<nav aria-label="Walkthrough sections" class="navigation"><button type="button" data-page="architecture" aria-pressed="true">01 &middot; Architecture</button><button type="button" data-page="driver" aria-pressed="false">02 &middot; Live driver</button><button type="button" data-page="api" aria-pressed="false">03 &middot; API design</button></nav>
+<section id="driver-page" hidden>
 <div class="architecture" aria-label="Query architecture"><span>Typed Table / Expr</span><b>&rarr;</b><span>Substrait subset</span><b>&rarr;</b><span>Kysely SQL</span><b>&rarr;</b><span>Selected database</span></div>
 <section class="controls"><label>EXAMPLE<select id="example"></select></label><label>EXECUTE ON<select id="backend"><option value="postgres">PostgreSQL 17</option><option value="mysql">MySQL 8</option><option value="duckdb">DuckDB · extension</option></select></label><button id="compile" type="button" disabled>Compile only</button><button id="run" type="button" class="primary" disabled>Run query &rarr;</button></section>
 <p id="backend-note" class="notice">PostgreSQL and MySQL execute queries in the supplied database server.</p>
@@ -12,23 +12,89 @@
 <section class="inspection"><details><summary>Generated SQL <span id="parameters"></span></summary><p class="footnote" id="sql-note">Display formatting only; the original SQL is executed.</p><details><summary>Compilation details</summary><pre id="lowering-trace">Compile to inspect lowering decisions.</pre></details><pre id="sql">Compile or run a query to inspect SQL.</pre><h3>Bound parameters</h3><p class="footnote">SQL and these ordered values are passed together to the database driver. PostgreSQL/DuckDB use $1, $2, ...; MySQL binds each ? in order. Values shown here belong to the fixed demo examples.</p><pre id="bound-parameters">Compile or run to inspect parameter values.</pre><details><summary>Original SQL</summary><pre id="sql-raw"></pre></details></details><details><summary>Substrait operator tree</summary><p class="footnote">Output at the top, inputs below. field# indexes are local to each input relation. This summary omits expression, type and emit details; inspect the authoritative JSON below.</p><pre id="plan-tree">Compile or run a query to inspect the operator tree.</pre><details><summary>Raw Substrait JSON</summary><pre id="plan">Compile or run a query to inspect the supported plan.</pre></details></details></section>
 </section>
 <section id="api-page" hidden aria-labelledby="api-heading">
-<div class="section-label">USING THE API</div><h2 id="api-heading">Build a query once. Choose where to run it.</h2><p class="intro">A Northwind example: count customers in London using typed expressions.</p>
-<div class="columns"><article class="panel"><h3>1. Choose a table</h3><pre>const source = createSource(challengeCatalog);
-const customers = source.table('customers');</pre><p>The catalog describes table names, columns, types and nullable fields. A declared schema gives TypeScript autocomplete and catches unknown columns or incompatible operations. Creating a source or table does not fetch data.</p><h3>2. Filter and aggregate</h3><pre id="api-code">Loading the actual city query…</pre><p><code>cityQuery('london')</code> builds a query object. The filter compares lowercase city names; the aggregate names the output <code>customer_count</code>. These steps describe the work without running it.</p><p class="footnote">The helper above is actual source from src/queries.ts. Imports and the shared source/catalog setup are omitted.</p></article>
-<article class="panel"><h3>3. Execute on a backend</h3><pre>const query = cityQuery('london');
+<div class="section-label">API DESIGN DECISIONS</div><h2 id="api-heading">Describe the computation. Keep the contracts explicit.</h2>
+<p class="intro">Start with the flow and usage, then explore one design decision at a time.</p>
+<nav class="navigation design-navigation" aria-label="API design topics">
+<button type="button" data-design="flow" aria-controls="design-flow" aria-pressed="true">1 · Flow</button>
+<button type="button" data-design="usage" aria-controls="design-usage" aria-pressed="false">2 · Usage</button>
+<button type="button" data-design="types" aria-controls="design-types" aria-pressed="false">3 · Types</button>
+<button type="button" data-design="composition" aria-controls="design-composition" aria-pressed="false">4 · Composition</button>
+<button type="button" data-design="execution" aria-controls="design-execution" aria-pressed="false">5 · Execution</button>
+<button type="button" data-design="layers" aria-controls="design-layers" aria-pressed="false">6 · Boundaries</button>
+<button type="button" data-design="precision" aria-controls="design-precision" aria-pressed="false">7 · Precision</button>
+<button type="button" data-design="semantics" aria-controls="design-semantics" aria-pressed="false">8 · Semantics</button>
+</nav>
+<section id="design-flow" aria-labelledby="design-flow-heading">
+<h3 id="design-flow-heading">From an application query to database results</h3>
+<article class="panel"><ol class="flow-steps"><li><strong>Describe the schema</strong><span>Catalog: tables, columns, types and nullability.</span></li><li><strong>Build the query</strong><span>Table / Expr: filter, project, join and aggregate. No data query yet.</span></li><li><strong>Choose a backend</strong><span>PostgreSQL, MySQL or a seeded DuckDB snapshot.</span></li><li><strong>Execute</strong><span>Validate → lower the plan → generate SQL and parameters → run on the database.</span></li><li><strong>Read typed results</strong><span>Rows follow the output schema and documented numeric representations.</span></li></ol></article>
+</section>
+<section id="design-usage" hidden aria-labelledby="design-usage-heading">
+<h3 id="design-usage-heading">Count customers in London</h3>
+<div class="columns"><article class="panel"><h3>Build</h3><pre>const source = createSource(challengeCatalog);
+const customers = source.table('customers');
+const query = customers
+  .filter(customers.columns.city.lower()
+    .eq(literal('london').lower()))
+  .aggregate({ customer_count: count() });</pre><p class="footnote">Imports omitted: createSource, literal and count from src/api.ts; challengeCatalog from src/challenge.ts.</p></article><article class="panel"><h3>Execute</h3><pre>const client = createClient('postgres', challengeCatalog);
+try {
+  const { rows } = await client.execute(query);
+  // [{ customer_count: '6' }]
+} finally {
+  await client.destroy();
+}</pre><p>createClient comes from src/client.ts. Change the backend to mysql or duckdb to reuse the query with the corresponding Northwind data.</p></article></div>
+<details><summary>Actual driver helper</summary><pre id="api-code">Loading the actual city query…</pre></details>
+</section>
+<section id="design-types" hidden aria-labelledby="design-types-heading">
+<h3 id="design-types-heading">Catch mistakes while building the query</h3>
+<div class="columns"><article class="panel"><h3>Table / Expr</h3><pre>const source = createSource(challengeCatalog);
+const customers = source.table('customers');</pre><pre>// A string expression supports lower().
+customers.columns.city.lower()
+
+// Projection names the output column.
+customers.select({ city: customers.columns.city })</pre></article>
+<article class="panel"><h3>Why this interface?</h3><p>A declared catalog gives column completion and compile-time checks for names and compatible operations. Predicates are typed expressions; projection objects name the output fields.</p><p>Direct expressions were chosen for readability. Callbacks can also be fully typed; avoiding callbacks is a style decision, not the source of type safety.</p><h3>Boundary</h3><p>The catalog describes schema, not business metrics or live data. Dynamic schemas lose static precision. Runtime scope and profile validation still protect execution.</p><p class="notice">Reference points: Ibis-style relational composition and Kysely-style schema-aware TypeScript ergonomics.</p></article></div>
+</section>
+<section id="design-composition" hidden aria-labelledby="design-composition-heading">
+<h3 id="design-composition-heading">A query stage produces another relation</h3>
+<div class="columns"><article class="panel"><h3>Average units per order</h3><pre id="composition-code">Loading the actual nested aggregation…</pre><p class="footnote">Actual averageUnitsQuery source. Shared source/catalog setup is omitted.</p></article><article class="panel"><h3>Why composition matters</h3><p>First sum quantities per order. Join those totals back to all orders, replace missing totals with zero, then average. Averaging detail rows directly would answer a different question.</p><p>Each transformation returns a new Table and leaves its input reusable. Filter preserves columns; select defines output columns; aggregate exposes group keys and named measures.</p><h3>Expr versus Measure</h3><p>An Expr describes a row value. A Measure, such as count() or sum(), aggregates rows. The result of aggregate() is a new relation whose columns can be used again.</p><p class="notice">Window extension: rank within each customer, then filter the ranks. Golden preserves the required SQL boundary while merging compatible operations.</p></article></div>
+</section>
+<section id="design-execution" hidden aria-labelledby="design-execution-heading">
+<h3 id="design-execution-heading">Simple execution, optional inspection</h3>
+<div class="columns"><article class="panel"><pre>const query = cityQuery('london');
 const client = createClient('postgres', challengeCatalog);
 
 try {
+  // Optional: no data query is executed here.
+  const preview = client.compile(query);
+  console.log(preview.sql);
+  // preview.parameters contains ordered values.
+
   const { rows } = await client.execute(query);
   console.table(rows);
 } finally {
   await client.destroy();
-}</pre><p><code>execute()</code> compiles and runs the query asynchronously. It returns an object containing <code>rows</code>. Close the client after all queries finish to release its connections.</p><p>Use <code>'mysql'</code> with the same query. For <code>'duckdb'</code>, seed the local Northwind snapshot first.</p><h3>Optional: preview SQL</h3><pre>const preview = client.compile(query);
-console.log(preview.sql);</pre><p>Use this inside the <code>try</code> block before <code>execute()</code>. Compilation is synchronous and does not run the data query. It is useful for debugging; normal execution does not require a separate compile step.</p></article></div>
-<div class="guide-grid"><article class="panel"><h3>Typed expressions</h3><p>Columns support operations appropriate to their type. Predicate and projection objects compose without callbacks. Runtime checks also validate query scope and supported operations.</p></article><article class="panel"><h3>Queries can build on queries</h3><p>For average units per order, first sum quantities per order, join those totals to orders, then average. Each transformation produces a new relation with its own output columns.</p></article><article class="panel"><h3>Reading results</h3><p>The London example returns <code>{ customer_count: '6' }</code>. Counts and decimal values are strings to avoid losing integer or decimal precision. Convert them only when your application can safely do so.</p><details><summary>Other numeric results</summary><p>Computed MySQL 32-bit integer values can also arrive as strings. The inferred result type allows this; the API does not promise every numeric column is a JavaScript number.</p></details></article></div>
-<p><a href="https://github.com/poweihuang0817/GoldenAnalytics/tree/main/docs/api" target="_blank" rel="noreferrer">Full API reference on GitHub &#8599;</a> · See Architecture for the internal translation pipeline.</p>
+}</pre></article><article class="panel"><h3>Why defer execution?</h3><p>Building expressions describes work without fetching data. Queries can be composed and reused before choosing where to execute them.</p><p>execute() compiles and runs asynchronously. A separate compile() call is optional: it provides SQL and parameters for debugging and database-free compiler tests.</p><h3>SQL and values travel together</h3><pre>SQL:        … lower(cast($1 as text))
+Parameters: ['london']</pre><p>The driver receives SQL plus ordered values. PostgreSQL uses $n placeholders; MySQL uses ? placeholders through the driver. Application code does not manually interpolate values.</p><p class="footnote">Parameter values can be sensitive. Inspect deliberately; do not log them by default. Destroy the client after outstanding queries finish.</p></article></div>
 </section>
-<section id="architecture-page" hidden aria-labelledby="architecture-heading">
+<section id="design-layers" hidden aria-labelledby="design-layers-heading">
+<h3 id="design-layers-heading">Separate the public API from SQL construction</h3>
+<div class="columns"><article class="panel"><h3>Responsibilities</h3><ol><li><strong>Typed API:</strong> named expressions, composition and output types.</li><li><strong>Substrait subset:</strong> a standard relational representation.</li><li><strong>Golden lowering:</strong> validation, function mapping and SQL query boundaries.</li><li><strong>Kysely:</strong> SQL construction, quoting and parameters.</li><li><strong>Database:</strong> physical planning and execution.</li></ol></article><article class="panel"><h3>Why retain an IR?</h3><p>The relational boundary can accept a future frontend without exposing Kysely's SQL builder as the application contract. A semantic frontend would resolve metrics and relationships before producing relations.</p><h3>The cost</h3><p>Using Kysely directly would be simpler. Retaining Substrait requires Golden to implement and test relational-to-SQL lowering. Kysely can express the challenge queries too.</p><p class="notice">Current support is a constrained profile with Golden function extensions. It does not imply full Substrait interoperability, a semantic engine, or federation.</p></article></div>
+</section>
+<section id="design-precision" hidden aria-labelledby="design-precision-heading">
+<h3 id="design-precision-heading">Result representation is part of the API</h3>
+<div class="columns"><article class="panel"><h3>Counts and decimals</h3><pre>// London example: actual result shape
+{ customer_count: '6' }
+
+// Illustrative decimal representation
+{ amount: '1234.5600000000' }</pre><p>JavaScript number cannot exactly represent every 64-bit integer or decimal amount. Count/i64 and decimal outputs remain strings to avoid losing precision during result transport.</p><h3>Caller responsibility</h3><p>For further exact arithmetic, keep the calculation in the database or use a decimal library. Converting to Number is a deliberate precision tradeoff; adding strings concatenates them.</p></article><article class="panel"><h3>Explicit limits</h3><p>The current decimal contract uses precision 38 and scale 10. A string preserves the returned value; it does not provide unlimited precision or undo rounding during computation.</p><p>Not every numeric result is a string. Floating-point results use numbers; some MySQL computed i32 values can arrive as strings, and inferred result types allow that representation.</p><p class="notice">The outer CAST(COUNT(*) AS text) implements this result contract. It is not a second aggregation or an extra subquery.</p></article></div>
+</section>
+<section id="design-semantics" hidden aria-labelledby="design-semantics-heading">
+<h3 id="design-semantics-heading">Portable intent needs explicit meaning</h3>
+<div class="columns"><article class="panel"><h3>Chosen query interpretations</h3><ul><li>City: lowercase comparison, preserving accents and whitespace.</li><li>Units: average per-order totals; orders without details contribute zero.</li><li>Price: discounted merchandise; freight is counted once per order.</li><li>P75: continuous interpolation by the customer's country.</li></ul><p>These are documented choices where the prompt is ambiguous. They are implemented by query helpers and supported functions, not inferred from a catalog or supplied automatically by Substrait.</p></article><article class="panel"><h3>How the contract is checked</h3><ul><li>Type-negative and runtime validation tests.</li><li>Independent expected calculations, including monetary arithmetic.</li><li>Real PostgreSQL/MySQL tests and DuckDB conformance.</li><li>Metamorphic checks: A AND B versus sequential filters.</li><li>SQL, ordered-parameter and lowering-trace snapshots.</li></ul><p>Three backends agreeing can still hide a shared compiler bug. Independent oracles add another check. Unsupported operations are rejected explicitly.</p><p class="notice">These tests cover a supported subset; they are not a formal proof or exhaustive vendor conformance.</p></article></div>
+</section>
+<p><a href="https://github.com/poweihuang0817/GoldenAnalytics/tree/main/docs/api" target="_blank" rel="noreferrer">Full API reference</a> · <a href="https://github.com/poweihuang0817/GoldenAnalytics/blob/main/docs/QUERY-SEMANTICS.md" target="_blank" rel="noreferrer">Query definitions</a> · <a href="https://github.com/poweihuang0817/GoldenAnalytics/blob/main/docs/TEST-METHODOLOGY.md" target="_blank" rel="noreferrer">Test methodology</a></p>
+</section>
+<section id="architecture-page" aria-labelledby="architecture-heading">
 <div class="section-label">THE TRANSLATION BOUNDARY</div><h2 id="architecture-heading">Intent stays portable. Execution stays with the backend.</h2>
 <figure class="diagram"><img src="/architecture.svg" alt="TypeScript typed API builds a constrained Substrait plan, validated and lowered through Kysely to PostgreSQL, MySQL or local DuckDB. Results return to the client."><figcaption><a href="/architecture.svg" target="_blank" rel="noreferrer">Open full-size diagram &#8599;</a></figcaption></figure>
 <div class="guide-grid"><article class="panel"><h3>Public API</h3><p>Table / Expr describes WHAT to compute. Immutable stages expose their own typed output schema.</p></article><article class="panel"><h3>Relational contract</h3><p>Substrait is the supported IR, not the user interface. Validation rejects unsupported features; lowering preserves joins, ordering and aggregate grain.</p></article><article class="panel"><h3>Execution</h3><p>Kysely constructs parameterized SQL. PostgreSQL/MySQL run remotely; DuckDB runs against a separately seeded local snapshot. No federation.</p></article></div>

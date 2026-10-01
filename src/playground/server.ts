@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { connect, type Backend } from '../backend.js';
 import { compilePlan, type LoweringDecision } from '../compiler.js';
 import { challengeCatalog } from '../challenge.js';
-import { cityQuery, averageUnitsQuery, percentileQuery } from '../queries.js';
+import { cityQuery, averageUnitsQuery, percentileQuery, recentOrdersQuery, shippingQuery, freightQuery, recentOrdersPerCustomer } from '../queries.js';
 import { sqlPreview, planOutline } from './preview.js';
 
 const source = readFileSync(new URL('../queries.ts', import.meta.url), 'utf8');
@@ -15,9 +15,14 @@ function definition(name: string) {
   return (next < 0 ? rest : rest.slice(0, next + 1)).trim();
 }
 const examples = [
+  { id: 'recent', title: 'Most recent 5 orders', description: 'Sort by order date, break ties by order ID, then take five orders.', code: `${definition('recentOrdersQuery')}\n\nrecentOrdersQuery(5)`, build: () => recentOrdersQuery(5) },
   { id: 'city', title: 'Customers in London', description: 'Filter with a bound value, then count. Case-insensitive matching is explicit.', code: `${definition('cityQuery')}\n\ncityQuery('london')`, build: () => cityQuery('london') },
+  { id: 'city-mexico', title: 'Customers in Mexico D.F.', description: 'The same city-count API with a different bound value. Accent-sensitive matching: mexico does not match México.', code: `${definition('cityQuery')}\n\ncityQuery('mexico d.f.')`, build: () => cityQuery('mexico d.f.') },
   { id: 'units', title: 'Average units per order', description: 'Aggregate order lines, join back to orders, then aggregate again. Orders without lines contribute zero.', code: `${definition('averageUnitsQuery')}\n\naverageUnitsQuery()`, build: averageUnitsQuery },
+  { id: 'shipping', title: 'Employee shipped/unshipped orders', description: 'Left join employees to orders and count each shipping status; include employees with no orders.', code: `${definition('shippingQuery')}\n\nshippingQuery()`, build: shippingQuery },
+  { id: 'freight', title: 'Customer freight/order-price ratio', description: 'Sum freight once per order and divide by discounted merchandise totals per customer.', code: `${definition('pricedOrders')}\n\n${definition('freightQuery')}\n\nfreightQuery()`, build: freightQuery },
   { id: 'percentile', title: '75th percentile by country', description: 'Exact continuous percentile of discounted order prices, rounded to decimal scale 10. Each country is a separate group.', code: `${definition('pricedOrders')}\n\n${definition('percentileQuery')}\n\npercentileQuery(0.75)`, build: percentileQuery },
+  { id: 'window', title: 'Extension: latest 3 orders per customer', description: 'ROW_NUMBER partitions by customer and ranks by date, then order ID. Filter to the first three rows per customer.', code: `${definition('recentOrdersPerCustomer')}\n\nrecentOrdersPerCustomer(3)`, build: () => recentOrdersPerCustomer(3) },
 ];
 export type Request = { query: string; backend: Backend; action: 'compile' | 'run' };
 export async function executeExample(request: Request, options: { duckdbPath?: string } = {}) {

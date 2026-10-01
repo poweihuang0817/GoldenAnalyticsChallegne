@@ -21,7 +21,12 @@ test('demo serves actual examples and validates every request before execution',
   try {
     const home = await fetch(base); assert.equal(home.status, 200); assert.match(home.headers.get('content-security-policy')!, /frame-ancestors 'none'/);
     const examples = await (await fetch(`${base}/examples`)).json() as any[];
-    assert.equal(examples.length, 3); assert.match(examples[0].code, /export function cityQuery/); assert.match(examples[2].code, /function pricedOrders/);
+    assert.deepEqual(examples.map(e => e.id), ['recent','city','city-mexico','units','shipping','freight','percentile','window']);
+    assert.match(examples.find(e => e.id === 'city').code, /export function cityQuery/);
+    assert.match(examples.find(e => e.id === 'city-mexico').code, /cityQuery\('mexico d.f.'\)/);
+    for (const id of ['freight','percentile']) assert.match(examples.find(e => e.id === id).code, /function pricedOrders/);
+    assert.match(examples.find(e => e.id === 'window').code, /withRowNumber/);
+    for (const example of examples) assert.equal((await post({ ...valid, query: example.id })).status, 200);
     assert.equal((await fetch(`${base}/query`)).status, 405);
     assert.equal((await fetch(`${base}/other`)).status, 404);
     assert.equal((await fetch(`${base}/query`, { method: 'POST', body: '{}' })).status, 415);
@@ -32,11 +37,16 @@ test('demo serves actual examples and validates every request before execution',
       req.on('error', reject); req.end();
     });
     assert.equal(wrongHost, 403);
-    assert.equal(calls, 0);
-    assert.equal((await post(valid)).status, 200); assert.equal(calls, 1);
+    assert.equal(calls, 8);
+    assert.equal((await post(valid)).status, 200); assert.equal(calls, 9);
     assert.equal((await post({ ...valid, backend: 'duckdb' })).status, 200);
-    assert.equal(calls, 2);
+    assert.equal(calls, 10);
     const html = await home.text();
+    assert.match(html, /data-page="architecture" aria-pressed="true"/);
+    assert.ok(html.indexOf('data-page="architecture"') < html.indexOf('data-page="driver"'));
+    assert.ok(html.indexOf('data-page="driver"') < html.indexOf('data-page="api"'));
+    assert.match(html, /<section id="driver-page" hidden>/);
+    assert.match(html, /<section id="architecture-page" aria-labelledby/);
     assert.match(html, /value="duckdb"/); assert.match(html, /id="api-page"/); assert.match(html, /id="architecture-page"/);
     const diagram = await fetch(base + '/architecture.svg');
     assert.equal(diagram.status, 200); assert.equal(diagram.headers.get('content-type'), 'image/svg+xml');
@@ -153,12 +163,12 @@ test('plan outline uses actual operators, function anchors and both join inputs 
 });
 
 test('all fixed walkthrough queries have formatted previews on each backend',async()=>{
-  for(const backend of ['postgres','mysql','duckdb'] as const)for(const query of ['city','units','percentile']) {
+  for(const backend of ['postgres','mysql','duckdb'] as const)for(const query of ['recent','city','city-mexico','units','shipping','freight','percentile','window']) {
     const preview=await executeExample({backend,query,action:'compile'},{duckdbPath:':memory:'});
     assert.equal(preview.sqlPreview.formatted,true,`${backend}/${query}`);
     assert.match(preview.sqlPreview.text,/\n/);
     assert.match(preview.planOutline,/Output:/);
-    assert.ok(!preview.sql.includes('\n')); // Original compiler output remains distinct.
+    if (query === 'city') assert.ok(!preview.sql.includes('\n')); // Some compiler templates (DuckDB freight) already contain newlines.
     assert.equal(preview.rows,undefined);
   }
 });
@@ -167,9 +177,44 @@ test('fixed demo returns ordered bindings separately from SQL on every backend',
   for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
     const result = await executeExample({ query: 'city', backend, action: 'compile' }, { duckdbPath: ':memory:' });
     assert.deepEqual(result.parameters, ['london']);
-    assert.equal(result.parameterCount, 1); assert.deepEqual(result.parameters, ['london']);
+    assert.equal(result.parameterCount, 1);
     assert.ok(!result.sql.includes('london'));
     assert.ok(!JSON.stringify(result.loweringTrace).includes('london'));
     assert.ok(result.sql.includes(backend === 'mysql' ? '?' : '$1'));
   }
+});
+
+test('design topic navigation is isolated from primary navigation and starts with flow', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { runInNewContext } = await import('node:vm');
+  const html = readFileSync(new URL('../src/playground/index.html', import.meta.url), 'utf8');
+  const script = readFileSync(new URL('../src/playground/app.js', import.meta.url), 'utf8');
+  const topics = [...html.matchAll(/data-design="([^"]+)"/g)].map(m => m[1]);
+  assert.deepEqual(topics, ['flow','usage','types','composition','execution','layers','precision','semantics']);
+  const elements = new Map<string, any>();
+  for (const match of html.matchAll(/<[^>]+\bid="([^"]+)"[^>]*>/g)) {
+    assert.ok(!elements.has(match[1]), `duplicate id ${match[1]}`);
+    elements.set(match[1], { hidden: /\bhidden\b/.test(match[0]), textContent: '', value: '', disabled: false });
+  }
+  const buttons = (key: string, names: string[]) => names.map(name => ({ dataset: { [key]: name }, pressed: '', onclick: undefined as any,
+    setAttribute(attribute: string, value: string) { if (attribute === 'aria-pressed') this.pressed = value; } }));
+  const design = buttons('design', topics), pages = buttons('page', ['architecture','driver','api']);
+  runInNewContext(script, { document: {
+    getElementById: (id: string) => { assert.ok(elements.has(id), id); return elements.get(id); },
+    querySelectorAll: (selector: string) => selector === '[data-design]' ? design : pages,
+  }, fetch: () => new Promise(() => {}) });
+  assert.equal(elements.get('design-flow').hidden, false);
+  for (const button of design) {
+    button.onclick();
+    for (const other of design) {
+      assert.equal(elements.get(`design-${other.dataset.design}`).hidden, other !== button);
+      assert.equal(other.pressed, String(other === button));
+    }
+    assert.equal(elements.get('architecture-page').hidden, false);
+    assert.equal(elements.get('driver-page').hidden, true);
+  }
+  pages[2].onclick();
+  assert.equal(elements.get('api-page').hidden, false);
+  assert.equal(elements.get('architecture-page').hidden, true);
+  assert.equal(elements.get('design-semantics').hidden, false);
 });
