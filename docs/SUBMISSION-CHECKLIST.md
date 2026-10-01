@@ -1,4 +1,4 @@
-﻿# Submission checklist
+# Submission checklist
 
 Supporting checklist refreshed September 30, 2026 (America/Los_Angeles).
 Checked items below have repository or CI evidence. Video completion, uploads,
