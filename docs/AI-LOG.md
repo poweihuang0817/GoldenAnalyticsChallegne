@@ -363,3 +363,8 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
   all five commands passed and compiler source was restored. Full raw corpus
   remains local; committed replay tool and compact summary avoid artifact noise.
   Per-case semantic review still covers the eight fixed demo families only.
+
+## Video rehearsal preparation (September 30, 2026)
+
+- User requested an English filming script in a not-to-submit folder while unavailable to record. Added timed narration and screen cues based on the current API, UI, tests and architecture, plus Drive delivery preparation notes.
+- Marked the script as AI-assisted rehearsal material and clarified that tracked files remain visible to repository readers. Candidate README unchanged; no recording, upload or final-access verification claimed.
