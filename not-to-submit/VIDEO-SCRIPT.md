@@ -1,4 +1,4 @@
-﻿# Five-minute video script
+# Five-minute video script
 
 AI-assisted rehearsal draft for Po-wei to edit. Not the candidate-authored submission README. Screen cues are not spoken; timing must be checked in rehearsal.
 
@@ -78,4 +78,3 @@ With more time, I would broaden the conformance corpus and add compiler instrume
 - Use the employer's provided online Google Drive upload link, not a local Drive folder. Confirm that the link permits uploads before delivery. A submission folder can contain `START-HERE.md`, the video, and a clean source ZIP if requested. START-HERE should link the repository, selected commit, README, setup/test instructions and video.
 - Exclude this rehearsal folder, credentials, node_modules, .git, worktrees, local database snapshots and raw diagnostic outputs from any separately prepared source bundle. Retain the lockfile, compose configuration, source, tests and required documentation.
 - Verify private GitHub access separately: Drive permission does not grant repository access.
-
