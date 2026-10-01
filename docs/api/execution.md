@@ -4,7 +4,7 @@
 
 ## Normal application execution
 
-Use `createClient(backend, catalog, options?)` from `src/client.ts`. `await client.execute(query)` returns `{ rows }`; `client.compile(query)` returns `{ sql, parameters }` without querying the database. Reuse the client and call `await client.destroy()` after in-flight queries finish. Preview parameter values may be sensitive; do not log them by default. Result rows are inferred from the query schema with conservative driver value types; no new result normalization occurs. Vendor errors propagate unchanged.
+Use `createClient(backend, catalog, options?)` from `src/client.ts`. `await client.execute(query)` returns `{ rows }`; `await client.compile(query)` returns `{ sql, parameters }` without querying the database. Reuse the client and call `await client.destroy()` after in-flight queries finish. Preview parameter values may be sensitive; do not log them by default. Result rows are inferred from the query schema with conservative driver value types; no new result normalization occurs. Compiler errors preserve stable details; execution failures use the existing ExecutionError wrapper and driver cause.
 
 See the [tutorial](tutorial.md) and [client/expression guide](../QUERY-CLIENT.md). The lower-level interfaces below remain available for compiler tests and serialized-plan consumers.
 
@@ -43,7 +43,7 @@ Structural limits include a 1 MB binary input cap and object size/depth budgets.
 
 Reuse a handle for multiple queries and close it in `finally`. For DuckDB, use one owned instance per destination file per process; independent concurrent handles/processes sharing that file are outside the prototype's lifecycle contract. `':memory:'` is suitable for isolated database instances but contains no Northwind rows until seeded.
 
-No cancellation, streaming API, retry policy, configurable transaction isolation, timeout option or stable normalized result/error wrapper is added by the query facade. The exposed connection's lower-level facilities are not a promise that every backend supports arbitrary Kysely operations.
+The facade accepts execution AbortSignal and timeoutMs controls; the timeout covers running database work only. Compilation uses a bounded worker queue and is excluded from that timeout. See [compilation lifecycle and limits](../QUERY-CLIENT.md#asynchronous-compilation). No streaming API, retry policy, configurable transaction isolation or result normalization is added. The exposed connection's lower-level facilities are not a promise that every backend supports arbitrary Kysely operations.
 
 ## Failure boundaries
 
@@ -54,4 +54,4 @@ No cancellation, streaming API, retry policy, configurable transaction isolation
 | Compilation | Catalog mismatch, unsupported function signature, dropped sort field, backend limitation such as DuckDB decimal AVG |
 | Execution | Connection failure, missing physical table/column, database numeric overflow |
 
-There is no stable normalized error-code API yet. Errors may be ordinary Error instances, validation errors or vendor exceptions; do not depend on exact message text as a public contract.
+CompileQueryError retains its code, stage, backend and capability across the worker boundary. ExecutionError retains execution control/driver failure codes and the original driver cause. Queue saturation, worker lifecycle failures and API construction can still produce ordinary Error instances; do not depend on exact message text as a public contract.

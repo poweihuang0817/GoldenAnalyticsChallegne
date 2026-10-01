@@ -26,7 +26,7 @@ flowchart LR
   D --> E[Selected database]
 ```
 
-Constructing a query does not fetch rows. `client.execute(query)` validates, compiles and executes it. Optional `client.compile(query)` previews SQL and bound parameters. Advanced callers can still use `toSubstrait()`, `compilePlan()` and `db.executeQuery()` separately. PostgreSQL/MySQL run remotely. DuckDB runs against a separately seeded local file, with no automatic fallback or federation.
+Constructing a query does not fetch rows. `client.execute(query)` validates, compiles and executes it. Optional `await client.compile(query)` previews SQL and bound parameters. Advanced callers can still use `toSubstrait()`, `compilePlan()` and `db.executeQuery()` separately. PostgreSQL/MySQL run remotely. DuckDB runs against a separately seeded local file, with no automatic fallback or federation.
 
 ## Run the documented examples
 
