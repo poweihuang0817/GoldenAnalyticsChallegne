@@ -29,12 +29,16 @@ During implementation, I reuse my knowledge from power bi to ensure it have the 
 - Debugging - framework to isolate issue. remote issue or our issue.
 
 ### For typed API
-- Compile is synchronous and generates SQL for debugging. Execute is asynchronous.
+- Both Compile and Execute are asynchronous. Compile is CPU bound so put into Worker thread. I have seen real 31 way join so need to use async and worker thread to avoid stuck.
 - Each component as type, instead of callback.
 - type and spelling check due to pre-load schema.
 
+
 ### For compiling
 - In target generation, ensure tree traversal has clear context object. 
+- Extensive SQL generation check to ensure SQL is concise.
+I manually inspect a lot to make sure result doesn't have too many blocks of SQL
+- I also added test of query shape to avoid regression.
 
 
 ## API usage
