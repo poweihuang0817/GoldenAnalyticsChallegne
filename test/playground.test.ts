@@ -93,8 +93,8 @@ test('DuckDB walkthrough runs through HTTP and preserves real count results', as
       const response: Response = await fetch('http://127.0.0.1:' + address.port + '/query', { method: 'POST',
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: 'city', backend: 'duckdb', action }) });
       assert.equal(response.status, 200);
-      const result = await response.json() as { rows?: unknown[]; rowCount?: number; sql: string; parameterCount: number };
-      assert.match(result.sql, /count\(\*\)/); assert.equal(result.parameterCount, 1);
+      const result = await response.json() as { rows?: unknown[]; rowCount?: number; sql: string; parameterCount: number; parameters: unknown[] };
+      assert.match(result.sql, /count\(\*\)/); assert.equal(result.parameterCount, 1); assert.deepEqual(result.parameters, ['london']);
       if (action === 'run') { assert.deepEqual(result.rows, [{ customer_count: '2' }]); assert.equal(result.rowCount, 1); }
       else assert.equal(result.rows, undefined);
     }
@@ -170,6 +170,17 @@ test('all fixed walkthrough queries have formatted previews on each backend',asy
     assert.match(preview.planOutline,/Output:/);
     if (query === 'city') assert.ok(!preview.sql.includes('\n')); // Some compiler templates (DuckDB freight) already contain newlines.
     assert.equal(preview.rows,undefined);
+  }
+});
+
+test('fixed demo returns ordered bindings separately from SQL on every backend', async () => {
+  for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
+    const result = await executeExample({ query: 'city', backend, action: 'compile' }, { duckdbPath: ':memory:' });
+    assert.deepEqual(result.parameters, ['london']);
+    assert.equal(result.parameterCount, 1);
+    assert.ok(!result.sql.includes('london'));
+    assert.ok(!JSON.stringify(result.loweringTrace).includes('london'));
+    assert.ok(result.sql.includes(backend === 'mysql' ? '?' : '$1'));
   }
 });
 

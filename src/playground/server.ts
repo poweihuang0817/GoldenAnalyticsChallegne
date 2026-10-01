@@ -34,7 +34,7 @@ export async function executeExample(request: Request, options: { duckdbPath?: s
     const compiled = compilePlan(db, plan, challengeCatalog, { trace: loweringTrace });
     const rows = request.action === 'run' ? (await db.executeQuery(compiled)).rows : undefined;
     const elapsedMs = Math.round((performance.now() - start) * 10) / 10;
-    return { sql: compiled.sql, sqlPreview: sqlPreview(compiled.sql, request.backend), planOutline: planOutline(plan), parameterCount: compiled.parameters.length, plan,
+    return { sql: compiled.sql, sqlPreview: sqlPreview(compiled.sql, request.backend), planOutline: planOutline(plan), parameterCount: compiled.parameters.length, parameters: compiled.parameters, plan,
       loweringTrace, rows: rows?.slice(0, 100), rowCount: rows?.length, elapsedMs };
   } finally { await db.destroy(); }
 }

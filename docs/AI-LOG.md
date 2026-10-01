@@ -364,6 +364,11 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
   remains local; committed replay tool and compact summary avoid artifact noise.
   Per-case semantic review still covers the eight fixed demo families only.
 
+## Demo bound parameters (September 30, 2026)
+
+- User asked to see the London value alongside compiled SQL and understand driver binding. Added a separate ordered parameter display for the fixed demo examples, retaining SQL placeholders and value-free lowering traces.
+- Verified the new response assertion failed before implementation. Code/docs typechecks and 63 unit tests pass, including real DuckDB HTTP compile/run. Documented PostgreSQL binding versus the current mysql2.query client-side formatting path; no compiler semantics changed.
+
 ## Complete video demo menu (September 30, 2026)
 
 - User requested all six challenge query families plus the window extension in the UI. Reused existing API helpers for eight entries, including two city values; no query/compiler changes. User then requested Architecture, Live driver, API design tab order with Architecture first.
