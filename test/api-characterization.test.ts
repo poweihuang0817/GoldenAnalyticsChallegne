@@ -89,6 +89,44 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
             assert.deepEqual(await run(groupedCounts(base.filter(base.columns.id.eq(99)))), []);
           });
 
+          await t.test('literal-only projected grouping key retains its bound value', async () => {
+            const groupedCounts = (input: typeof base) => {
+              const projected = input.select({ bucket: integer(7) });
+              return projected.groupBy('bucket').aggregate({ n: count() });
+            };
+            assert.deepEqual(await run(groupedCounts(base)), [{ bucket: signed(7), n: '7' }]);
+            assert.deepEqual(await run(groupedCounts(base.filter(base.columns.id.eq(99)))), []);
+          });
+
+          await t.test('window dependencies survive when output drops partition and ordering columns', async () => {
+            const ranked = base.withRowNumber('position', {
+              partitionBy: ['grp'], orderBy: [{ column: 'qty', direction: 'desc', nulls: 'last' }, { column: 'id' }],
+            });
+            const rankOnly = ranked.select({ position: ranked.columns.position }).orderBy({ column: 'position' });
+            assert.deepEqual(await run(rankOnly), [1, 1, 1, 1, 2, 2, 2].map(position => ({ position: String(position) })));
+          });
+
+          await t.test('nested join retains grandchild keys referenced only by ON predicates', async () => {
+            const first = base.filter(base.columns.id.eq(1));
+            const innerJoin = first.join(base, { how: 'inner' });
+            const innerMatch = innerJoin.on(innerJoin.left.grp.eq(innerJoin.right.grp));
+            const intermediate = innerMatch.select({ outer_key: innerMatch.right.id, customer: innerMatch.left.id });
+            const outerJoin = intermediate.join(base, { how: 'inner' });
+            const outerMatch = outerJoin.on(outerJoin.left.outer_key.eq(outerJoin.right.id));
+            const result = outerMatch.select({ customer: outerMatch.left.customer, quantity: outerMatch.right.qty })
+              .orderBy({ column: 'quantity', nulls: 'last' });
+            assert.deepEqual(await run(result), [{ customer: 1, quantity: 10 }, { customer: 1, quantity: null }]);
+          });
+
+          await t.test('filtered derived join input keeps WHERE dependencies absent from output', async () => {
+            const filtered = base.filter(base.columns.flag.eq(1));
+            const derived = filtered.select({ key: filtered.columns.id });
+            const join = base.join(derived, { how: 'inner' });
+            const matched = join.on(join.left.id.eq(join.right.key));
+            const result = matched.select({ id: matched.left.id }).orderBy({ column: 'id' });
+            assert.deepEqual(await run(result), [{ id: 1 }, { id: 4 }, { id: 7 }]);
+          });
+
           await t.test('window input filters and output filters remain different computations', async () => {
             const rank = (q: typeof base) => q.withRowNumber('position', { partitionBy: ['grp'], orderBy: [{ column: 'id' }] });
             const ranked = rank(base);
