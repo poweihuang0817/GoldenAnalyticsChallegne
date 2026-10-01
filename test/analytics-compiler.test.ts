@@ -126,3 +126,50 @@ test('analytical compiler rejects unregistered URIs, functions, duplicate anchor
     assert.throws(() => compilePlan(db, overflow, challengeCatalog));
   } finally { await db.destroy(); }
 });
+
+test('audit cleanup folds terminal pagination and only removes proven redundant SQL', async () => {
+  const { recentOrdersQuery, averageUnitsQuery, shippingQuery, freightQuery } = await import('../src/queries.js');
+  for (const backend of ['postgres','mysql','duckdb'] as const) {
+    const db = connect(backend, { duckdbPath: ':memory:' });
+    try {
+      const compile = (q: import('../src/api.js').Query) => compilePlan(db, q.toSubstrait(), challengeCatalog);
+      const recent = compile(recentOrdersQuery());
+      assert.equal(recent.sql.match(/\bselect\b/gi)?.length, 1, 'terminal fetch should use one block');
+      assert.equal(recent.sql.match(/case when/gi)?.length, 1, 'only nullable order_date needs null ranking');
+      assert.deepEqual(recent.parameters, [5, 0]);
+      for (const q of [averageUnitsQuery(), shippingQuery(), freightQuery()]) {
+        const sql = compile(q).sql;
+        const inspectCasts = (node: any): void => {
+          if (!node || typeof node !== 'object') return;
+          if (node.kind === 'RawNode' && node.sqlFragments?.[0] === 'cast(' && node.sqlFragments.length === 2) {
+            const inner = node.parameters?.[0];
+            assert.ok(!(inner?.kind === 'RawNode' && JSON.stringify(inner.sqlFragments) === JSON.stringify(node.sqlFragments)), 'adjacent casts to the same physical type');
+          }
+          for (const value of Object.values(node)) if (typeof value === 'object') {
+            if (Array.isArray(value)) value.forEach(inspectCasts); else inspectCasts(value);
+          }
+        };
+        inspectCasts(compile(q).query);
+        assert.doesNotMatch(sql, /order_date/, 'unused scan columns should not be materialized');
+      }
+    } finally { await db.destroy(); }
+  }
+});
+
+test('audit percentile position is bound once and unused freight is pruned', async () => {
+  const { percentileQuery, shippingQuery, averageUnitsQuery } = await import('../src/queries.js');
+  for (const backend of ['postgres','mysql','duckdb'] as const) {
+    const db = connect(backend, { duckdbPath: ':memory:' });
+    try {
+      const compiled = compilePlan(db, percentileQuery().toSubstrait(), challengeCatalog);
+      assert.equal(compiled.parameters.filter(p => p === 0.75).length, 1);
+      assert.doesNotMatch(compiled.sql, /freight/);
+      assert.equal(compiled.sql.match(/\bselect\b/gi)?.length, 5);
+      assert.equal(compilePlan(db, shippingQuery().toSubstrait(), challengeCatalog).sql.match(/\bselect\b/gi)?.length, 1);
+      assert.equal(compilePlan(db, averageUnitsQuery().toSubstrait(), challengeCatalog).sql.match(/\bselect\b/gi)?.length, 2);
+      const window = compilePlan(db, recentOrdersPerCustomer().toSubstrait(), challengeCatalog);
+      // Nullable date within ROW_NUMBER and nullable customer in final order remain.
+      assert.equal(window.sql.match(/case when/gi)?.length, 2);
+    } finally { await db.destroy(); }
+  }
+});

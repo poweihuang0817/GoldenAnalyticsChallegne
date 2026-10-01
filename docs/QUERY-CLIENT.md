@@ -57,6 +57,15 @@ Reuse the client to amortize worker startup. `destroy()` rejects queued/in-progr
 
 Worker isolation does not promise faster compilation. Query construction, `toSubstrait()` export and structured cloning still run on the main thread. `execute(query, { timeoutMs })` applies to running database work, excluding compilation, the worker queue and connection acquisition. Aborting during compilation prevents subsequent database execution but does not interrupt that CPU job; it settles after compilation responds. There is no compilation deadline or end-to-end hard deadline. Destroying the client does terminate its compiler CPU work.
 
+### Worker-to-executor contract
+
+Execution reconstructs a Kysely executable query with
+`CompiledQuery.raw(preview.sql, preview.parameters)`. SQL plus ordered parameters
+are sufficient for the current PostgreSQL, MySQL and DuckDB execution paths;
+worker equivalence and real execution tests protect this boundary. If a future
+adapter, plugin or driver requires additional compiled-query metadata, revisit
+this transport contract rather than assuming raw reconstruction remains equivalent.
+
 ### Join characterization
 
 Reproduce with `npx tsx scripts/characterize-compilation.ts`. Local observation on Windows / Node v24.19.0, compiler base `683c5cc`, using a left-deep chain of inner joins over one required i32 column per read and retaining all outputs. Counts below are join operators (11/21/32 table occurrences). Each warm worker call is checked against direct synchronous SQL and ordered parameters. These observations are not CI performance thresholds or representative of every query shape.
