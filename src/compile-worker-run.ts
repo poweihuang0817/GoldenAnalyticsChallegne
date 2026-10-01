@@ -1,7 +1,7 @@
 import { parentPort, threadId } from 'node:worker_threads';
 import { DummyDriver, Kysely, MysqlAdapter, MysqlQueryCompiler, PostgresAdapter, PostgresQueryCompiler } from 'kysely';
 import { DuckDBAdapter } from './duckdb.js';
-import { compilePlan, type Database } from './compiler.js';
+import { compilePlanSync, type Database } from './compiler.js';
 import { CompileQueryError } from './errors.js';
 import type { CompileRequest } from './compile-service.js';
 
@@ -15,7 +15,7 @@ parentPort.on('message', ({ id, backend, plan, catalog }: CompileRequest) => {
     createIntrospector: () => { throw new Error('Compilation cannot inspect a database'); },
   } });
   try {
-    const { sql, parameters } = compilePlan(db, plan, catalog);
+    const { sql, parameters } = compilePlanSync(db, plan, catalog);
     parentPort!.postMessage({ id, preview: { sql, parameters: [...parameters] }, threadId });
   } catch (cause) {
     const error = cause instanceof Error ? cause : new Error(String(cause));

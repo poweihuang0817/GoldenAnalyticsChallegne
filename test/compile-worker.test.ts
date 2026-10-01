@@ -4,7 +4,7 @@ import { EventEmitter } from 'node:events';
 import { Worker } from 'node:worker_threads';
 import { tmpdir } from 'node:os';
 import { CompileService, type CompileRequest } from '../src/compile-service.js';
-import { compilePlan } from '../src/compiler.js';
+import { compilePlanSync } from '../src/compiler.js';
 import { connect } from '../src/backend.js';
 import { createSource } from '../src/api.js';
 import { CompileQueryError } from '../src/errors.js';
@@ -66,12 +66,12 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) test(`${backend}
   const db = connect(backend, { duckdbPath: ':memory:' });
   try {
     for (const { query } of queryExamples) {
-      const expected = compilePlan(db, query.toSubstrait(), challengeCatalog);
+      const expected = compilePlanSync(db, query.toSubstrait(), challengeCatalog);
       assert.deepEqual(await service.compile(query.toSubstrait()), { sql: expected.sql, parameters: [...expected.parameters] });
     }
     const bad = plan(); bad.relations[0].root.names = [];
     let expected: CompileQueryError;
-    try { compilePlan(db, bad, challengeCatalog); assert.fail('expected invalid query'); }
+    try { compilePlanSync(db, bad, challengeCatalog); assert.fail('expected invalid query'); }
     catch (error) { assert.ok(error instanceof CompileQueryError); expected = error; }
     await assert.rejects(service.compile(bad), error => {
       assert.ok(error instanceof CompileQueryError);

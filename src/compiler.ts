@@ -16,7 +16,7 @@ type Query = SelectQueryBuilder<Database, string, {}>;
  * @returns A Kysely compiled query containing SQL and bound parameters.
  * @remarks Compile separately for each backend; catalog validation does not inspect live metadata.
  */
-export function compilePlan(db: Kysely<Database>, input: unknown, catalog: Catalog, options: { trace?: LoweringDecision[] } = {}) {
+export function compilePlanSync(db: Kysely<Database>, input: unknown, catalog: Catalog, options: { trace?: LoweringDecision[] } = {}) {
   const backend = compilerBackend(db);
   const invalid = (message: string) => new CompileQueryError(message, { code: 'INVALID_QUERY', stage: 'compile', backend });
   const unsupported = (message: string) => new CompileQueryError(message, { code: 'UNSUPPORTED_CAPABILITY', stage: 'compile', backend });

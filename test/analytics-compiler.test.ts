@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { connect } from '../src/backend.js';
-import { compilePlan, type LoweringDecision } from '../src/compiler.js';
+import { compilePlanSync, type LoweringDecision } from '../src/compiler.js';
 import { challengeCatalog, customersInCity } from '../src/challenge.js';
 import { FUNCTIONS } from '../src/relational.js';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -12,11 +12,11 @@ test('row count lowers to count star while nullable column count remains an expr
   for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
     const db = connect(backend, { duckdbPath: ':memory:' });
     try {
-      const compiled = compilePlan(db, cityQuery('london').toSubstrait(), challengeCatalog);
+      const compiled = compilePlanSync(db, cityQuery('london').toSubstrait(), challengeCatalog);
       assert.match(compiled.sql, /count\(\*\)/);
       assert.deepEqual(compiled.parameters, ['london']);
       const customers = createSource(challengeCatalog).table('customers');
-      const nullableCount = compilePlan(db, customers.aggregate({ n: customers.columns.city.count() }).toSubstrait(), challengeCatalog);
+      const nullableCount = compilePlanSync(db, customers.aggregate({ n: customers.columns.city.count() }).toSubstrait(), challengeCatalog);
       assert.doesNotMatch(nullableCount.sql, /count\(\*\)/);
       assert.match(nullableCount.sql, /count\(.*city/);
     } finally { await db.destroy(); }
@@ -29,7 +29,7 @@ test('generated SQL, ordered bindings and lowering trace match reviewed snapshot
     try {
       const snapshots = [...queryExamples, { name: 'Window top N', query: recentOrdersPerCustomer() }].map(({name, query}) => {
         const trace: LoweringDecision[] = [];
-        const compiled = compilePlan(db, query.toSubstrait(), challengeCatalog, { trace });
+        const compiled = compilePlanSync(db, query.toSubstrait(), challengeCatalog, { trace });
         return { name, sql: compiled.sql, parameters: compiled.parameters, trace };
       });
       const directory = new URL('./fixtures/sql-query-blocks/', import.meta.url);
@@ -54,20 +54,20 @@ test('query blocks retain aggregate, computed projection, fetch and window bound
       const computed = orders.select({ value: orders.columns.freight.div(orders.columns.freight) });
       for (const query of [nested, limited.filter(limited.columns.order_id.eq(10250)),
         computed.filter(computed.columns.value.isNotNull()), recentOrdersPerCustomer(2)]) {
-        const compiled = compilePlan(db, query.toSubstrait(), challengeCatalog);
+        const compiled = compilePlanSync(db, query.toSubstrait(), challengeCatalog);
         assert.match(compiled.sql, /from \(select/);
       }
-      const nestedSql = compilePlan(db, nested.toSubstrait(), challengeCatalog).sql;
+      const nestedSql = compilePlanSync(db, nested.toSubstrait(), challengeCatalog).sql;
       const trace: LoweringDecision[] = [];
-      const window = compilePlan(db, recentOrdersPerCustomer(2).toSubstrait(), challengeCatalog, { trace });
+      const window = compilePlanSync(db, recentOrdersPerCustomer(2).toSubstrait(), challengeCatalog, { trace });
       assert.equal(window.sql.match(/\bselect\b/gi)?.length, 2);
       assert.ok(trace.some(e => e.operation === 'window' && e.decision === 'merged'));
       assert.ok(trace.some(e => e.operation === 'filter' && e.decision === 'boundary' && e.reason.includes('window')));
-      const withoutTrace = compilePlan(db, recentOrdersPerCustomer(2).toSubstrait(), challengeCatalog);
+      const withoutTrace = compilePlanSync(db, recentOrdersPerCustomer(2).toSubstrait(), challengeCatalog);
       assert.equal(window.sql, withoutTrace.sql);
       assert.deepEqual(window.parameters, withoutTrace.parameters);
       assert.equal(nestedSql.match(/\bselect\b/gi)?.length, 2);
-      const filteredSql = compilePlan(db, limited.filter(limited.columns.order_id.eq(10250)).toSubstrait(), challengeCatalog).sql;
+      const filteredSql = compilePlanSync(db, limited.filter(limited.columns.order_id.eq(10250)).toSubstrait(), challengeCatalog).sql;
       assert.match(filteredSql, /limit .*\).*where/s);
     } finally { await db.destroy(); }
   }
@@ -78,18 +78,18 @@ test('simple analytical pipelines use one SQL query block without losing binding
     const db = connect(backend, { duckdbPath: ':memory:' });
     try {
       const city = "London' OR 1=1 --";
-      const compiled = compilePlan(db, cityQuery(city).toSubstrait(), challengeCatalog);
+      const compiled = compilePlanSync(db, cityQuery(city).toSubstrait(), challengeCatalog);
       assert.equal(compiled.sql.match(/\bselect\b/gi)?.length, 1);
       assert.ok(compiled.parameters.includes(city));
       assert.ok(!compiled.sql.includes(city));
       const trace: LoweringDecision[] = [];
-      compilePlan(db, cityQuery(city).toSubstrait(), challengeCatalog, { trace });
+      compilePlanSync(db, cityQuery(city).toSubstrait(), challengeCatalog, { trace });
       assert.ok(!JSON.stringify(trace).includes(city));
       const customers = createSource(challengeCatalog).table('customers');
       const renamed = customers.select({ place: customers.columns.city });
       const filtered = renamed.filter(renamed.columns.place.isNotNull());
       const grouped = filtered.groupBy('place').aggregate({ n: count() }).orderBy({ column: 'place' });
-      const query = compilePlan(db, grouped.toSubstrait(), challengeCatalog);
+      const query = compilePlanSync(db, grouped.toSubstrait(), challengeCatalog);
       assert.equal(query.sql.match(/\bselect\b/gi)?.length, 1);
       assert.match(query.sql, /where .*is not null.*group by .*order by/);
     } finally { await db.destroy(); }
@@ -107,23 +107,23 @@ test('analytical compiler rejects unregistered URIs, functions, duplicate anchor
   try {
     const uri = customersInCity('london');
     uri.extensionUris![0].uri = 'https://example.invalid/functions.yaml';
-    assert.throws(() => compilePlan(db, uri, challengeCatalog), /URI/);
+    assert.throws(() => compilePlanSync(db, uri, challengeCatalog), /URI/);
     const fn = customersInCity('london');
     fn.extensions![0].extensionFunction.name = 'execute_arbitrary_sql';
-    assert.throws(() => compilePlan(db, fn, challengeCatalog), /declaration/);
+    assert.throws(() => compilePlanSync(db, fn, challengeCatalog), /declaration/);
     const duplicate = customersInCity('london');
     duplicate.extensions!.push(duplicate.extensions![0]);
-    assert.throws(() => compilePlan(db, duplicate, challengeCatalog), /duplicate/);
+    assert.throws(() => compilePlanSync(db, duplicate, challengeCatalog), /duplicate/);
     const output = customersInCity('london');
     const relation = output.relations[0].root.input;
     if (!('aggregate' in relation)) throw new Error('Expected aggregate');
     relation.aggregate.measures[0].measure.outputType = { bool: { nullability: 'NULLABILITY_REQUIRED' } };
-    assert.throws(() => compilePlan(db, output, challengeCatalog), /output type/);
+    assert.throws(() => compilePlanSync(db, output, challengeCatalog), /output type/);
     const overflow = customersInCity('london');
     const aggregate = overflow.relations[0].root.input;
     if (!('aggregate' in aggregate)) throw new Error('Expected aggregate');
     aggregate.aggregate.measures[0].measure.arguments[0].value = { literal: { i32: 2147483648 } };
-    assert.throws(() => compilePlan(db, overflow, challengeCatalog));
+    assert.throws(() => compilePlanSync(db, overflow, challengeCatalog));
   } finally { await db.destroy(); }
 });
 
@@ -132,7 +132,7 @@ test('audit cleanup folds terminal pagination and only removes proven redundant 
   for (const backend of ['postgres','mysql','duckdb'] as const) {
     const db = connect(backend, { duckdbPath: ':memory:' });
     try {
-      const compile = (q: import('../src/api.js').Query) => compilePlan(db, q.toSubstrait(), challengeCatalog);
+      const compile = (q: import('../src/api.js').Query) => compilePlanSync(db, q.toSubstrait(), challengeCatalog);
       const recent = compile(recentOrdersQuery());
       assert.equal(recent.sql.match(/\bselect\b/gi)?.length, 1, 'terminal fetch should use one block');
       assert.equal(recent.sql.match(/case when/gi)?.length, 1, 'only nullable order_date needs null ranking');
@@ -161,13 +161,13 @@ test('audit percentile position is bound once and unused freight is pruned', asy
   for (const backend of ['postgres','mysql','duckdb'] as const) {
     const db = connect(backend, { duckdbPath: ':memory:' });
     try {
-      const compiled = compilePlan(db, percentileQuery().toSubstrait(), challengeCatalog);
+      const compiled = compilePlanSync(db, percentileQuery().toSubstrait(), challengeCatalog);
       assert.equal(compiled.parameters.filter(p => p === 0.75).length, 1);
       assert.doesNotMatch(compiled.sql, /freight/);
       assert.equal(compiled.sql.match(/\bselect\b/gi)?.length, 5);
-      assert.equal(compilePlan(db, shippingQuery().toSubstrait(), challengeCatalog).sql.match(/\bselect\b/gi)?.length, 1);
-      assert.equal(compilePlan(db, averageUnitsQuery().toSubstrait(), challengeCatalog).sql.match(/\bselect\b/gi)?.length, 2);
-      const window = compilePlan(db, recentOrdersPerCustomer().toSubstrait(), challengeCatalog);
+      assert.equal(compilePlanSync(db, shippingQuery().toSubstrait(), challengeCatalog).sql.match(/\bselect\b/gi)?.length, 1);
+      assert.equal(compilePlanSync(db, averageUnitsQuery().toSubstrait(), challengeCatalog).sql.match(/\bselect\b/gi)?.length, 2);
+      const window = compilePlanSync(db, recentOrdersPerCustomer().toSubstrait(), challengeCatalog);
       // Nullable date within ROW_NUMBER and nullable customer in final order remain.
       assert.equal(window.sql.match(/case when/gi)?.length, 2);
     } finally { await db.destroy(); }

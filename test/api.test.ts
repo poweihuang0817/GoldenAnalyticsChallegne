@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createSource, count, literal, integer, caseWhen, type Expr, eq, and } from '../src/api.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { connect } from '../src/backend.js';
-import { compilePlan, type Catalog } from '../src/compiler.js';
+import { compilePlanSync, type Catalog } from '../src/compiler.js';
 import { encodePlan, decodePlan } from '../src/plan.js';
 const source = createSource(challengeCatalog);
 test('table construction is lazy, branches immutable, exported plans independent', () => {
@@ -73,7 +73,7 @@ test('left join widens right nullability and self-join uses separate occurrences
   const query = matched.select({ left: matched.left.employee_id, right: matched.right.employee_id });
   for (const backend of ['postgres', 'mysql'] as const) {
     const db = connect(backend);
-    try { assert.match(compilePlan(db, query.toSubstrait(), challengeCatalog).sql, /left join/); }
+    try { assert.match(compilePlanSync(db, query.toSubstrait(), challengeCatalog).sql, /left join/); }
     finally { await db.destroy(); }
   }
 });
@@ -87,9 +87,9 @@ test('both dialects bind literals and preserve nested aggregate boundaries offli
   for (const backend of ['postgres', 'mysql'] as const) {
     const db = connect(backend);
     try {
-      const compiled = compilePlan(db, filtered.toSubstrait(), challengeCatalog);
+      const compiled = compilePlanSync(db, filtered.toSubstrait(), challengeCatalog);
       assert.ok(compiled.parameters.includes(city)); assert.ok(!compiled.sql.includes(city));
-      const sql = compilePlan(db, nested.toSubstrait(), challengeCatalog).sql;
+      const sql = compilePlanSync(db, nested.toSubstrait(), challengeCatalog).sql;
       assert.match(sql, /avg\(/); assert.match(sql, /sum\(/); assert.match(sql, /from \(select/);
     } finally { await db.destroy(); }
   }
@@ -115,16 +115,16 @@ test('function-free API plans currently require scoped compiler dispatch for com
   for (const backend of ['postgres', 'mysql'] as const) {
     const db = connect(backend);
     try {
-      const actual = compilePlan(db, plan, challengeCatalog);
+      const actual = compilePlanSync(db, plan, challengeCatalog);
       const scoped = compileAnalytics(db, plan, challengeCatalog);
       assert.equal(actual.sql, scoped.sql);
       assert.deepEqual(actual.parameters, scoped.parameters);
       // Removing unused declarations alone would break valid, function-free nested limits.
       const nested = query.limit(2).toSubstrait();
-      assert.doesNotThrow(() => compilePlan(db, nested, challengeCatalog));
+      assert.doesNotThrow(() => compilePlanSync(db, nested, challengeCatalog));
       delete nested.extensions;
       delete nested.extensionUris;
-      assert.throws(() => compilePlan(db, nested, challengeCatalog), /Nested fetch/);
+      assert.throws(() => compilePlanSync(db, nested, challengeCatalog), /Nested fetch/);
     } finally { await db.destroy(); }
   }
 });

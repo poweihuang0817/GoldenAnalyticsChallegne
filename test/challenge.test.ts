@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { sql } from 'kysely';
 import { connect } from '../src/backend.js';
-import { compilePlan } from '../src/compiler.js';
+import { compilePlanSync } from '../src/compiler.js';
 import { encodePlan, decodePlan } from '../src/plan.js';
 import { analyticalExamples, challengeCatalog, customersInCity, countryPercentile } from '../src/challenge.js';
 import { queryExamples } from '../src/queries.js';
@@ -61,16 +61,16 @@ for (const backend of ['postgres', 'mysql'] as const) {
       const oracle = expected(customers, orders, details, employees);
       for (const [i, example] of analyticalExamples.entries()) {
         const plan = decodePlan(encodePlan(example.plan));
-        const result = (await db.executeQuery(compilePlan(db, plan, challengeCatalog))).rows;
+        const result = (await db.executeQuery(compilePlanSync(db, plan, challengeCatalog))).rows;
         if (i === 2) assert.ok(Math.abs(Number((result[0] as Row).average_units) - oracle[i][0].average_units) < 1e-12);
         else assert.deepEqual(result, oracle[i], example.name);
         const apiPlan = decodePlan(encodePlan(queryExamples[i + 1].query.toSubstrait()));
-        const apiResult = (await db.executeQuery(compilePlan(db, apiPlan, challengeCatalog))).rows;
+        const apiResult = (await db.executeQuery(compilePlanSync(db, apiPlan, challengeCatalog))).rows;
         if (i === 2) assert.ok(Math.abs(Number((apiResult[0] as Row).average_units) - oracle[i][0].average_units) < 1e-12);
         else assert.deepEqual(apiResult, oracle[i], `Public API: ${example.name}`);
       }
       for (const city of ['LONDON', 'México D.F.', "london' OR 1=1 --"]) {
-        const query = compilePlan(db, customersInCity(city), challengeCatalog);
+        const query = compilePlanSync(db, customersInCity(city), challengeCatalog);
         assert.ok(query.parameters.includes(city));
         assert.ok(!query.sql.includes(city));
         const rows = (await db.executeQuery(query)).rows;
@@ -84,7 +84,7 @@ test('PostgreSQL: portable percentile agrees with native percentile_cont', async
   const db = connect('postgres');
   try {
     const native = (await sql<Row>`select c.country, percentile_cont(0.75) within group (order by coalesce(t.price,0)::double precision) as p75 from customers c join orders o on o.customer_id=c.customer_id left join (select order_id, sum(unit_price*quantity*(1-discount)) as price from order_details group by order_id) t on t.order_id=o.order_id group by c.country order by c.country`.execute(db)).rows;
-    const portable = (await db.executeQuery(compilePlan(db, countryPercentile(), challengeCatalog))).rows as Row[];
+    const portable = (await db.executeQuery(compilePlanSync(db, countryPercentile(), challengeCatalog))).rows as Row[];
     assert.equal(portable.length, native.length);
     for (let i=0; i<native.length; i++) {
       assert.equal(portable[i].country, native[i].country);

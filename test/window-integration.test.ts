@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { sql } from 'kysely';
 import { connect } from '../src/backend.js';
-import { compilePlan, type Catalog } from '../src/compiler.js';
+import { compilePlanSync, type Catalog } from '../src/compiler.js';
 import { createSource, literal } from '../src/api.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { recentOrdersPerCustomer } from '../src/queries.js';
@@ -30,7 +30,7 @@ for (const backend of ['postgres','mysql'] as const) {
       const rows = (await sql<Order>`select customer_id, order_id, order_date from orders`.execute(db)).rows;
       for (const n of [0,1,3,1000]) {
         const plan = decodePlan(encodePlan(recentOrdersPerCustomer(n).toSubstrait()));
-        assert.deepEqual((await db.executeQuery(compilePlan(db, plan, challengeCatalog))).rows, oracle(rows,n));
+        assert.deepEqual((await db.executeQuery(compilePlanSync(db, plan, challengeCatalog))).rows, oracle(rows,n));
       }
     } finally { await db.destroy(); }
   });
@@ -58,7 +58,7 @@ for (const backend of ['postgres','mysql'] as const) {
           const ranked = base.withRowNumber('position', { partitionBy: ['customer_id'], orderBy: [
             { column: 'order_date', direction: 'desc' }, { column: 'order_id', direction: 'desc' },
           ] });
-          const run = async (query: typeof base) => (await connection.executeQuery(compilePlan(connection, decodePlan(encodePlan(query.toSubstrait())), catalog))).rows;
+          const run = async (query: typeof base) => (await connection.executeQuery(compilePlanSync(connection, decodePlan(encodePlan(query.toSubstrait())), catalog))).rows;
           for (const n of [0,1,3,9]) assert.deepEqual(await run(ranked.filter(ranked.columns.position.lte(n)).orderBy({ column: 'customer_id' }, { column: 'position' })), oracle(rows,n));
           const global = base.withRowNumber('position', { partitionBy: [], orderBy: [{ column: 'order_id' }] }).orderBy({ column: 'order_id' });
           assert.deepEqual((await run(global)).map(r => r.position), ['1','2','3','4','5','6','7']);
@@ -76,7 +76,7 @@ for (const backend of ['postgres','mysql'] as const) {
 test('extension returns identical values and rank strings across backends', async () => {
   const pg = connect('postgres'), my = connect('mysql'), plan = recentOrdersPerCustomer().toSubstrait();
   try {
-    assert.deepEqual((await pg.executeQuery(compilePlan(pg,plan,challengeCatalog))).rows,
-      (await my.executeQuery(compilePlan(my,plan,challengeCatalog))).rows);
+    assert.deepEqual((await pg.executeQuery(compilePlanSync(pg,plan,challengeCatalog))).rows,
+      (await my.executeQuery(compilePlanSync(my,plan,challengeCatalog))).rows);
   } finally { await Promise.all([pg.destroy(),my.destroy()]); }
 });

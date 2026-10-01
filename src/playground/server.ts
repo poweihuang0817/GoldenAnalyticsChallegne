@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { connect, type Backend } from '../backend.js';
-import { compilePlan, type LoweringDecision } from '../compiler.js';
+import { compilePlanSync, type LoweringDecision } from '../compiler.js';
 import { challengeCatalog } from '../challenge.js';
 import { cityQuery, averageUnitsQuery, percentileQuery, recentOrdersQuery, shippingQuery, freightQuery, recentOrdersPerCustomer } from '../queries.js';
 import { sqlPreview, planOutline } from './preview.js';
@@ -31,7 +31,7 @@ export async function executeExample(request: Request, options: { duckdbPath?: s
   const plan = example.build().toSubstrait(), db = connect(request.backend, options), start = performance.now();
   try {
     const loweringTrace: LoweringDecision[] = [];
-    const compiled = compilePlan(db, plan, challengeCatalog, { trace: loweringTrace });
+    const compiled = compilePlanSync(db, plan, challengeCatalog, { trace: loweringTrace });
     const rows = request.action === 'run' ? (await db.executeQuery(compiled)).rows : undefined;
     const elapsedMs = Math.round((performance.now() - start) * 10) / 10;
     return { sql: compiled.sql, sqlPreview: sqlPreview(compiled.sql, request.backend), planOutline: planOutline(plan), parameterCount: compiled.parameters.length, parameters: compiled.parameters, plan,

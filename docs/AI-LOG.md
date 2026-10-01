@@ -402,3 +402,8 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Implemented guarded block absorption, column demand, physical cast provenance, non-null sort simplification, and shared percentile position. Parameterized computed grouping retains a boundary to avoid distinct bind positions changing PostgreSQL grouping validity.
 - Rejected a more aggressive DuckDB decimal rewrite after correlated alias/binder/precision failures; retained exact arithmetic and added regression fixtures. No universal latency benefit claimed.
 - Local code/docs checks, 68 unit tests, 98 integration tests and one three-backend conformance test passed. Regenerated the 24 display SQL files from exact SQL/parameter/trace fixtures. Candidate README unchanged; async compiler workers are separate issue #60.
+
+## Explicit synchronous compiler naming (September 30, 2026)
+
+- User requested a clear async naming contract. Renamed the low-level compiler to compilePlanSync, retaining await client.compile as the public worker-backed API. Updated source, tests, instrumentation scripts and current documentation references; historical log entries remain historical.
+- Fixed the missing await in the candidate README example as a narrow user-authorized API correction. Playground still explicitly uses compilePlanSync for trace output; moving that route to the worker requires trace transport and remains separate work.

@@ -45,13 +45,21 @@ Every transformation returns a new relation scope. Rebuild later expressions fro
 
 Literal catalogs preserve column names/kinds/nullability through filtering, projection, aggregation and joins. `execute` infers result aliases and nullable fields. i64/decimal/date/string values are strings, fp64 values are numbers, i32 is conservatively number|string, and boolean is boolean|number. This describes existing drivers; it does not add normalization. See [semantics](api/semantics.md).
 
-A broadly typed dynamic Catalog cannot provide exact field inference. Runtime checks remain for dynamic inputs, scopes and the supported profile. SQL preview, lower-level `compilePlan`, and optional Substrait serialization remain available for debugging and advanced consumers.
+A broadly typed dynamic Catalog cannot provide exact field inference. Runtime checks remain for dynamic inputs, scopes and the supported profile. SQL preview, lower-level `compilePlanSync`, and optional Substrait serialization remain available for debugging and advanced consumers.
 
 Ibis, Drizzle, Polars and Kysely are design references for different aspects of [the public API](api/design.md). Substrait remains the relational IR; Kysely remains below lowering, and PostgreSQL/MySQL still execute remotely.
 
+## Compilation naming
+
+`client.compile(query)` returns a Promise and is the public asynchronous API.
+`compilePlanSync(db, plan, catalog)` is the low-level synchronous compiler; it
+occupies its calling thread and is used inside the worker and by explicit compiler
+tests/tools. The Sync suffix describes scheduling, while Plan describes its
+Substrait input. No legacy compilePlan alias is retained.
+
 ## Asynchronous compilation
 
-`client.compile(query)` returns `Promise<QueryPreview>`. Each client lazily starts one reusable worker and accepts at most 32 outstanding compilation requests, including the active request; excess requests reject. The worker receives only the supported Substrait JSON plan, the copied catalog and backend name. A connection-free Kysely DummyDriver compiles SQL and bound parameters. Database pools and execution stay in the application process. The internal `compilePlan` API stays synchronous, including the demo HTTP handler that uses its lowering trace directly.
+`client.compile(query)` returns `Promise<QueryPreview>`. Each client lazily starts one reusable worker and accepts at most 32 outstanding compilation requests, including the active request; excess requests reject. The worker receives only the supported Substrait JSON plan, the copied catalog and backend name. A connection-free Kysely DummyDriver compiles SQL and bound parameters. Database pools and execution stay in the application process. The internal `compilePlanSync` API stays synchronous, including the demo HTTP handler that uses its lowering trace directly.
 
 Reuse the client to amortize worker startup. `destroy()` rejects queued/in-progress compilation and terminates the worker, then releases the backend pool. A fatal worker error/exit rejects outstanding and subsequent compilations; create a new client after such a failure. Finish database executions before destroying the client. Workers are an internal detail and require no driver-side setup. The repository's tsx source runtime registers its loader inside the worker through `compile-worker.mjs`.
 

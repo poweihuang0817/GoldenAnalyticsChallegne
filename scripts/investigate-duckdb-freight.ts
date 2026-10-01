@@ -2,7 +2,7 @@ import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {sql} from 'kysely';
 import assert from 'node:assert/strict';
 import {connect} from '../src/backend.js';
-import {compilePlan} from '../src/compiler.js';
+import {compilePlanSync} from '../src/compiler.js';
 import {freightQuery} from '../src/queries.js';
 import {challengeCatalog} from '../src/challenge.js';
 import {seedDuckDB} from '../src/duckdb-seed.js';
@@ -13,7 +13,7 @@ for(let round=0;round<6;round++){
  const db=connect('duckdb',{duckdbPath:':memory:'}),pg=connect('postgres');
  try{await seedDuckDB(pg,db);await db.connection().execute(async c=>{
  if(round>=3) await sql`set threads=1`.execute(c);
- const compiled=compilePlan(c,freightQuery().toSubstrait(),challengeCatalog);
+ const compiled=compilePlanSync(c,freightQuery().toSubstrait(),challengeCatalog);
  assert.deepEqual(compiled.parameters,baseline.parameters); // fixed baseline literal ordering
  const queries=[{...compiled,sql:baseline.sql},compiled];
  const values=await Promise.all(queries.map(q=>c.executeQuery(q)));assert.deepEqual(values[0].rows,values[1].rows);

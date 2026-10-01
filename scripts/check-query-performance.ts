@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { connect } from '../src/backend.js';
-import { compilePlan } from '../src/compiler.js';
+import { compilePlanSync } from '../src/compiler.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { queryExamples, recentOrdersPerCustomer } from '../src/queries.js';
 import { seedDuckDB } from '../src/duckdb-seed.js';
@@ -22,7 +22,7 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
     await db.connection().execute(async connection => {
       for (const { name, query } of examples) {
         const start = performance.now();
-        const compiled = compilePlan(connection, query.toSubstrait(), challengeCatalog);
+        const compiled = compilePlanSync(connection, query.toSubstrait(), challengeCatalog);
         const compileMs = performance.now() - start;
         await connection.executeQuery(compiled); // warm connection/query once
         const elapsedMs: number[] = [];

@@ -1,7 +1,7 @@
 // Reproducible observations, not a speed benchmark or CI timing assertion.
 import assert from 'node:assert/strict';
 import { createSource } from '../src/api.js';
-import { compilePlan, type Catalog } from '../src/compiler.js';
+import { compilePlanSync, type Catalog } from '../src/compiler.js';
 import { CompileService } from '../src/compile-service.js';
 import { connect } from '../src/backend.js';
 import { ref, type Rel } from '../src/plan.js';
@@ -39,7 +39,7 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
     for (const joins of [10, 20, 31]) {
       const plan = joinPlan(joins);
       let start = performance.now();
-      const direct = compilePlan(db, plan, catalog);
+      const direct = compilePlanSync(db, plan, catalog);
       const directMs = performance.now() - start;
       start = performance.now();
       const worker = await service.compile(plan);

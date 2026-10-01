@@ -13,7 +13,7 @@ See the [tutorial](tutorial.md) and [client/expression guide](../QUERY-CLIENT.md
 | Entry point | Behavior |
 | --- | --- |
 | `connect(backend, options?)` from `backend.ts` | Backend is `'postgres'`, `'mysql'` or `'duckdb'`. Returns `Kysely<Database>`. Optional `{ duckdbPath?: string }` configures DuckDB; otherwise `DUCKDB_PATH` or `northwind.duckdb`. PG/MySQL use `POSTGRES_URL` / `MYSQL_URL` or local sample defaults. |
-| `compilePlan(db, input, catalog)` from `compiler.ts` | Synchronous validation/lowering; returns Kysely's compiled query, including `sql` and `parameters`. Does not execute SQL or inspect live database metadata. Compile separately for each backend. |
+| `compilePlanSync(db, input, catalog)` from `compiler.ts` | Synchronous validation/lowering; returns Kysely's compiled query, including `sql` and `parameters`. Does not execute SQL or inspect live database metadata. Compile separately for each backend. |
 | `await db.executeQuery(compiled)` | Executes through the selected driver and returns a result containing `rows`. Database failures surface here. |
 | `await db.destroy()` | Releases backend resources; call in `finally`. |
 | `encodePlan(input)` from `plan.ts` | Profile-validates a JSON plan and returns protobuf `Uint8Array`. |
@@ -32,7 +32,7 @@ import { encodePlan, decodePlan } from '../../src/plan.js';
 const jsonPlan = cityQuery('london').toSubstrait();
 const bytes = encodePlan(jsonPlan);
 const decoded = decodePlan(bytes);
-// Pass decoded to compilePlan with the intended connection and trusted catalog.
+// Pass decoded to compilePlanSync with the intended connection and trusted catalog.
 ```
 
 `fromPlanJson(input)` validates the supported JSON shape and returns a generated protobuf Plan; `toPlanJson(plan)` normalizes a generated Plan back to `SupportedPlanJson`. These are lower-level codec boundaries. Application code normally uses `Table.toSubstrait` plus the optional encode/decode helpers. Generated enums/types, field/wire guards and `ref` are compiler/protocol implementation tools, not a general public builder API.

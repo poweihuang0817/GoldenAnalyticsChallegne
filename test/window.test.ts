@@ -4,7 +4,7 @@ import { createSource, integer, literal } from '../src/api.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { recentOrdersPerCustomer } from '../src/queries.js';
 import { connect } from '../src/backend.js';
-import { compilePlan } from '../src/compiler.js';
+import { compilePlanSync } from '../src/compiler.js';
 import { encodePlan, decodePlan, type Rel } from '../src/plan.js';
 
 const source = createSource(challengeCatalog);
@@ -43,7 +43,7 @@ test('both dialects lower ranking in a subquery before filtering and reject unsu
   for (const backend of ['postgres', 'mysql'] as const) {
     const db = connect(backend);
     try {
-      const query = compilePlan(db, recentOrdersPerCustomer(3).toSubstrait(), challengeCatalog);
+      const query = compilePlanSync(db, recentOrdersPerCustomer(3).toSubstrait(), challengeCatalog);
       assert.match(query.sql, /row_number\(\) over \(partition by/);
       assert.match(query.sql, /case when/);
       assert.match(query.sql, /from \(select/);
@@ -64,7 +64,7 @@ test('both dialects lower ranking in a subquery before filtering and reject unsu
       for (const edit of edits) {
         const invalid = structuredClone(plan);
         edit((invalid.relations[0].root.input as Extract<Rel, { window: unknown }>).window);
-        assert.throws(() => compilePlan(db, invalid, challengeCatalog));
+        assert.throws(() => compilePlanSync(db, invalid, challengeCatalog));
       }
     } finally { await db.destroy(); }
   }

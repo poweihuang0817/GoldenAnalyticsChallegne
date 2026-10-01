@@ -4,7 +4,7 @@ import { sql } from 'kysely';
 import { createSource, literal, count, type Table } from '../src/api.js';
 import { connect } from '../src/backend.js';
 import { createClient } from '../src/client.js';
-import { compilePlan } from '../src/compiler.js';
+import { compilePlanSync } from '../src/compiler.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { queryExamples, recentOrdersQuery, cityQuery } from '../src/queries.js';
 
@@ -25,7 +25,7 @@ test('every public API example produces equivalent results on PostgreSQL and MyS
 for (const backend of ['postgres', 'mysql'] as const) {
   test(`${backend}: API composition, empty aggregates, pagination and deterministic equivalence cases`, async () => {
     const db = connect(backend), source = createSource(challengeCatalog);
-    const execute = async (query: Table) => (await db.executeQuery(compilePlan(db, query.toSubstrait(), challengeCatalog))).rows;
+    const execute = async (query: Table) => (await db.executeQuery(compilePlanSync(db, query.toSubstrait(), challengeCatalog))).rows;
     try {
       const reference = (await sql`select order_id, order_date from orders order by case when order_date is null then 1 else 0 end, order_date desc, order_id desc limit 5`.execute(db)).rows;
       assert.deepEqual(await execute(recentOrdersQuery()), reference);

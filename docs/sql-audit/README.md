@@ -82,7 +82,7 @@ in the fixture/property corpus. No compiler or semantic changes in this audit.
 
 The user subsequently requested all test-case SQL, not only demo cases. Run
 `node scripts/capture-test-sql.mjs` in a dedicated idle worktree with dependencies
-installed and supplied databases running. It temporarily instruments compilePlan,
+installed and supplied databases running. It temporarily instruments compilePlanSync,
 runs unit/integration/three-backend tests, docs compilation and the default driver,
 then restores the compiler byte-for-byte in finally. Do not run other work in that
 worktree during capture. Forced termination may bypass finally; restore from the
