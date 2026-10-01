@@ -12,21 +12,33 @@
 <section class="inspection"><details><summary>Generated SQL <span id="parameters"></span></summary><p class="footnote" id="sql-note">Display formatting only; the original SQL is executed.</p><details><summary>Compilation details</summary><pre id="lowering-trace">Compile to inspect lowering decisions.</pre></details><pre id="sql">Compile or run a query to inspect SQL.</pre><h3>Bound parameters</h3><p class="footnote">SQL and these ordered values are passed together to the database driver. PostgreSQL/DuckDB use $1, $2, ...; MySQL binds each ? in order. Values shown here belong to the fixed demo examples.</p><pre id="bound-parameters">Compile or run to inspect parameter values.</pre><details><summary>Original SQL</summary><pre id="sql-raw"></pre></details></details><details><summary>Substrait operator tree</summary><p class="footnote">Output at the top, inputs below. field# indexes are local to each input relation. This summary omits expression, type and emit details; inspect the authoritative JSON below.</p><pre id="plan-tree">Compile or run a query to inspect the operator tree.</pre><details><summary>Raw Substrait JSON</summary><pre id="plan">Compile or run a query to inspect the supported plan.</pre></details></details></section>
 </section>
 <section id="api-page" hidden aria-labelledby="api-heading">
-<div class="section-label">API DESIGN DECISIONS</div><h2 id="api-heading">Describe the computation. Keep the contracts explicit.</h2>
-<p class="intro">Start with the flow and usage, then explore one design decision at a time.</p>
+<div class="section-label">API DESIGN DECISIONS</div><h2 id="api-heading">Build a query. Understand the design.</h2>
+<p class="intro">Catalog → Usage → Design decisions.</p>
 <nav class="navigation design-navigation" aria-label="API design topics">
-<button type="button" data-design="flow" aria-controls="design-flow" aria-pressed="true">1 · Flow</button>
+<button type="button" data-design="catalog" aria-controls="design-catalog" aria-pressed="true">1 · Catalog</button>
 <button type="button" data-design="usage" aria-controls="design-usage" aria-pressed="false">2 · Usage</button>
 <button type="button" data-design="types" aria-controls="design-types" aria-pressed="false">3 · Types</button>
-<button type="button" data-design="composition" aria-controls="design-composition" aria-pressed="false">4 · Composition</button>
-<button type="button" data-design="execution" aria-controls="design-execution" aria-pressed="false">5 · Execution</button>
-<button type="button" data-design="layers" aria-controls="design-layers" aria-pressed="false">6 · Boundaries</button>
-<button type="button" data-design="precision" aria-controls="design-precision" aria-pressed="false">7 · Precision</button>
-<button type="button" data-design="semantics" aria-controls="design-semantics" aria-pressed="false">8 · Semantics</button>
+<button type="button" data-design="projection" aria-controls="design-projection" aria-pressed="false">4 · Projection</button>
+<button type="button" data-design="composition" aria-controls="design-composition" aria-pressed="false">5 · Composition</button>
+<button type="button" data-design="execution" aria-controls="design-execution" aria-pressed="false">6 · Execution</button>
+<button type="button" data-design="layers" aria-controls="design-layers" aria-pressed="false">7 · Boundaries</button>
+<button type="button" data-design="precision" aria-controls="design-precision" aria-pressed="false">8 · Precision</button>
+<button type="button" data-design="semantics" aria-controls="design-semantics" aria-pressed="false">9 · Semantics</button>
 </nav>
-<section id="design-flow" aria-labelledby="design-flow-heading">
-<h3 id="design-flow-heading">From an application query to database results</h3>
-<article class="panel"><ol class="flow-steps"><li><strong>Describe the schema</strong><span>Catalog: tables, columns, types and nullability.</span></li><li><strong>Build the query</strong><span>Table / Expr: filter, project, join and aggregate. No data query yet.</span></li><li><strong>Choose a backend</strong><span>PostgreSQL, MySQL or a seeded DuckDB snapshot.</span></li><li><strong>Execute</strong><span>Validate → lower the plan → generate SQL and parameters → run on the database.</span></li><li><strong>Read typed results</strong><span>Rows follow the output schema and documented numeric representations.</span></li></ol></article>
+<section id="design-catalog" aria-labelledby="design-catalog-heading">
+<h3 id="design-catalog-heading">Start with the schema</h3>
+<div class="columns"><article class="panel"><h3>Northwind catalog</h3><pre>const challengeCatalog = {
+  customers: [
+    { name: 'customer_id', type: 'string', nullable: false },
+    { name: 'city', type: 'string', nullable: true },
+    { name: 'country', type: 'string', nullable: true },
+  ],
+  // Other challenge tables omitted here.
+} as const satisfies Catalog;</pre><p class="footnote">Excerpt from src/challenge.ts. Catalog is imported from src/compiler.ts.</p></article><article class="panel"><h3>Use it to build typed queries</h3><pre>const source = createSource(challengeCatalog);
+const customers = source.table('customers');
+
+customers.columns.city
+// Expr&lt;'string', true&gt;</pre><p><strong>as const</strong> preserves exact names and types. <strong>satisfies Catalog</strong> checks the schema's shape.</p><p>This declares schema, not data. It does not fetch rows or define business metrics.</p></article></div>
 </section>
 <section id="design-usage" hidden aria-labelledby="design-usage-heading">
 <h3 id="design-usage-heading">Count customers in London</h3>
@@ -45,14 +57,33 @@ try {
 <details><summary>Actual driver helper</summary><pre id="api-code">Loading the actual city query…</pre></details>
 </section>
 <section id="design-types" hidden aria-labelledby="design-types-heading">
-<h3 id="design-types-heading">Catch mistakes while building the query</h3>
-<div class="columns"><article class="panel"><h3>Table / Expr</h3><pre>const source = createSource(challengeCatalog);
-const customers = source.table('customers');</pre><pre>// A string expression supports lower().
-customers.columns.city.lower()
+<h3 id="design-types-heading">Our constraints, checked by TypeScript</h3>
+<div class="columns"><article class="panel"><h3>1. Declare the column type</h3><pre>// Catalog entry
+{ name: 'city', type: 'string', nullable: true }
 
-// Projection names the output column.
-customers.select({ city: customers.columns.city })</pre></article>
-<article class="panel"><h3>Why this interface?</h3><p>A declared catalog gives column completion and compile-time checks for names and compatible operations. Predicates are typed expressions; projection objects name the output fields.</p><p>Direct expressions were chosen for readability. Callbacks can also be fully typed; avoiding callbacks is a style decision, not the source of type safety.</p><h3>Boundary</h3><p>The catalog describes schema, not business metrics or live data. Dynamic schemas lose static precision. Runtime scope and profile validation still protect execution.</p><p class="notice">Reference points: Ibis-style relational composition and Kysely-style schema-aware TypeScript ergonomics.</p></article></div>
+// Inferred expression type
+customers.columns.city // Expr&lt;'string', true&gt;</pre><h3>2. Define the operation constraint</h3><pre id="lower-constraint">lower(this: Expr&lt;'string', N&gt;): Expr&lt;'string', N&gt;;</pre><p class="footnote">Actual signature from src/api.ts. The receiver must be a string expression. N preserves whether the value can be NULL.</p></article><article class="panel"><h3>3. TypeScript checks each call</h3><pre>// Accepted: city is a string expression.
+customers.columns.city.lower();
+
+// Type error: order_id is an i32 expression.
+orders.columns.order_id.lower();</pre><p>We encode the rule in the API. The editor and tsc report incompatible calls before a database query runs.</p><p>The method exists on Expr, but its this constraint rejects a numeric receiver. Runtime validation remains necessary when static types are bypassed.</p><p class="notice">lower() builds an expression. The database performs the lowercase conversion later.</p></article></div>
+</section>
+<section id="design-projection" hidden aria-labelledby="design-projection-heading">
+<h3 id="design-projection-heading">Projection: choose and name output columns</h3>
+<div class="columns"><article class="panel"><h3>Input → output</h3><pre>// Illustrative input row
+{ customer_id: 'ALFKI', city: 'Berlin', country: 'Germany' }
+
+const projected = customers.select({
+  customer_city: customers.columns.city
+});
+
+// Corresponding output row when executed
+{ customer_city: 'Berlin' }</pre><p>The object key is the output name. The value is the source expression. This selects city, renames it, and leaves out customer_id and country.</p><p class="notice">select() chooses columns; filter() chooses rows. This projection keeps one output row per input row, including duplicates.</p></article><article class="panel"><h3>The next stage has a new schema</h3><pre>projected.columns.customer_city; // Accepted
+projected.columns.city;          // Type error
+projected.columns.customer_id;   // Type error
+
+// Conceptual SQL
+SELECT city AS customer_city FROM customers</pre><p>The original customers relation is unchanged. Building projected has not executed SQL.</p><details><summary>Actual select() type constraint</summary><pre id="select-constraint">select&lt;E extends Record&lt;string, Expr&gt;&gt;(expressions: E &amp; KnownKeys&lt;E&gt;): Table&lt;Output&lt;E&gt;&gt;;</pre><p>E is the projection object. Its values must be expressions; KnownKeys requires statically known output names. Output derives each expression's type and nullability for the returned Table.</p></details></article></div>
 </section>
 <section id="design-composition" hidden aria-labelledby="design-composition-heading">
 <h3 id="design-composition-heading">A query stage produces another relation</h3>

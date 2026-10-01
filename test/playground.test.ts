@@ -184,13 +184,13 @@ test('fixed demo returns ordered bindings separately from SQL on every backend',
   }
 });
 
-test('design topic navigation is isolated from primary navigation and starts with flow', async () => {
+test('design topic navigation is isolated from primary navigation and starts with catalog', async () => {
   const { readFileSync } = await import('node:fs');
   const { runInNewContext } = await import('node:vm');
   const html = readFileSync(new URL('../src/playground/index.html', import.meta.url), 'utf8');
   const script = readFileSync(new URL('../src/playground/app.js', import.meta.url), 'utf8');
   const topics = [...html.matchAll(/data-design="([^"]+)"/g)].map(m => m[1]);
-  assert.deepEqual(topics, ['flow','usage','types','composition','execution','layers','precision','semantics']);
+  assert.deepEqual(topics, ['catalog','usage','types','projection','composition','execution','layers','precision','semantics']);
   const elements = new Map<string, any>();
   for (const match of html.matchAll(/<[^>]+\bid="([^"]+)"[^>]*>/g)) {
     assert.ok(!elements.has(match[1]), `duplicate id ${match[1]}`);
@@ -203,7 +203,7 @@ test('design topic navigation is isolated from primary navigation and starts wit
     getElementById: (id: string) => { assert.ok(elements.has(id), id); return elements.get(id); },
     querySelectorAll: (selector: string) => selector === '[data-design]' ? design : pages,
   }, fetch: () => new Promise(() => {}) });
-  assert.equal(elements.get('design-flow').hidden, false);
+  assert.equal(elements.get('design-catalog').hidden, false);
   for (const button of design) {
     button.onclick();
     for (const other of design) {
@@ -217,4 +217,15 @@ test('design topic navigation is isolated from primary navigation and starts wit
   assert.equal(elements.get('api-page').hidden, false);
   assert.equal(elements.get('architecture-page').hidden, true);
   assert.equal(elements.get('design-semantics').hidden, false);
+});
+
+test('displayed API constraints match the actual public signatures', async () => {
+  const { readFileSync } = await import('node:fs');
+  const html = readFileSync(new URL('../src/playground/index.html', import.meta.url), 'utf8');
+  const api = readFileSync(new URL('../src/api.ts', import.meta.url), 'utf8');
+  for (const id of ['lower-constraint','select-constraint']) {
+    const encoded = html.match(new RegExp(`<pre id="${id}">([^]*?)</pre>`))![1];
+    const signature = encoded.replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&');
+    assert.ok(api.includes(signature), `Update displayed ${id} when its API signature changes`);
+  }
 });
