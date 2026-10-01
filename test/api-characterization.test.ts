@@ -33,6 +33,100 @@ for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
           const base = createSource(catalog).table(name);
           const run = async (q: Table) => (await connection.executeQuery(compilePlan(connection, q.toSubstrait(), catalog))).rows;
 
+          await t.test('terminal fetch preserves null placement, tied values, aliases and zero offset', async () => {
+            const projected = base.select({ key: base.columns.id, amount: base.columns.qty });
+            for (const nulls of ['first', 'last'] as const) {
+              const page = projected.orderBy({ column: 'amount', direction: 'desc', nulls }, { column: 'key', direction: 'desc' });
+              const expected = nulls === 'first'
+                ? [{ key: 7, amount: null }, { key: 5, amount: null }, { key: 2, amount: null }, { key: 4, amount: 20 }]
+                : [{ key: 4, amount: 20 }, { key: 3, amount: 20 }, { key: 1, amount: 10 }, { key: 6, amount: 5 }];
+              assert.deepEqual(await run(page.limit(4, 0)), expected);
+              assert.deepEqual(await run(page.limit(2, 1)), expected.slice(1, 3));
+              assert.deepEqual(await run(page.limit(0, 0)), []);
+            }
+          });
+
+          await t.test('outer join widens non-null keys before null sorting and terminal fetch', async () => {
+            const join = base.join(base.filter(base.columns.id.lte(4)), { how: 'left' });
+            const matched = join.on(join.left.id.eq(join.right.id));
+            const projected = matched.select({ id: matched.left.id, matched_id: matched.right.id });
+            for (const nulls of ['first', 'last'] as const) {
+              const page = projected.orderBy({ column: 'matched_id', nulls }, { column: 'id' }).limit(3);
+              assert.deepEqual(await run(page), nulls === 'first'
+                ? [{ id: 5, matched_id: null }, { id: 6, matched_id: null }, { id: 7, matched_id: null }]
+                : [{ id: 1, matched_id: 1 }, { id: 2, matched_id: 2 }, { id: 3, matched_id: 3 }]);
+            }
+          });
+
+          await t.test('CASE projection aggregated over a left join retains duplicates and unmatched rows', async () => {
+            const join = base.join(base.filter(base.columns.id.lte(6)), { how: 'left' });
+            const matched = join.on(join.left.grp.eq(join.right.grp));
+            const projected = matched.select({
+              id: matched.left.id,
+              present: caseWhen(matched.right.id.isNotNull(), integer(1), integer(0)),
+              shipped: caseWhen(matched.right.id.isNotNull().and(matched.right.flag.eq(1)), integer(1), integer(0)),
+              units: matched.right.qty.coalesce(0),
+            });
+            const totals = projected.groupBy('id').aggregate({
+              present: projected.columns.present.sum(), shipped: projected.columns.shipped.sum(), units: projected.columns.units.sum(),
+            }).orderBy({ column: 'id' });
+            assert.deepEqual(await run(totals), [
+              { id: 1, present: 2, shipped: 1, units: 10 }, { id: 2, present: 2, shipped: 1, units: 10 },
+              { id: 3, present: 2, shipped: 1, units: 40 }, { id: 4, present: 2, shipped: 1, units: 40 },
+              { id: 5, present: 0, shipped: 0, units: 0 }, { id: 6, present: 0, shipped: 0, units: 0 },
+              { id: 7, present: 0, shipped: 0, units: 0 },
+            ]);
+          });
+
+          await t.test('computed grouping keys with bound literals retain their expression scope', async () => {
+            const groupedCounts = (input: typeof base) => {
+              const projected = input.select({ bucket: caseWhen(input.columns.qty.lte(10), integer(1), integer(0)) });
+              return projected.groupBy('bucket').aggregate({ n: count() }).orderBy({ column: 'bucket' });
+            };
+            assert.deepEqual(await run(groupedCounts(base)), [
+              { bucket: signed(0), n: '5' }, { bucket: signed(1), n: '2' },
+            ]);
+            assert.deepEqual(await run(groupedCounts(base.filter(base.columns.id.eq(99)))), []);
+          });
+
+          await t.test('literal-only projected grouping key retains its bound value', async () => {
+            const groupedCounts = (input: typeof base) => {
+              const projected = input.select({ bucket: integer(7) });
+              return projected.groupBy('bucket').aggregate({ n: count() });
+            };
+            assert.deepEqual(await run(groupedCounts(base)), [{ bucket: signed(7), n: '7' }]);
+            assert.deepEqual(await run(groupedCounts(base.filter(base.columns.id.eq(99)))), []);
+          });
+
+          await t.test('window dependencies survive when output drops partition and ordering columns', async () => {
+            const ranked = base.withRowNumber('position', {
+              partitionBy: ['grp'], orderBy: [{ column: 'qty', direction: 'desc', nulls: 'last' }, { column: 'id' }],
+            });
+            const rankOnly = ranked.select({ position: ranked.columns.position }).orderBy({ column: 'position' });
+            assert.deepEqual(await run(rankOnly), [1, 1, 1, 1, 2, 2, 2].map(position => ({ position: String(position) })));
+          });
+
+          await t.test('nested join retains grandchild keys referenced only by ON predicates', async () => {
+            const first = base.filter(base.columns.id.eq(1));
+            const innerJoin = first.join(base, { how: 'inner' });
+            const innerMatch = innerJoin.on(innerJoin.left.grp.eq(innerJoin.right.grp));
+            const intermediate = innerMatch.select({ outer_key: innerMatch.right.id, customer: innerMatch.left.id });
+            const outerJoin = intermediate.join(base, { how: 'inner' });
+            const outerMatch = outerJoin.on(outerJoin.left.outer_key.eq(outerJoin.right.id));
+            const result = outerMatch.select({ customer: outerMatch.left.customer, quantity: outerMatch.right.qty })
+              .orderBy({ column: 'quantity', nulls: 'last' });
+            assert.deepEqual(await run(result), [{ customer: 1, quantity: 10 }, { customer: 1, quantity: null }]);
+          });
+
+          await t.test('filtered derived join input keeps WHERE dependencies absent from output', async () => {
+            const filtered = base.filter(base.columns.flag.eq(1));
+            const derived = filtered.select({ key: filtered.columns.id });
+            const join = base.join(derived, { how: 'inner' });
+            const matched = join.on(join.left.id.eq(join.right.key));
+            const result = matched.select({ id: matched.left.id }).orderBy({ column: 'id' });
+            assert.deepEqual(await run(result), [{ id: 1 }, { id: 4 }, { id: 7 }]);
+          });
+
           await t.test('window input filters and output filters remain different computations', async () => {
             const rank = (q: typeof base) => q.withRowNumber('position', { partitionBy: ['grp'], orderBy: [{ column: 'id' }] });
             const ranked = rank(base);

@@ -6,6 +6,37 @@ import { createSource } from '../src/api.js';
 import { compilePlan, type Catalog } from '../src/compiler.js';
 import { queryExamples } from '../src/queries.js';
 import { challengeCatalog } from '../src/challenge.js';
+import { duckdbDecimalDivide } from '../src/duckdb-decimal.js';
+
+test('DuckDB exact division isolates intermediate names from correlated input columns', async () => {
+  const db = connect('duckdb', { duckdbPath: ':memory:' });
+  try {
+    // Reusing SELECT aliases in the correlated scalar query can instead bind to
+    // these outer names. Scope separation must preserve HUGEINT arithmetic.
+    for (const names of [['n', 'd', 'q'], ['__g_n', '__g_d', '__g_q']]) {
+      const [numerator, denominator, collision] = names;
+      const table = sql.id('decimal_scope_inputs');
+      await sql`create table ${table} (id integer, ${sql.id(numerator)} decimal(38,10),
+        ${sql.id(denominator)} decimal(38,10), ${sql.id(collision)} hugeint)`.execute(db);
+      await sql`insert into ${table} values
+        (1, 1, 3, 888), (2, -0.0000000001, 2, 888),
+        (3, '9007199254740993.0000000000', 3, 888),
+        (4, null, 1, 888), (5, 1, null, 888),
+        (6, '100000000000000000000.0000000000', 0, 888),
+        (7, '100000000000000000000.0000000000', null, 888)`.execute(db);
+      const ratio = duckdbDecimalDivide(sql.ref(`outer_values.${numerator}`), sql.ref(`outer_values.${denominator}`));
+      const rows = (await sql`select id, ${ratio} as ratio from ${table} as outer_values order by id`.execute(db)).rows;
+      assert.deepEqual(rows, [
+        { id: 1, ratio: '0.3333333333' },
+        { id: 2, ratio: '-0.0000000001' },
+        { id: 3, ratio: '3002399751580331.0000000000' },
+        { id: 4, ratio: null }, { id: 5, ratio: null },
+        { id: 6, ratio: null }, { id: 7, ratio: null },
+      ], `correlated column names: ${names.join(', ')}`);
+      await sql`drop table ${table}`.execute(db);
+    }
+  } finally { await db.destroy(); }
+});
 
 test('DuckDB binds values and preserves decimal, i64, date and null results', async () => {
   const db = connect('duckdb', { duckdbPath: ':memory:' });
