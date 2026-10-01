@@ -172,3 +172,38 @@ test('all fixed walkthrough queries have formatted previews on each backend',asy
     assert.equal(preview.rows,undefined);
   }
 });
+
+test('design topic navigation is isolated from primary navigation and starts with flow', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { runInNewContext } = await import('node:vm');
+  const html = readFileSync(new URL('../src/playground/index.html', import.meta.url), 'utf8');
+  const script = readFileSync(new URL('../src/playground/app.js', import.meta.url), 'utf8');
+  const topics = [...html.matchAll(/data-design="([^"]+)"/g)].map(m => m[1]);
+  assert.deepEqual(topics, ['flow','usage','types','composition','execution','layers','precision','semantics']);
+  const elements = new Map<string, any>();
+  for (const match of html.matchAll(/<[^>]+\bid="([^"]+)"[^>]*>/g)) {
+    assert.ok(!elements.has(match[1]), `duplicate id ${match[1]}`);
+    elements.set(match[1], { hidden: /\bhidden\b/.test(match[0]), textContent: '', value: '', disabled: false });
+  }
+  const buttons = (key: string, names: string[]) => names.map(name => ({ dataset: { [key]: name }, pressed: '', onclick: undefined as any,
+    setAttribute(attribute: string, value: string) { if (attribute === 'aria-pressed') this.pressed = value; } }));
+  const design = buttons('design', topics), pages = buttons('page', ['architecture','driver','api']);
+  runInNewContext(script, { document: {
+    getElementById: (id: string) => { assert.ok(elements.has(id), id); return elements.get(id); },
+    querySelectorAll: (selector: string) => selector === '[data-design]' ? design : pages,
+  }, fetch: () => new Promise(() => {}) });
+  assert.equal(elements.get('design-flow').hidden, false);
+  for (const button of design) {
+    button.onclick();
+    for (const other of design) {
+      assert.equal(elements.get(`design-${other.dataset.design}`).hidden, other !== button);
+      assert.equal(other.pressed, String(other === button));
+    }
+    assert.equal(elements.get('architecture-page').hidden, false);
+    assert.equal(elements.get('driver-page').hidden, true);
+  }
+  pages[2].onclick();
+  assert.equal(elements.get('api-page').hidden, false);
+  assert.equal(elements.get('architecture-page').hidden, true);
+  assert.equal(elements.get('design-semantics').hidden, false);
+});
