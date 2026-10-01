@@ -62,8 +62,16 @@ and [RelToSqlConverter](https://github.com/apache/calcite/blob/main/core/src/mai
 No Calcite runtime dependency or general optimizer was introduced. Column demand
 uses structured Kysely references; pinned-library changes must retain these tests.
 
+### Architecture guardrail
+
+QueryBlock and Value metadata are SQL emission state, not a second relational
+planner. Do not mechanically extend them into HAVING/DISTINCT/QUALIFY/CTE rules,
+join conventions, cost models or physical-property planning. If that scope is
+needed, first reassess the boundary and whether mature infrastructure such as
+Calcite or DataFusion should own it. Neither dependency is selected by this PR.
+Freeze further optional compiler optimization before submission.
+
 ## Original audit (historical)
-# Generated SQL audit
 
 Reviewed source: `13db90a9e14f2d97c35f3f89ca349918329d092d` (after #52).
 Scope: all seven `queryExamples` entries (six challenge families, two city inputs)
