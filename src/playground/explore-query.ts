@@ -1,15 +1,16 @@
 import { readFileSync } from 'node:fs';
+import type { Backend, ConnectionOptions } from '../backend.js';
 import { createClient } from '../client.js';
 import { challengeCatalog } from '../challenge.js';
 import { coverage, customerCountQuery, dailySalesQuery, forecast, type FilterStage } from '../forecast-demo.js';
 import { sqlPreview } from './preview.js';
 
-export type ExploreRequest = { stage: FilterStage; backend: 'postgres' | 'mysql' | 'duckdb'; action: 'compile' | 'run' };
+export type ExploreRequest = { stage: FilterStage; backend: Backend; action: 'compile' | 'run' };
 export function validateExploreRequest(value: unknown): ExploreRequest {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Choose a listed stage, backend and action.');
   const v = value as Record<string, unknown>;
   if (Object.keys(v).length !== 3 || !['stage', 'backend', 'action'].every(k => Object.hasOwn(v, k)) ||
-    !['all', 'uk', 'london'].includes(String(v.stage)) || !['postgres', 'mysql', 'duckdb'].includes(String(v.backend)) ||
+    !['all', 'uk', 'london'].includes(String(v.stage)) || !['postgres', 'mysql', 'duckdb', 'bigquery'].includes(String(v.backend)) ||
     !['compile', 'run'].includes(String(v.action)) || Object.values(v).some(x => typeof x !== 'string')) {
     throw new Error('Only predefined stages, backends and actions are allowed. Raw SQL and arbitrary predicates are rejected.');
   }
@@ -18,7 +19,7 @@ export function validateExploreRequest(value: unknown): ExploreRequest {
 
 const source = readFileSync(new URL('../forecast-demo.ts', import.meta.url), 'utf8');
 const code = source.slice(source.indexOf('export function salesStages()'), source.indexOf('\nexport function customerCountQuery'));
-export async function runExplore(input: ExploreRequest, options: { duckdbPath?: string } = {}) {
+export async function runExplore(input: ExploreRequest, options: ConnectionOptions = {}) {
   const request = validateExploreRequest(input);
   const client = createClient(request.backend, challengeCatalog, options);
   try {

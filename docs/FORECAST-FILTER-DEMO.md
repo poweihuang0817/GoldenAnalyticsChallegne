@@ -12,7 +12,7 @@ $env:DUCKDB_PATH = 'C:\path\to\northwind.duckdb'
 npm run demo:ui
 ```
 
-Open http://127.0.0.1:4317. The combined **Golden Interview** UI includes Architecture, Live driver, API design and Dashboard lab. `GOLDEN_DEMO_PORT` overrides the port; this working session uses 4319 to avoid other running servers. `npm run demo:explore` is an alias for the same server, not a separate UI. PostgreSQL and MySQL use the existing sample connection configuration. BigQuery remains in its separate PR and is not included in this branch.
+Open http://127.0.0.1:4317. The combined **Golden Interview** UI includes Architecture, Live driver, API design and Dashboard lab. `GOLDEN_DEMO_PORT` overrides the port; this working session uses 4319 to avoid other running servers. `npm run demo:explore` is an alias for the same server, not a separate UI. PostgreSQL and MySQL use the existing sample connection configuration. BigQuery is included from PR #64. Configure Application Default Credentials and BIGQUERY_PROJECT_ID/BIGQUERY_DATASET as described in [BIGQUERY.md](BIGQUERY.md); both backend selectors offer BigQuery. PR #64 should merge before this combined UI PR.
 
 Open **Dashboard lab** for the following walkthrough. The implementation and query examples are Golden's demo, not a claim about Claude's internal implementation.
 
@@ -62,3 +62,7 @@ Our analogous boundary is filtered historical data, followed by an explicit fore
 - Local browser smoke: all/UK/London, chart, code, SQL binding display and HTTP 400 rejection. The temporary browser tooling is not a project dependency or a CI browser test.
 
 Implementation: `src/forecast-demo.ts`, `src/playground/explore-query.ts`, shared `src/playground/server.ts` and `index.html`, plus `explore.js`/`explore.css`. The existing compiler, public API and candidate README remain unchanged. The prior Playground and new lab share navigation and a server; separate DOM IDs, scoped styles and navigation selectors keep their controls isolated.
+
+### BigQuery forecast verification
+
+With ADC, BIGQUERY_PROJECT_ID/BIGQUERY_DATASET and a seeded DUCKDB_PATH configured, run `npm run test:forecast:bigquery`. It compares customer counts, monthly history, forecasts and backtests for all/UK/London against DuckDB. Without cloud configuration the test skips; offline tests are not live cloud verification. The UI uses the same BigQuery configuration and per-query billing cap as the live driver.

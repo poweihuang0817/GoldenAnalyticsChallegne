@@ -1,7 +1,7 @@
 import { CompiledQuery } from 'kysely';
 import { executeControlled, validateExecutionOptions, ExecutionError, type ExecuteOptions } from './execution.js';
 import type { Query, InferRow } from './api.js';
-import { connect, type Backend } from './backend.js';
+import { connect, type Backend, type ConnectionOptions } from './backend.js';
 import type { Catalog } from './compiler.js';
 import { CompileService } from './compile-service.js';
 
@@ -11,7 +11,7 @@ export interface QueryPreview {
 }
 
 /** Owns a backend pool and a lazy compilation worker. Always await destroy. */
-export function createClient(backend: Backend, catalog: Catalog, options: { duckdbPath?: string } = {}) {
+export function createClient(backend: Backend, catalog: Catalog, options: ConnectionOptions = {}) {
   const compiler = new CompileService(backend, structuredClone(catalog));
   const db = connect(backend, options);
   let closed = false;

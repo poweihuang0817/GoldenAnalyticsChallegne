@@ -47,7 +47,8 @@ test('forecast rejects unsafe representations and bounds, and handles missing/sh
 
 test('demo governance rejects arbitrary SQL before executor and enforces origin and concurrency', async () => {
   const valid = { stage: 'all', backend: 'duckdb', action: 'run' } as const;
-  for (const v of [null, [], {}, { ...valid, stage: 'admin' }, { ...valid, sql: 'select 1' }, { ...valid, backend: 'bigquery' }]) assert.throws(() => validateExploreRequest(v));
+  for (const v of [null, [], {}, { ...valid, stage: 'admin' }, { ...valid, sql: 'select 1' }, { ...valid, backend: 'unknown' }]) assert.throws(() => validateExploreRequest(v));
+  assert.deepEqual(validateExploreRequest({ ...valid, backend: 'bigquery' }), { ...valid, backend: 'bigquery' });
   let calls = 0, release!: () => void;
   const server = createDemoServer(undefined, async () => { calls++; await new Promise<void>(r => release = r); return { ok: true }; });
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
@@ -65,6 +66,10 @@ test('demo governance rejects arbitrary SQL before executor and enforces origin 
     release(); assert.equal((await pending).status, 200);
     for (const path of ['/', '/explore.js', '/explore.css', '/p75-evidence.json']) assert.equal((await fetch(url + path)).status, 200);
     const html = await (await fetch(url)).text();
+    for (const id of ['backend', 'explore-backend']) {
+      const options = html.match(new RegExp(`<select id="${id}">([\\s\\S]*?)</select>`))?.[1] ?? '';
+      assert.match(options, /value="bigquery"/);
+    }
     assert.doesNotMatch(html, /data-explore-page="(?:governance|refinement)"/);
     assert.match(html, /<title>Golden Interview<\/title>/);
     assert.match(html, /data-page="explore"/);

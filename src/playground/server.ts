@@ -1,7 +1,8 @@
 import { createServer, type IncomingMessage } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { connect, type Backend } from '../backend.js';
+import { connect, type Backend, type ConnectionOptions } from '../backend.js';
+import { executeControlled } from '../execution.js';
 import { compilePlanSync, type LoweringDecision } from '../compiler.js';
 import { challengeCatalog } from '../challenge.js';
 import { cityQuery, averageUnitsQuery, percentileQuery, recentOrdersQuery, shippingQuery, freightQuery, recentOrdersPerCustomer } from '../queries.js';
@@ -26,14 +27,14 @@ const examples = [
   { id: 'window', title: 'Extension: latest 3 orders per customer', description: 'ROW_NUMBER partitions by customer and ranks by date, then order ID. Filter to the first three rows per customer.', code: `${definition('recentOrdersPerCustomer')}\n\nrecentOrdersPerCustomer(3)`, build: () => recentOrdersPerCustomer(3) },
 ];
 export type Request = { query: string; backend: Backend; action: 'compile' | 'run' };
-export async function executeExample(request: Request, options: { duckdbPath?: string } = {}) {
+export async function executeExample(request: Request, options: ConnectionOptions = {}) {
   const example = examples.find(e => e.id === request.query);
   if (!example) throw new Error('Unknown example');
   const plan = example.build().toSubstrait(), db = connect(request.backend, options), start = performance.now();
   try {
     const loweringTrace: LoweringDecision[] = [];
     const compiled = compilePlanSync(db, plan, challengeCatalog, { trace: loweringTrace });
-    const rows = request.action === 'run' ? (await db.executeQuery(compiled)).rows : undefined;
+    const rows = request.action === 'run' ? (await executeControlled(db, request.backend, compiled, { timeoutMs: 60_000 })).rows : undefined;
     const elapsedMs = Math.round((performance.now() - start) * 10) / 10;
     return { sql: compiled.sql, sqlPreview: sqlPreview(compiled.sql, request.backend), planOutline: planOutline(plan), parameterCount: compiled.parameters.length, parameters: compiled.parameters, plan,
       loweringTrace, rows: rows?.slice(0, 100), rowCount: rows?.length, elapsedMs };
@@ -91,12 +92,14 @@ export function createDemoServer(execute: (request: Request) => Promise<unknown>
       catch { send(400, { error: 'Request rejected: choose a listed stage, backend and action; no raw SQL.' }); return; }
     } else if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).length !== 3
       || !['query', 'backend', 'action'].every(k => Object.hasOwn(input, k))
-      || !examples.some(e => e.id === input.query) || !['postgres', 'mysql', 'duckdb'].includes(input.backend)
+      || !examples.some(e => e.id === input.query) || !['postgres', 'mysql', 'duckdb', 'bigquery'].includes(input.backend)
       || !['compile', 'run'].includes(input.action)) { send(400, { error: 'Choose a listed example, backend and action.' }); return; }
     if (busy) { send(429, { error: 'A query is running. Try again when it finishes.' }); return; }
     busy = true;
     try { send(200, await (exploration ? explore(input) : execute(input))); }
-    catch { send(500, { error: 'Query failed. Check the sample databases. For DuckDB, run npm run seed:duckdb with the same DUCKDB_PATH before starting the demo.' }); }
+    catch { send(500, { error: input.backend === 'bigquery'
+      ? 'BigQuery query failed. Check Application Default Credentials (gcloud auth application-default login), BIGQUERY_PROJECT_ID, BIGQUERY_DATASET, dataset location, read permissions and the per-query billing limit. See docs/BIGQUERY.md.'
+      : 'Query failed. Check the sample databases. For DuckDB, run npm run seed:duckdb with the same DUCKDB_PATH before starting the demo.' }); }
     finally { busy = false; }
   });
 }
