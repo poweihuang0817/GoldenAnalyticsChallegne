@@ -1,4 +1,4 @@
-const $ = id => document.getElementById(id);
+const $ = id => document.getElementById('explore-' + id);
 async function precisionEvidence() {
   try {
     const response = await fetch('/p75-evidence.json');
@@ -18,8 +18,8 @@ async function precisionEvidence() {
 precisionEvidence();
 let stage = 'all';
 let loaded = false;
-document.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', () => {
-  document.querySelectorAll('[data-page]').forEach(b => { const selected = b === button; b.setAttribute('aria-pressed', String(selected)); $(`${b.dataset.page}-page`).hidden = !selected; });
+document.querySelectorAll('[data-explore-page]').forEach(button => button.addEventListener('click', () => {
+  document.querySelectorAll('[data-explore-page]').forEach(b => { const selected = b === button; b.setAttribute('aria-pressed', String(selected)); $(`${b.dataset.explorePage}-page`).hidden = !selected; });
 }));
 document.querySelectorAll('[data-stage]').forEach(button => button.addEventListener('click', () => {
   stage = button.dataset.stage;
@@ -28,21 +28,22 @@ document.querySelectorAll('[data-stage]').forEach(button => button.addEventListe
 }));
 $('backend').addEventListener('change', () => { if (loaded) run(); });
 $('run').addEventListener('click', run);
-function busy(value) { document.querySelectorAll('#run, #reject, [data-stage], #backend').forEach(el => el.disabled = value); }
+function busy(value) { document.querySelectorAll('#explore-run, #explore-reject, #explore-page [data-stage], #explore-backend').forEach(el => el.disabled = value); }
 function text(id, value) { $(id).textContent = value ?? ''; }
 function clearResults() {
-  for (const id of ['summary','accuracy','chart','values','plan','count-sql','count-parameters','sales-sql','sales-parameters','rejection']) $(id).replaceChildren();
+  for (const id of ['summary','accuracy','chart','values','count-sql','count-parameters','sales-sql','sales-parameters','rejection']) $(id).replaceChildren();
 }
 async function run() {
-  busy(true); clearResults(); text('status', 'Querying the selected backend…');
+  busy(true); clearResults(); text('query-selection', 'Compiling the selected filter stage…'); text('status', 'Querying the selected backend…');
   try {
     const response = await fetch('/explore/query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stage, backend: $('backend').value, action: 'run' }) });
     const data = await response.json(); if (!response.ok) throw new Error(data.error);
     loaded = true;
+    text('query-selection', `${data.stage === 'all' ? 'All customers' : data.stage === 'uk' ? 'Country = UK' : 'Country = UK AND city = London'} · ${data.backend}. These are the compiled SQL and bound values for this selection.`);
     text('status', `Executed ${data.stage} on ${data.backend}. ${data.customers} matching customers; ${data.dailyRows} daily sales rows.`);
     text('summary', data.reason ?? `Training period: ${data.history[0].month} through ${data.history.at(-1).month}. Forecast is relative to this historical snapshot.`);
     text('accuracy', data.backtest ? `Rolling one-month backtest: mean absolute error ${data.backtest.mae} across ${data.backtest.periods} months. Each prediction uses only the preceding three months. This is evaluation of a simple baseline, not an accuracy guarantee.` : 'Not enough history for a rolling backtest.');
-    text('code', data.code); text('plan', typeof data.plan === 'string' ? data.plan : JSON.stringify(data.plan, null, 2));
+    text('code', data.code);
     text('count-sql', data.countSQL); text('count-parameters', JSON.stringify(data.countParameters, null, 2));
     text('sales-sql', data.salesSQL); text('sales-parameters', JSON.stringify(data.salesParameters, null, 2));
     const rows = [...data.history.map(r => ({ ...r, kind: 'History' })), ...data.predictions.map(r => ({ ...r, kind: 'Forecast' }))];

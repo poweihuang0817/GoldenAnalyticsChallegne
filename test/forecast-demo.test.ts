@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
+import { createDemoServer } from '../src/playground/server.js';
 import { coverage, forecast, salesStages, MAX_DAYS } from '../src/forecast-demo.js';
-import { createExploreServer, validateExploreRequest } from '../src/playground/explore-server.js';
+import { validateExploreRequest } from '../src/playground/explore-query.js';
 
 test('filter stages preserve earlier relations and add one filter at a time', () => {
   const { all, uk, london } = salesStages();
@@ -48,7 +49,7 @@ test('demo governance rejects arbitrary SQL before executor and enforces origin 
   const valid = { stage: 'all', backend: 'duckdb', action: 'run' } as const;
   for (const v of [null, [], {}, { ...valid, stage: 'admin' }, { ...valid, sql: 'select 1' }, { ...valid, backend: 'bigquery' }]) assert.throws(() => validateExploreRequest(v));
   let calls = 0, release!: () => void;
-  const server = createExploreServer(async () => { calls++; await new Promise<void>(r => release = r); return { ok: true }; });
+  const server = createDemoServer(undefined, async () => { calls++; await new Promise<void>(r => release = r); return { ok: true }; });
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   const address = server.address(); if (!address || typeof address === 'string') throw new Error('No address');
   const url = `http://127.0.0.1:${address.port}`;
@@ -59,14 +60,20 @@ test('demo governance rejects arbitrary SQL before executor and enforces origin 
     assert.equal((await post({ ...valid, stage: 'x'.repeat(1100) })).status, 400);
     const pending = post(valid);
     while (!release) await new Promise(r => setTimeout(r, 5));
-    assert.equal((await post(valid)).status, 429); release(); assert.equal((await pending).status, 200);
+    assert.equal((await post(valid)).status, 429);
+    assert.equal((await fetch(`${url}/query`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: 'city', backend: 'duckdb', action: 'run' }) })).status, 429, 'one shared execution slot across driver and lab');
+    release(); assert.equal((await pending).status, 200);
     for (const path of ['/', '/explore.js', '/explore.css', '/p75-evidence.json']) assert.equal((await fetch(url + path)).status, 200);
     const html = await (await fetch(url)).text();
     assert.match(html, /row-level security/); assert.match(html, /not an end-to-end deadline/);
-    assert.match(html, /<title>Claude Dashboard<\/title>/);
-    for (const page of ['forecast','refinement','governance','precision','flow']) {
-      assert.equal((html.match(new RegExp(`data-page="${page}"`, 'g')) ?? []).length, 1);
-      assert.equal((html.match(new RegExp(`id="${page}-page"`, 'g')) ?? []).length, 1);
+    assert.match(html, /<title>Golden Interview<\/title>/);
+    assert.match(html, /data-page="explore"/);
+    assert.doesNotMatch(html, /Readable plan for the selected sales query/);
+    const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
+    assert.equal(new Set(ids).size, ids.length);
+    for (const page of ['forecast','refinement','query','governance','precision','flow']) {
+      assert.equal((html.match(new RegExp(`data-explore-page="${page}"`, 'g')) ?? []).length, 1);
+      assert.equal((html.match(new RegExp(`id="explore-${page}-page"`, 'g')) ?? []).length, 1);
     }
     const evidence = await (await fetch(url + '/p75-evidence.json')).json() as { rows: { country: string; float_display: string; decimal_display: string }[]; query: string };
     assert.match(evidence.query, /numeric '0.75'/);

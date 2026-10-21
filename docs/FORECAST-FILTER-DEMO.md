@@ -9,20 +9,20 @@ npm ci
 # Use the existing sample setup from docs/RUNNING.md.
 # For DuckDB, seed a snapshot first or point to an existing one:
 $env:DUCKDB_PATH = 'C:\path\to\northwind.duckdb'
-npm run demo:explore
+npm run demo:ui
 ```
 
-Open http://127.0.0.1:4319. The separate server leaves the existing Playground and other dashboard processes alone. `GOLDEN_EXPLORE_PORT` overrides this port. PostgreSQL and MySQL use the existing sample connection configuration. BigQuery remains in its separate PR and is not included in this branch.
+Open http://127.0.0.1:4317. The combined **Golden Interview** UI includes Architecture, Live driver, API design and Dashboard lab. `GOLDEN_DEMO_PORT` overrides the port; this working session uses 4319 to avoid other running servers. `npm run demo:explore` is an alias for the same server, not a separate UI. PostgreSQL and MySQL use the existing sample connection configuration. BigQuery remains in its separate PR and is not included in this branch.
 
-The user-requested page title is **Claude Dashboard**. The implementation and query examples on this page are Golden's demo, not a claim about Claude's internal implementation.
+Open **Dashboard lab** for the following walkthrough. The implementation and query examples are Golden's demo, not a claim about Claude's internal implementation.
 
 ## Two-minute walkthrough
 
 1. Select a backend and **Run selected stage**. Show historical monthly sales and the dashed baseline forecast. Dates refer to the Northwind observation period, not today's business.
 2. Click **Add country = UK**, then **Add city = London**. Each step reruns the query and recomputes the forecast. The original unfiltered relation remains reusable.
-3. Open **Incremental filters**. Show the actual `salesStages()` helper and the selected query's readable plan. Notice `uk.filter(uk.columns.city...)`: the next predicate uses the new relation's scope.
-4. Open **Governance & SQL**. Show the customer-count SQL and separate parameters. The count query has one SELECT block in the tested DuckDB case. All three dialects are compiled and executed in conformance tests. Required casts preserve our result and comparison semantics. Full sales SQL remains available separately and has not been disguised or rewritten for display.
-5. Click **Demo: reject a raw-SQL request**. The server returns HTTP 400 before calling the executor. Explain the boundaries below.
+3. Open **Incremental filters**. Show the actual `salesStages()` helper and short sales-pipeline summary. Notice `uk.filter(uk.columns.city...)`: the next predicate uses the new relation's scope. The verbose plan tree is omitted from this page.
+4. Open **New query**. Show the customer-count SQL and separate parameters, updated for the current selection. The count query has one SELECT block in the tested DuckDB case. All three dialects are compiled and executed in conformance tests. Required casts preserve our result and comparison semantics. Full sales SQL remains available separately and has not been disguised or rewritten for display.
+5. Open **Governance** and click **Demo: reject a raw-SQL request**. The server returns HTTP 400 before calling the executor. Explain the boundaries below. Live driver and Dashboard lab share one active-request slot.
 6. Open **Decimal vs Float**. The recorded BigQuery evidence reproduces USA P75 rounding as 2477.57 with FLOAT64 versus 2477.58 with NUMERIC. The fraction 0.75 itself is exactly representable. `src/playground/p75-evidence.json` contains the read-only reproduction SQL, capture timestamp and results. The UI does not query BigQuery when this tab opens.
 7. Open **Dashboard Flow** to discuss the user-described Python/SQL/HTML authoring workflow, changes to query logic, and token/correctness/semantics questions. Ordinary bound-value changes can reuse SQL without an LLM call. No token benchmark or LLM integration is claimed.
 
@@ -61,4 +61,4 @@ Our analogous boundary is filtered historical data, followed by an explicit fore
 - `npm run check` and `npm run check:docs`: TypeScript checks.
 - Local browser smoke: all/UK/London, chart, code, SQL binding display and HTTP 400 rejection. The temporary browser tooling is not a project dependency or a CI browser test.
 
-Implementation: `src/forecast-demo.ts`, `src/playground/explore-server.ts`, and `src/playground/explore.{html,js,css}`. The existing compiler, public API, candidate README and prior Playground remain unchanged.
+Implementation: `src/forecast-demo.ts`, `src/playground/explore-query.ts`, shared `src/playground/server.ts` and `index.html`, plus `explore.js`/`explore.css`. The existing compiler, public API and candidate README remain unchanged. The prior Playground and new lab share navigation and a server; separate DOM IDs, scoped styles and navigation selectors keep their controls isolated.

@@ -18,7 +18,7 @@
     "seed:duckdb": "tsx scripts/seed-duckdb.ts",
     "demo:duckdb": "tsx src/demo.ts --duckdb",
     "test:duckdb": "tsx --test test/duckdb-integration.test.ts test/forecast-conformance.test.ts",
-    "demo:explore": "tsx src/playground/explore-server.ts"
+    "demo:explore": "tsx src/playground/server.ts"
   },
   "dependencies": {
     "@duckdb/node-api": "1.5.5-r.5",

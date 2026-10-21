@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { sql } from 'kysely';
 import { connect } from '../src/backend.js';
 import { seedDuckDB } from '../src/duckdb-seed.js';
-import { runExplore } from '../src/playground/explore-server.js';
+import { runExplore } from '../src/playground/explore-query.js';
 
 test('forecast inputs and outputs agree on provided PostgreSQL/MySQL and seeded DuckDB', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'golden-forecast-conformance-'));

@@ -6,6 +6,7 @@ import { compilePlanSync, type LoweringDecision } from '../compiler.js';
 import { challengeCatalog } from '../challenge.js';
 import { cityQuery, averageUnitsQuery, percentileQuery, recentOrdersQuery, shippingQuery, freightQuery, recentOrdersPerCustomer } from '../queries.js';
 import { sqlPreview, planOutline } from './preview.js';
+import { runExplore, validateExploreRequest, type ExploreRequest } from './explore-query.js';
 
 const source = readFileSync(new URL('../queries.ts', import.meta.url), 'utf8');
 function definition(name: string) {
@@ -43,6 +44,9 @@ const assets: Record<string, [string, string]> = {
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
   '/architecture.svg': ['architecture.svg', 'image/svg+xml'],
+  '/explore.js': ['explore.js', 'text/javascript; charset=utf-8'],
+  '/explore.css': ['explore.css', 'text/css; charset=utf-8'],
+  '/p75-evidence.json': ['p75-evidence.json', 'application/json; charset=utf-8'],
 };
 async function body(request: IncomingMessage) {
   const chunks: Buffer[] = []; let size = 0;
@@ -53,7 +57,8 @@ async function body(request: IncomingMessage) {
   }
   return JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown;
 }
-export function createDemoServer(execute: (request: Request) => Promise<unknown> = executeExample) {
+export function createDemoServer(execute: (request: Request) => Promise<unknown> = executeExample,
+  explore: (request: ExploreRequest) => Promise<unknown> = runExplore) {
   let busy = false;
   // HTTP receive timeouts only: these do not limit or cancel database execution.
   return createServer({ requestTimeout: 5000, headersTimeout: 5000 }, async (req, res) => {
@@ -75,22 +80,30 @@ export function createDemoServer(execute: (request: Request) => Promise<unknown>
     if (req.method === 'GET' && req.url === '/examples') {
       send(200, examples.map(({ build, ...example }) => example)); return;
     }
-    if (req.url !== '/query') { send(404, { error: 'Not found.' }); return; }
+    if (!['/query', '/explore/query'].includes(req.url ?? '')) { send(404, { error: 'Not found.' }); return; }
     if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); send(405, { error: 'Use POST.' }); return; }
     if (req.headers['content-type'] !== 'application/json') { send(415, { error: 'Use application/json.' }); return; }
     let input: any;
     try { input = await body(req); } catch { send(400, { error: 'Expected a JSON request of at most 1024 bytes.' }); return; }
-    if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).length !== 3
+    const exploration = req.url === '/explore/query';
+    if (exploration) {
+      try { input = validateExploreRequest(input); }
+      catch { send(400, { error: 'Request rejected: choose a listed stage, backend and action; no raw SQL.' }); return; }
+    } else if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).length !== 3
       || !['query', 'backend', 'action'].every(k => Object.hasOwn(input, k))
       || !examples.some(e => e.id === input.query) || !['postgres', 'mysql', 'duckdb'].includes(input.backend)
       || !['compile', 'run'].includes(input.action)) { send(400, { error: 'Choose a listed example, backend and action.' }); return; }
     if (busy) { send(429, { error: 'A query is running. Try again when it finishes.' }); return; }
     busy = true;
-    try { send(200, await execute(input)); }
+    try { send(200, await (exploration ? explore(input) : execute(input))); }
     catch { send(500, { error: 'Query failed. Check the sample databases. For DuckDB, run npm run seed:duckdb with the same DUCKDB_PATH before starting the demo.' }); }
     finally { busy = false; }
   });
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  createDemoServer().listen(4317, '127.0.0.1', () => console.log('Demo: http://127.0.0.1:4317'));
+  const port = Number(process.env.GOLDEN_DEMO_PORT ?? 4317);
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Invalid GOLDEN_DEMO_PORT');
+  const server = createDemoServer();
+  server.on('error', error => { console.error(error.message); process.exitCode = 1; });
+  server.listen(port, '127.0.0.1', () => console.log(`Golden Interview: http://127.0.0.1:${port}`));
 }

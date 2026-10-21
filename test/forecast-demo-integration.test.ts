@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { sql } from 'kysely';
 import { connect } from '../src/backend.js';
-import { runExplore } from '../src/playground/explore-server.js';
+import { runExplore } from '../src/playground/explore-query.js';
 
 test('real DuckDB execution matches independent monthly totals and filter counts', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'golden-forecast-'));
