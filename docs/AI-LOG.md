@@ -421,3 +421,5 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - User requested exactly four English slides explaining Substrait, Golden SQL lowering and Kysely, our typed API constraints, and a concrete bottom-up example.
 - Added an editable deck using the London customer-count query throughout: bound SQL, lowering, constrained Substrait, and typed API with the complete forward flow. Speaker notes distinguish compile-time constraints, runtime validation, and database execution.
 - Rendered and visually inspected all four slides in PowerPoint; no text-height overflow warnings. No application code or candidate README changes.
+
+- User requested a standalone Substrait slide. Added the London-count logical outline, its position between the typed API and compiler, and Golden's remaining validation/lowering responsibilities. Included speaker notes and visually reviewed the exported slide.
