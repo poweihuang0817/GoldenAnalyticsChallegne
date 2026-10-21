@@ -1,5 +1,19 @@
 # AI collaboration log
 
+## October 20: dashboard query requirements and IR value
+
+- User asked whether an IR remains useful compared with shorter Claude SQL and
+  whether chart filters require additional query API functionality. Inspected the
+  nine downloaded dashboard queries and the current typed API/profile/catalog.
+- Added [dashboard query coverage](DASHBOARD-QUERY-COVERAGE.md): concrete gaps,
+  population/precision differences, staged DATE/query work and independent tests.
+- Kept visualization upstream; distinguished existing filter from missing typed
+  expressions, catalog gaps from compiler gaps, and potential standard interchange
+  benefits from demonstrated behavior. A one-cent difference does not justify IR.
+- Documentation-only work from main in its own worktree; BigQuery remains in open
+  PR #64. No feature implementation, new execution evidence or architecture change
+  is claimed by this requirements analysis.
+
 ## September 30: resolve challenge-query ambiguity (#38)
 
 - User requested completing #38 while personally writing the README, and authorized a separate agent to close out PRQL/Ossie research. Root used an isolated query-semantics worktree; candidate README left untouched.
