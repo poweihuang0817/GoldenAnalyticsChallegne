@@ -407,3 +407,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 
 - User requested a clear async naming contract. Renamed the low-level compiler to compilePlanSync, retaining await client.compile as the public worker-backed API. Updated source, tests, instrumentation scripts and current documentation references; historical log entries remain historical.
 - Fixed the missing await in the candidate README example as a narrow user-authorized API correction. Playground still explicitly uses compilePlanSync for trace output; moving that route to the worker requires trace transport and remains separate work.
+
+## October 20: interview deck on dashboard query evolution
+
+- User requested an English PowerPoint explaining potential improvements over the downloaded Claude dashboard, then requested float clarification, API readability and the actual P75 SQL excerpt.
+- Created an editable 11-slide deck with speaker notes. Distinguished demonstrated behavior from proposed semantic/filter orchestration and retained SQL-quality limitations.
+- Used installed PowerPoint because the prescribed artifact runtime loader/packages were unavailable. Rendered and visually reviewed all slides. No application code or candidate README changes.
