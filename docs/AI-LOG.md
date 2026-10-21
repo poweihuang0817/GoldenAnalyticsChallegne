@@ -415,3 +415,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - Used installed PowerPoint because the prescribed artifact runtime loader/packages were unavailable. Rendered and visually reviewed all slides. No application code or candidate README changes.
 
 - User requested a remake centered on diagrams and SQL-generation opportunities. Added a separate nine-slide editable diagram edition with filter branching, operation ordering, capabilities, proposed named projections, independent verification, precision choices and a validation roadmap. Retained the Claude P75 reference excerpt and distinguished implemented behavior from proposals in speaker notes. Rendered and visually reviewed every slide.
+
+## October 21: four-slide API-to-SQL walkthrough
+
+- User requested exactly four English slides explaining Substrait, Golden SQL lowering and Kysely, our typed API constraints, and a concrete bottom-up example.
+- Added an editable deck using the London customer-count query throughout: bound SQL, lowering, constrained Substrait, and typed API with the complete forward flow. Speaker notes distinguish compile-time constraints, runtime validation, and database execution.
+- Rendered and visually inspected all four slides in PowerPoint; no text-height overflow warnings. No application code or candidate README changes.
