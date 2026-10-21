@@ -407,3 +407,23 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 
 - User requested a clear async naming contract. Renamed the low-level compiler to compilePlanSync, retaining await client.compile as the public worker-backed API. Updated source, tests, instrumentation scripts and current documentation references; historical log entries remain historical.
 - Fixed the missing await in the candidate README example as a narrow user-authorized API correction. Playground still explicitly uses compilePlanSync for trace output; moving that route to the worker requires trace transport and remains separate work.
+
+## October 20: interview deck on dashboard query evolution
+
+- User requested an English PowerPoint explaining potential improvements over the downloaded Claude dashboard, then requested float clarification, API readability and the actual P75 SQL excerpt.
+- Created an editable 11-slide deck with speaker notes. Distinguished demonstrated behavior from proposed semantic/filter orchestration and retained SQL-quality limitations.
+- Used installed PowerPoint because the prescribed artifact runtime loader/packages were unavailable. Rendered and visually reviewed all slides. No application code or candidate README changes.
+
+- User requested a remake centered on diagrams and SQL-generation opportunities. Added a separate nine-slide editable diagram edition with filter branching, operation ordering, capabilities, proposed named projections, independent verification, precision choices and a validation roadmap. Retained the Claude P75 reference excerpt and distinguished implemented behavior from proposals in speaker notes. Rendered and visually reviewed every slide.
+
+## October 21: four-slide API-to-SQL walkthrough
+
+- User requested exactly four English slides explaining Substrait, Golden SQL lowering and Kysely, our typed API constraints, and a concrete bottom-up example.
+- Added an editable deck using the London customer-count query throughout: bound SQL, lowering, constrained Substrait, and typed API with the complete forward flow. Speaker notes distinguish compile-time constraints, runtime validation, and database execution.
+- Rendered and visually inspected all four slides in PowerPoint; no text-height overflow warnings. No application code or candidate README changes.
+
+- User requested a standalone Substrait slide. Added the London-count logical outline, its position between the typed API and compiler, and Golden's remaining validation/lowering responsibilities. Included speaker notes and visually reviewed the exported slide.
+
+- User clarified that the Substrait slide needs TypeScript-specific code. Added a separate code-focused slide grounded in src/api.ts and src/client.ts, including query.toSubstrait(), await client.compile(query), and await client.execute(query). Clarified that plan export is optional and JSON, with omitted setup/resource cleanup in speaker notes.
+
+- User requested implementation details beyond compile calling toSubstrait. Traced RuntimeTable relation construction, function anchors, profile/codec validation, structured-cloned JSON worker transport and Golden lowering. Added an internals slide with shortened source excerpts and detailed speaker notes; verified worker code and rendered the slide.
