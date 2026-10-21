@@ -407,3 +407,8 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 
 - User requested a clear async naming contract. Renamed the low-level compiler to compilePlanSync, retaining await client.compile as the public worker-backed API. Updated source, tests, instrumentation scripts and current documentation references; historical log entries remain historical.
 - Fixed the missing await in the candidate README example as a narrow user-authorized API correction. Playground still explicitly uses compilePlanSync for trace output; moving that route to the worker requires trace transport and remains separate work.
+
+## October 21: typed-array design proposal
+
+- User requested a PostgreSQL/CSV array design and a Markdown review document. Clarified the initial proposal to keep a fixed comma delimiter and parsing inside the adapter, with no public split/parser API. Proposed native PostgreSQL arrays, PostgreSQL-backed CSV import, and typed item expansion followed by existing filter/count. This is a proposal only; implementation and Substrait expansion mapping remain subject to review. See docs/TYPED-ARRAY-PLAN.md.
+
