@@ -2,6 +2,12 @@
 
 Status: ACCEPTED on September 26, 2026: a constrained Substrait profile compiled through Kysely, selected explicitly by the user. The lower layer now covers all six sample query families; see `CHALLENGE-COVERAGE.md` for semantics and evidence.
 
+Post-submission extension (October 20): [BigQuery](BIGQUERY.md) adds a remote
+GoogleSQL dialect and official Node SDK job adapter under the same relational
+compiler. The six challenge families and window extension have live cloud tests.
+The Playground and diagram also include BigQuery, alongside the public client and
+CLI driver. The original submitted version remains recorded in Git history.
+
 ![Substrait validation, Kysely compilation, and remote database execution](../src/playground/architecture.svg)
 
 Diagram source: [`src/playground/architecture.svg`](../src/playground/architecture.svg), shared with the walkthrough UI.

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
 <title id="title">Golden analytical query architecture</title>
-<desc id="desc">Top to bottom: Typed Table and Expression API, constrained Substrait, validation and SQL lowering through Kysely, then the selected PostgreSQL, MySQL or DuckDB backend. Rows return to the client. No federation.</desc>
+<desc id="desc">Top to bottom: Typed Table and Expression API, constrained Substrait, validation and SQL lowering through Kysely, then the selected PostgreSQL, MySQL, DuckDB or BigQuery backend. Rows return to the client. No federation.</desc>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 10 5 0 10z" fill="#678779"/></marker></defs>
 <rect width="1200" height="820" rx="14" fill="#fff"/>
 <g font-family="Segoe UI,Arial,sans-serif" text-anchor="middle">
@@ -16,20 +16,24 @@
 <rect x="330" y="365" width="540" height="105" rx="12" fill="#f0f5f1" stroke="#cddbd1" stroke-width="2"/>
 <text x="600" y="407" font-size="25" font-weight="600" fill="#172c39">Validation + SQL lowering</text>
 <text x="600" y="443" font-size="19" fill="#53676b">Golden validates · Kysely builds SQL + parameters</text>
-<path d="M600 475V510 M210 510H990" stroke="#678779" stroke-width="3" fill="none"/>
-<path d="M600 510V554" stroke="#678779" stroke-width="3" fill="none" marker-end="url(#arrow)"/><path d="M990 510V554" stroke="#678779" stroke-width="3" fill="none" marker-end="url(#arrow)"/><path d="M210 510V554" stroke="#678779" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
-<rect x="35" y="570" width="350" height="140" rx="12" fill="#f0f5f1" stroke="#cddbd1" stroke-width="2"/>
-<text x="210" y="614" font-size="27" font-weight="600" fill="#172c39">PostgreSQL 17</text>
-<text x="210" y="652" font-size="18" fill="#53676b">Remote Northwind database</text>
-<text x="210" y="683" font-size="18" fill="#53676b">PostgreSQL SQL · pg driver</text>
-<rect x="425" y="570" width="350" height="140" rx="12" fill="#f0f5f1" stroke="#cddbd1" stroke-width="2"/>
-<text x="600" y="614" font-size="27" font-weight="600" fill="#172c39">MySQL 8</text>
-<text x="600" y="652" font-size="18" fill="#53676b">Remote Northwind database</text>
-<text x="600" y="683" font-size="18" fill="#53676b">MySQL SQL · mysql2 driver</text>
-<rect x="815" y="570" width="350" height="140" rx="12" fill="#f0f5f1" stroke="#cddbd1" stroke-width="2"/>
-<text x="990" y="614" font-size="27" font-weight="600" fill="#172c39">DuckDB · extension</text>
-<text x="990" y="652" font-size="18" fill="#53676b">Separately seeded local snapshot</text>
-<text x="990" y="683" font-size="18" fill="#53676b">Embedded execution · native driver</text>
+<path d="M600 475V510 M155 510H1045" stroke="#678779" stroke-width="3" fill="none"/>
+<path d="M155 510V554 M450 510V554 M750 510V554 M1045 510V554" stroke="#678779" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+<rect x="20" y="570" width="270" height="140" rx="12" fill="#f0f5f1" stroke="#cddbd1" stroke-width="2"/>
+<text x="155" y="614" font-size="25" font-weight="600" fill="#172c39">PostgreSQL 17</text>
+<text x="155" y="652" font-size="17" fill="#53676b">Remote Northwind</text>
+<text x="155" y="683" font-size="17" fill="#53676b">PostgreSQL SQL · pg</text>
+<rect x="315" y="570" width="270" height="140" rx="12" fill="#f0f5f1" stroke="#cddbd1" stroke-width="2"/>
+<text x="450" y="614" font-size="25" font-weight="600" fill="#172c39">MySQL 8</text>
+<text x="450" y="652" font-size="17" fill="#53676b">Remote Northwind</text>
+<text x="450" y="683" font-size="17" fill="#53676b">MySQL SQL · mysql2</text>
+<rect x="615" y="570" width="270" height="140" rx="12" fill="#f0f5f1" stroke="#cddbd1" stroke-width="2"/>
+<text x="750" y="614" font-size="25" font-weight="600" fill="#172c39">DuckDB</text>
+<text x="750" y="652" font-size="17" fill="#53676b">Seeded local snapshot</text>
+<text x="750" y="683" font-size="17" fill="#53676b">Embedded · native driver</text>
+<rect x="910" y="570" width="270" height="140" rx="12" fill="#f0f5f1" stroke="#cddbd1" stroke-width="2"/>
+<text x="1045" y="614" font-size="25" font-weight="600" fill="#172c39">BigQuery</text>
+<text x="1045" y="652" font-size="17" fill="#53676b">Google Cloud dataset</text>
+<text x="1045" y="683" font-size="17" fill="#53676b">GoogleSQL · Node SDK</text>
 <text x="600" y="761" font-size="23" font-weight="600" fill="#172c39">Execute on one selected backend · return rows to the client</text>
 <text x="600" y="796" font-size="17" fill="#53676b">Decimal / i64 strings preserved · compile() is an optional SQL preview · no federation</text>
 </g>

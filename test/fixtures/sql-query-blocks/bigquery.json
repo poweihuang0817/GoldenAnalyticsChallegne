@@ -1,0 +1,269 @@
+[
+  {
+    "name": "Most recent orders",
+    "sql": "select `orders`.`order_id` as `order_id`, `orders`.`order_date` as `order_date` from `orders` order by case when `orders`.`order_date` is null then 1 else 0 end asc, `orders`.`order_date` desc, `orders`.`order_id` desc limit ? offset ?",
+    "parameters": [
+      5,
+      0
+    ],
+    "trace": [
+      {
+        "relationId": "r2",
+        "operation": "project",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r1",
+        "operation": "sort",
+        "decision": "merged",
+        "reason": "Track output ordering without a new query block"
+      },
+      {
+        "relationId": "r0",
+        "operation": "fetch",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      }
+    ]
+  },
+  {
+    "name": "Customers in London",
+    "sql": "select cast(count(*) as string) as `customer_count` from `customers` where (lower(`customers`.`city`) = lower(cast(? as string)))",
+    "parameters": [
+      "london"
+    ],
+    "trace": [
+      {
+        "relationId": "r1",
+        "operation": "filter",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r0",
+        "operation": "aggregate",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      }
+    ]
+  },
+  {
+    "name": "Customers in Mexico D.F.",
+    "sql": "select cast(count(*) as string) as `customer_count` from `customers` where (lower(`customers`.`city`) = lower(cast(? as string)))",
+    "parameters": [
+      "mexico d.f."
+    ],
+    "trace": [
+      {
+        "relationId": "r1",
+        "operation": "filter",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r0",
+        "operation": "aggregate",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      }
+    ]
+  },
+  {
+    "name": "Average units per order",
+    "sql": "select cast(avg(cast(coalesce(`r6`.`c1`, cast(? as float64)) as float64)) as float64) as `average_units` from `orders` as `r2` left join (select `order_details`.`order_id` as `c0`, cast(sum(cast(`order_details`.`quantity` as float64)) as float64) as `c1` from `order_details` group by `order_details`.`order_id`) as `r6` on (`r2`.`order_id` = `r6`.`c0`)",
+    "parameters": [
+      0
+    ],
+    "trace": [
+      {
+        "relationId": "r4",
+        "operation": "aggregate",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r1",
+        "operation": "project",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r0",
+        "operation": "aggregate",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      }
+    ]
+  },
+  {
+    "name": "Employee shipped/unshipped orders",
+    "sql": "select `r3`.`employee_id` as `employee_id`, cast(sum(cast(case when ((`r6`.`order_id` is not null) and (`r6`.`shipped_date` is not null)) then cast(? as float64) else cast(? as float64) end as float64)) as float64) as `shipped`, cast(sum(cast(case when ((`r6`.`order_id` is not null) and (`r6`.`shipped_date` is null)) then cast(? as float64) else cast(? as float64) end as float64)) as float64) as `unshipped` from `employees` as `r3` left join `orders` as `r6` on (`r3`.`employee_id` = `r6`.`employee_id`) group by `r3`.`employee_id` order by `r3`.`employee_id` asc",
+    "parameters": [
+      1,
+      0,
+      1,
+      0
+    ],
+    "trace": [
+      {
+        "relationId": "r2",
+        "operation": "project",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r1",
+        "operation": "aggregate",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r0",
+        "operation": "sort",
+        "decision": "merged",
+        "reason": "Track output ordering without a new query block"
+      }
+    ]
+  },
+  {
+    "name": "Customer freight/order-price ratio",
+    "sql": "select `r1`.`c0` as `customer_id`, format('%.10f', if(abs(round(cast((`r1`.`c1` / nullif(`r1`.`c2`, 0)) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((`r1`.`c1` / nullif(`r1`.`c2`, 0)) as bignumeric), 10))) as `freight_ratio` from (select `r4`.`customer_id` as `c0`, if(abs(round(cast(sum(`r12`.`c2`) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(sum(`r12`.`c2`) as bignumeric), 10)) as `c1`, if(abs(round(cast(sum(`r12`.`c1`) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(sum(`r12`.`c1`) as bignumeric), 10)) as `c2` from `customers` as `r4` left join (select `r7`.`customer_id` as `c0`, coalesce(`r11`.`c1`, cast(cast(? as int64) as bignumeric)) as `c1`, coalesce(if(abs(round(cast(`r7`.`freight` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`r7`.`freight` as bignumeric), 10)), cast(cast(? as int64) as bignumeric)) as `c2` from `orders` as `r7` left join (select `order_details`.`order_id` as `c0`, if(abs(round(cast(sum(if(abs(round(cast((if(abs(round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) * if(abs(round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) * if(abs(round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(sum(if(abs(round(cast((if(abs(round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) * if(abs(round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) * if(abs(round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10)) as `c1` from `order_details` group by `order_details`.`order_id`) as `r11` on (`r7`.`order_id` = `r11`.`c0`)) as `r12` on (`r4`.`customer_id` = `r12`.`c0`) group by `r4`.`customer_id`) as `r1` order by `r1`.`c0` asc",
+    "parameters": [
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "trace": [
+      {
+        "relationId": "r9",
+        "operation": "aggregate",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r6",
+        "operation": "project",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r3",
+        "operation": "project",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r2",
+        "operation": "aggregate",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r1",
+        "operation": "project",
+        "decision": "boundary",
+        "reason": "Preserve aggregate input scope or specialized lowering boundary"
+      },
+      {
+        "relationId": "r0",
+        "operation": "sort",
+        "decision": "merged",
+        "reason": "Track output ordering without a new query block"
+      }
+    ]
+  },
+  {
+    "name": "75th percentile of order price by customer country",
+    "sql": "select `r12`.`c0` as `country`, format('%.10f', if(abs(round(cast(max(`r12`.`v`) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(max(`r12`.`v`) as bignumeric), 10))) as `order_price_p75` from (select `r1`.`c0` as `c0`, percentile_cont(`r1`.`c1`, bignumeric '0.7500000000' ignore nulls) over (partition by `r1`.`c0`) as v from (select `r3`.`country` as `c0`, `r11`.`c1` as `c1` from `customers` as `r3` inner join (select `r6`.`customer_id` as `c0`, coalesce(`r10`.`c1`, cast(cast(? as int64) as bignumeric)) as `c1` from `orders` as `r6` left join (select `order_details`.`order_id` as `c0`, if(abs(round(cast(sum(if(abs(round(cast((if(abs(round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) * if(abs(round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) * if(abs(round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(sum(if(abs(round(cast((if(abs(round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) * if(abs(round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((if(abs(round(cast(`order_details`.`unit_price` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`unit_price` as bignumeric), 10)) * cast(`order_details`.`quantity` as bignumeric)) as bignumeric), 10)) * if(abs(round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast((cast(cast(? as int64) as bignumeric) - if(abs(round(cast(`order_details`.`discount` as bignumeric), 10)) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), round(cast(`order_details`.`discount` as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10))) as bignumeric), 10)) as `c1` from `order_details` group by `order_details`.`order_id`) as `r10` on (`r6`.`order_id` = `r10`.`c0`)) as `r11` on (`r3`.`customer_id` = `r11`.`c0`)) as `r1`) as `r12` group by `r12`.`c0` order by case when `r12`.`c0` is null then 1 else 0 end asc, `r12`.`c0` asc",
+    "parameters": [
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "trace": [
+      {
+        "relationId": "r8",
+        "operation": "aggregate",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r5",
+        "operation": "project",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r2",
+        "operation": "project",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r1",
+        "operation": "aggregate",
+        "decision": "boundary",
+        "reason": "Preserve project input scope or specialized lowering boundary"
+      },
+      {
+        "relationId": "r1",
+        "operation": "percentile_cont",
+        "decision": "native",
+        "reason": "BigQuery continuousPercentile capability; typed fraction and empty-input aggregate preserved"
+      },
+      {
+        "relationId": "r0",
+        "operation": "sort",
+        "decision": "merged",
+        "reason": "Track output ordering without a new query block"
+      }
+    ]
+  },
+  {
+    "name": "Window top N",
+    "sql": "select `r1`.`c0` as `customer_id`, `r1`.`c1` as `order_id`, `r1`.`c2` as `order_date`, cast(`r1`.`c3` as string) as `position` from (select `orders`.`customer_id` as `c0`, `orders`.`order_id` as `c1`, `orders`.`order_date` as `c2`, row_number() over (partition by `orders`.`customer_id` order by case when `orders`.`order_date` is null then 1 else 0 end asc, `orders`.`order_date` desc, `orders`.`order_id` desc) as `c3` from `orders`) as `r1` where (`r1`.`c3` <= cast(? as int64)) order by case when `r1`.`c0` is null then 1 else 0 end asc, `r1`.`c0` asc, `r1`.`c3` asc",
+    "parameters": [
+      3
+    ],
+    "trace": [
+      {
+        "relationId": "r3",
+        "operation": "project",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r2",
+        "operation": "window",
+        "decision": "merged",
+        "reason": "Compatible row-level input block"
+      },
+      {
+        "relationId": "r1",
+        "operation": "filter",
+        "decision": "boundary",
+        "reason": "Preserve window input scope or specialized lowering boundary"
+      },
+      {
+        "relationId": "r0",
+        "operation": "sort",
+        "decision": "merged",
+        "reason": "Track output ordering without a new query block"
+      }
+    ]
+  }
+]

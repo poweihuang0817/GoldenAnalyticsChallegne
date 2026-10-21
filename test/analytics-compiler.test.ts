@@ -24,7 +24,7 @@ test('row count lowers to count star while nullable column count remains an expr
 });
 
 test('generated SQL, ordered bindings and lowering trace match reviewed snapshots', async () => {
-  for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
+  for (const backend of ['postgres', 'mysql', 'duckdb', 'bigquery'] as const) {
     const db = connect(backend, { duckdbPath: ':memory:' });
     try {
       const snapshots = [...queryExamples, { name: 'Window top N', query: recentOrdersPerCustomer() }].map(({name, query}) => {

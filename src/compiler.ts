@@ -29,7 +29,7 @@ export function compilePlanSync(db: Kysely<Database>, input: unknown, catalog: C
     });
     throw cause;
   }
-  if (plan.extensions?.length || plan.extensionUris?.length) return compileAnalytics(db, plan, catalog, options.trace);
+  if (backend === 'bigquery' || plan.extensions?.length || plan.extensionUris?.length) return compileAnalytics(db, plan, catalog, options.trace);
   options.trace?.push({ relationId: 'legacy', operation: 'dispatch', decision: 'source', reason: 'Function-free compiler; detailed trace unavailable' });
   const root = plan.relations[0].root;
   let query: Query;

@@ -11,16 +11,21 @@
     "check": "tsc --noEmit",
     "check:docs": "tsc --project tsconfig.docs.json",
     "docs:examples": "tsx docs/api/examples.ts",
-    "test": "tsx --test test/client.test.ts test/compile-worker.test.ts test/compiler.test.ts test/substrait.test.ts test/analytics-compiler.test.ts test/api.test.ts test/window.test.ts test/playground.test.ts test/duckdb.test.ts test/execution.test.ts test/capabilities.test.ts test/metadata.test.ts test/semantic-definitions.test.ts",
+    "test": "tsx --test test/client.test.ts test/compile-worker.test.ts test/compiler.test.ts test/substrait.test.ts test/analytics-compiler.test.ts test/api.test.ts test/window.test.ts test/playground.test.ts test/duckdb.test.ts test/execution.test.ts test/capabilities.test.ts test/metadata.test.ts test/semantic-definitions.test.ts test/bigquery.test.ts test/forecast-demo.test.ts test/forecast-demo-integration.test.ts",
     "test:integration": "tsx --test test/integration.test.ts test/challenge.test.ts test/percentile.test.ts test/api-integration.test.ts test/window-integration.test.ts test/api-characterization.test.ts test/execution-integration.test.ts test/metadata-integration.test.ts",
     "demo": "tsx src/demo.ts",
     "demo:ui": "tsx src/playground/server.ts",
     "seed:duckdb": "tsx scripts/seed-duckdb.ts",
     "demo:duckdb": "tsx src/demo.ts --duckdb",
-    "test:duckdb": "tsx --test test/duckdb-integration.test.ts"
+    "test:duckdb": "tsx --test test/duckdb-integration.test.ts test/forecast-conformance.test.ts",
+    "demo:explore": "tsx src/playground/server.ts",
+    "test:bigquery": "tsx --test test/bigquery-integration.test.ts",
+    "demo:bigquery": "tsx src/demo.ts --bigquery",
+    "test:forecast:bigquery": "tsx --test test/forecast-bigquery.test.ts"
   },
   "dependencies": {
     "@duckdb/node-api": "1.5.5-r.5",
+    "@google-cloud/bigquery": "9.4.0",
     "kysely": "0.29.6",
     "mysql2": "3.24.4",
     "pg": "8.23.0",

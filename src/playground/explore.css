@@ -1,0 +1,36 @@
+﻿.navigation { flex-wrap: wrap; }
+#explore-page { font-size: 19px; }
+#explore-page p, #explore-page li { line-height: 1.55; }
+#explore-page h2 { font-size: 29px; }
+#explore-page h3 { font-size: 23px; }
+#explore-page .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+#explore-page label { font-size: 17px; letter-spacing: 0; flex: 0 0 auto; }
+#explore-stages { display: flex; gap: 8px; flex-wrap: wrap; }
+#explore-page button, #explore-page select { font-size: 17px; }
+#explore-page button[aria-pressed=true], #explore-run { background: #087f6b; color: white; border-color: #087f6b; }
+#explore-page nav { display: flex; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #c9d6d1; padding: 18px 0; margin-bottom: 28px; }
+#explore-page > section { background: white; padding: 24px; border: 1px solid #d7e1dd; border-radius: 8px; }
+#explore-page pre { font-size: 17px; line-height: 1.5; max-height: none; }
+#explore-page details { margin: 20px 0; }
+#explore-page summary { color: #087f6b; font-size: 18px; }
+#explore-page li { margin: 9px 0; }
+#explore-chart { min-height: 300px; }
+#explore-chart svg { width: 100%; height: auto; }
+#explore-page .legend { font-size: 16px; color: #526471; }
+#explore-page table { width: 100%; font-size: 17px; }
+#explore-page th, #explore-page td { white-space: normal; }
+#explore-status { min-height: 30px; }
+#explore-rejection { color: #7d3a09; }
+#explore-page .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+#explore-page .flow { display: flex; gap: 26px; list-style: none; padding: 0; margin: 20px 0; }
+#explore-page .flow li { flex: 1; border-top: 3px solid #087f6b; padding-top: 14px; position: relative; }
+#explore-page .flow li:not(:last-child)::after { content: '→'; position: absolute; right: -22px; top: 12px; color: #087f6b; }
+#explore-page .flow strong, #explore-page .flow span { display: block; }
+#explore-page .flow span { font-size: 16px; color: #526471; margin-top: 8px; }
+#explore-page .questions td { vertical-align: top; }
+#explore-page .questions td:first-child { width: 13%; }
+#explore-page .questions td:nth-child(2) { width: 32%; }
+#explore-page .table-scroll { overflow-x: auto; }
+#explore-precision-values td:nth-last-child(-n+2) { font-weight: 700; color: #087f6b; }
+#explore-page .pipeline-summary { font-size: 22px; color: #087f6b; font-weight: 600; }
+@media(max-width:850px) { #explore-page .comparison { grid-template-columns: 1fr; } #explore-page .flow { flex-direction: column; } #explore-page .flow li:not(:last-child)::after { content: none; } }

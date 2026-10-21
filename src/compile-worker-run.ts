@@ -1,6 +1,7 @@
 import { parentPort, threadId } from 'node:worker_threads';
 import { DummyDriver, Kysely, MysqlAdapter, MysqlQueryCompiler, PostgresAdapter, PostgresQueryCompiler } from 'kysely';
 import { DuckDBAdapter } from './duckdb.js';
+import { BigQueryAdapter, BigQueryCompiler } from './bigquery/dialect.js';
 import { compilePlanSync, type Database } from './compiler.js';
 import { CompileQueryError } from './errors.js';
 import type { CompileRequest } from './compile-service.js';
@@ -10,8 +11,8 @@ parentPort.on('message', ({ id, backend, plan, catalog }: CompileRequest) => {
   // No connection pools, native connections, credentials or backend connect() calls.
   const db = new Kysely<Database>({ dialect: {
     createDriver: () => new DummyDriver(),
-    createAdapter: () => backend === 'duckdb' ? new DuckDBAdapter() : backend === 'mysql' ? new MysqlAdapter() : new PostgresAdapter(),
-    createQueryCompiler: () => backend === 'mysql' ? new MysqlQueryCompiler() : new PostgresQueryCompiler(),
+    createAdapter: () => backend === 'bigquery' ? new BigQueryAdapter() : backend === 'duckdb' ? new DuckDBAdapter() : backend === 'mysql' ? new MysqlAdapter() : new PostgresAdapter(),
+    createQueryCompiler: () => backend === 'bigquery' ? new BigQueryCompiler() : backend === 'mysql' ? new MysqlQueryCompiler() : new PostgresQueryCompiler(),
     createIntrospector: () => { throw new Error('Compilation cannot inspect a database'); },
   } });
   try {
