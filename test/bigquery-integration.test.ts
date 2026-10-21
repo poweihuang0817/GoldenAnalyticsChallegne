@@ -84,8 +84,39 @@ test('BigQuery live: exact decimal division, nulls, half ties, precision and ove
   } finally { await db.destroy(); }
 });
 
-// Independently authored native SQL: use BigQuery COUNTIF and PERCENTILE_CONT,
-// not Golden's CASE/portable rank interpolation implementation.
+test('BigQuery native percentile: exact precision, ties, null groups and empty aggregates', { skip: !enabled }, async () => {
+  const db = connect('bigquery');
+  const catalog = { samples: [{ name: 'g', type: 'string', nullable: true }, { name: 'v', type: 'decimal', nullable: true }, { name: 'f', type: 'fp64', nullable: true }] } as const;
+  const samples = createSource(catalog).table('samples');
+  const data = `select 'a' g, bignumeric '9007199254740993' v, 1.0 f
+    union all select 'a',bignumeric '9007199254740993.0000000002',3.0
+    union all select 'a',null,null union all select 'nulls',null,null
+    union all select cast(null as string),bignumeric '-0.0000000001',2.0
+    union all select null,bignumeric '0',2.0`;
+  try {
+    for (const [p, a, n, f] of [
+      [0, '9007199254740993.0000000000', '-0.0000000001', 1],
+      [0.5, '9007199254740993.0000000001', '-0.0000000001', 2],
+      [0.75, '9007199254740993.0000000002', '0.0000000000', 2.5],
+      [1, '9007199254740993.0000000002', '0.0000000000', 3],
+    ] as const) {
+      for (const column of ['v', 'f'] as const) {
+        const query = samples.groupBy('g').aggregate({ p: samples.columns[column].percentile(p) }).orderBy({ column: 'g' });
+        const compiled = compilePlanSync(db, query.toSubstrait(), catalog);
+        const result = await db.executeQuery(CompiledQuery.raw(`with samples as (${data}) ${compiled.sql}`, [...compiled.parameters]));
+        assert.deepEqual(result.rows, [{ g: 'a', p: column === 'v' ? a : f }, { g: 'nulls', p: null }, { g: null, p: column === 'v' ? n : 2 }]);
+      }
+    }
+    for (const grouped of [false, true]) {
+      const query = grouped ? samples.groupBy('g').aggregate({ p: samples.columns.v.percentile(0.75) }) : samples.aggregate({ p: samples.columns.v.percentile(0.75) });
+      const compiled = compilePlanSync(db, query.toSubstrait(), catalog);
+      const result = await db.executeQuery(CompiledQuery.raw(`with samples as (select * from (${data}) where false) ${compiled.sql}`, [...compiled.parameters]));
+      assert.deepEqual(result.rows, grouped ? [] : [{ p: null }]);
+    }
+  } finally { await db.destroy(); }
+});
+
+// Independently authored reference SQL plus hand-calculated fixtures above.
 const prices = `with prices as (select order_id, sum(cast(unit_price as bignumeric)*quantity*(1-cast(discount as bignumeric))) price from order_details group by order_id),
  priced as (select o.*, coalesce(p.price,0) price from orders o left join prices p using(order_id)) `;
 const references = [

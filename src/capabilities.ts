@@ -19,7 +19,7 @@ export function capabilitySupport(backend: Backend, capability: Capability): Fea
     case 'exactDecimalAverage': return backend === 'duckdb'
       ? { kind: 'unsupported', reason: 'DuckDB exact decimal average is unsupported; use explicit fp64 inputs' }
       : { kind: 'native' };
-    case 'continuousPercentile': return { kind: 'rewrite' };
+    case 'continuousPercentile': return { kind: backend === 'bigquery' ? 'native' : 'rewrite' };
     case 'rowNumber': return { kind: 'native' };
     case 'exactDecimalDivision': return { kind: backend === 'duckdb' ? 'rewrite' : 'native' };
   }

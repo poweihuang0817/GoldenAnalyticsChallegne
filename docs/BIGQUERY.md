@@ -75,8 +75,12 @@ interpolated. Project, dataset, location and credentials do not enter the plan o
   `FORMAT('%.10f', ...)`, preserving decimal strings instead of JavaScript floats.
   This requires extra SQL because GoogleSQL cannot CAST to parameterized decimal types.
 - Division by zero yields NULL through the existing NULLIF lowering.
-- Continuous percentile uses the existing rank/count interpolation rewrite; it is
-  tested against independently authored native BigQuery PERCENTILE_CONT queries.
+- Continuous percentile resolves the `continuousPercentile` capability to native
+  `PERCENTILE_CONT` on BigQuery; other backends retain the rank/count rewrite.
+  Decimal fractions use validated BIGNUMERIC literals to avoid FLOAT64 promotion.
+  An outer aggregate preserves one NULL row for empty global input and no rows
+  for empty grouped input. Tests cover hand-calculated precision/NULL/empty cases
+  and independently authored Northwind SQL. Compiler trace records the native path.
 - Approximate numeric operations use FLOAT64. Imported FLOAT64 money may already
   have lost precision; casting it cannot recover the original source digits.
 - FLOAT64 window partition keys (including percentile grouping keys) are rejected

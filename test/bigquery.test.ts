@@ -21,7 +21,7 @@ test('BigQuery compiles all sample families and window without credentials; work
   const client = createClient('bigquery', challengeCatalog);
   try {
     assert.equal(compilerBackend(db), 'bigquery');
-    assert.equal(capabilitySupport('bigquery', 'continuousPercentile').kind, 'rewrite');
+    assert.equal(capabilitySupport('bigquery', 'continuousPercentile').kind, 'native');
     for (const { name, query } of examples) {
       const compiled = compilePlanSync(db, query.toSubstrait(), challengeCatalog);
       assert.deepEqual(await client.compile(query), { sql: compiled.sql, parameters: [...compiled.parameters] }, name);
@@ -36,6 +36,9 @@ test('BigQuery compiles all sample families and window without credentials; work
     assert.match(freight.sql, /Golden decimal\(38,10\) overflow/);
     assert.match(freight.sql, /format\('%.10f'/);
     assert.match(freight.sql, /nullif\(/);
+    const percentile = compilePlanSync(db, queryExamples[6].query.toSubstrait(), challengeCatalog);
+    assert.match(percentile.sql, /percentile_cont\(/i);
+    assert.doesNotMatch(percentile.sql, /row_number\(|floor\(|ceil\(/i);
   } finally { await client.destroy(); await db.destroy(); }
 });
 

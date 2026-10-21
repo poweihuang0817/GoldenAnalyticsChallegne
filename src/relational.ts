@@ -341,6 +341,23 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
       const cast = exact ? decimal : float;
       const value = cast(args[0].expr);
       const selectedGroups = groups.length ? sql`${select(groups)}, ` : sql``;
+      const support = backend ? requireCapability(backend, 'continuousPercentile') : { kind: 'rewrite' };
+      if (support.kind === 'native') {
+        if (!bigquery) throw unsupported('Native percentile lowering is unavailable for this dialect');
+        trace?.push({ relationId: name, operation: 'percentile_cont', decision: 'native', reason: 'BigQuery continuousPercentile capability; typed fraction and empty-input aggregate preserved' });
+        // BigQuery requires a literal fraction. Only the validated numeric plan
+        // literal is rendered here; ordinary query values remain parameters.
+        // A BIGNUMERIC fraction avoids promoting exact inputs to FLOAT64.
+        const fraction = exact ? sql`bignumeric ${sql.lit(p.toFixed(10))}` : sql.lit(p);
+        const windowed = sql`select ${selectedGroups}percentile_cont(${value}, ${fraction} ignore nulls) over (${partition}) as v from ${childFrom()}`;
+        const r = alias();
+        const outputGroups = groups.map((g, i) => ({ ...g, expr: col(r, i) }));
+        // Aggregation, rather than DISTINCT, preserves one NULL row for an
+        // empty global aggregate and zero rows for an empty grouped aggregate.
+        const result: Value = { expr: cast(sql`max(${sql.ref(`${r}.v`)})`), kind: resultKind, nullable: true };
+        return blockRelation({ source: sql`(${windowed}) as ${sql.id(r)}`, values: [...outputGroups, result],
+          groups: outputGroups, extendable: false });
+      }
       const windowCount = sql`count(${value}) over (${partition})`;
       const rankPosition = sql`(1 + ${cast(sql.val(bigquery && exact ? String(p) : p))} * (${windowCount} - 1))`;
       const ranked = sql`select ${selectedGroups}${value} as v, row_number() over (${partition} order by case when ${value} is null then 1 else 0 end, ${value}) as rn, ${windowCount} as n, ${rankPosition} as pos from ${childFrom()}`;

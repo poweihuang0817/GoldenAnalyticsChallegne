@@ -433,3 +433,12 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
   backend selection, positional binding labels, four-backend diagram, setup errors,
   60-second running-query budgets and a configurable loopback demo port. Added
   offline UI behavior tests and an opt-in live HTTP test for all eight examples.
+- User requested using existing capabilities to choose backend-native SQL after
+  reviewing verbose BigQuery output. Added a failing native-selection regression,
+  then routed continuousPercentile to BigQuery PERCENTILE_CONT with a typed exact
+  fraction, explicit NULL handling and an outer aggregate for empty input.
+- All 91 local tests, code/docs type checks and five live BigQuery test groups
+  passed, including decimal/fp64 percentile endpoints, ties, NULL groups and empty
+  input. Other three backends' SQL snapshots are unchanged. P75 SQL shrank from
+  10,521 to 9,639 characters; repeated decimal guard expansion still dominates.
+  Decimal expression deduplication is separate work, not a claimed performance win.
