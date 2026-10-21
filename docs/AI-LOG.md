@@ -411,4 +411,3 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 ## October 21: typed-array design proposal
 
 - User requested a PostgreSQL/CSV array design and a Markdown review document. Clarified the initial proposal to keep a fixed comma delimiter and parsing inside the adapter, with no public split/parser API. Proposed native PostgreSQL arrays, PostgreSQL-backed CSV import, and typed item expansion followed by existing filter/count. This is a proposal only; implementation and Substrait expansion mapping remain subject to review. See docs/TYPED-ARRAY-PLAN.md.
-
