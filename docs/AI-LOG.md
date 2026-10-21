@@ -407,3 +407,50 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 
 - User requested a clear async naming contract. Renamed the low-level compiler to compilePlanSync, retaining await client.compile as the public worker-backed API. Updated source, tests, instrumentation scripts and current documentation references; historical log entries remain historical.
 - Fixed the missing await in the candidate README example as a narrow user-authorized API correction. Playground still explicitly uses compilePlanSync for trace output; moving that route to the worker requires trace transport and remains separate work.
+
+## October 20: BigQuery backend after submission
+
+- User requested a BigQuery backend after comparing exported Claude dashboard SQL
+  with Golden, then identified `northwind-demo-512222` as the live test project.
+- Work isolated in `feat/bigquery-backend`; the dashboard worktree and submitted
+  implementation remain untouched. Retained Table/Expr -> Substrait -> Golden/Kysely.
+- Added official Node SDK job execution, parameter binding, billing cap, cancellation,
+  a GoogleSQL dialect, decimal mapping, offline tests and opt-in read-only live tests.
+- User requested help installing gcloud and configuring local ADC. Credentials must
+  stay outside source control; browser Console access is not local SDK authentication.
+- Live verification must be recorded separately from offline checks. No claim of
+  full dialect support, lower token costs or superior runtime performance is made.
+- Live ADC access confirmed the US Northwind dataset. Three cloud test groups passed:
+  hand-calculated CTE fixtures, decimal edge cases, and all eight public-client
+  dataset queries against independently authored native SQL. No dataset writes.
+- Self-review added failing regression tests before fixing large fp64 parameter
+  binding and explicit rejection of FLOAT64 partition keys.
+- 89 offline tests and code/docs type checks passed. Existing integration initially
+  had one timing-sensitive DuckDB cancellation failure (abort arrived before query
+  acquisition); isolated rerun and all 98 integration cases serialized passed,
+  as did the three-backend conformance test. The timing test was not weakened.
+- User then requested BigQuery in the UI. Extended the same open PR/worktree with
+  backend selection, positional binding labels, four-backend diagram, setup errors,
+  60-second running-query budgets and a configurable loopback demo port. Added
+  offline UI behavior tests and an opt-in live HTTP test for all eight examples.
+- User requested using existing capabilities to choose backend-native SQL after
+  reviewing verbose BigQuery output. Added a failing native-selection regression,
+  then routed continuousPercentile to BigQuery PERCENTILE_CONT with a typed exact
+  fraction, explicit NULL handling and an outer aggregate for empty input.
+- All 91 local tests, code/docs type checks and five live BigQuery test groups
+  passed, including decimal/fp64 percentile endpoints, ties, NULL groups and empty
+  input. Other three backends' SQL snapshots are unchanged. P75 SQL shrank from
+  10,521 to 9,639 characters; repeated decimal guard expansion still dominates.
+  Decimal expression deduplication is separate work, not a claimed performance win.
+- User requested shorter BigQuery SQL and independent verification of LLM dashboard
+  queries. A SQL-size regression failed first. Tried singleton scalar bindings;
+  live tests exposed CASE evaluation differences and uncached jobs showed large
+  slot-cost increases. Discarded that compiler experiment rather than shipping it.
+- Kept conservative integer-conversion and checked-COALESCE simplifications, with
+  reviewed snapshots. Freight SQL is 7,366 characters (was 10,476); native P75 is
+  6,885 (was 9,639). Two uncached runs retained scanned bytes with comparable slot
+  costs; no general speedup claim. Full nested-expression deduplication remains open.
+- Added a hand-calculated freight fanout oracle and a deliberately wrong executable
+  SQL contrast, plus CASE/COALESCE and intermediate-overflow cloud regressions.
+  Final local suite: 92 passed; code/docs type checks passed; seven live BigQuery
+  test groups passed. No candidate README or other agent worktree was changed.
