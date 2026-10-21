@@ -65,13 +65,13 @@ test('demo governance rejects arbitrary SQL before executor and enforces origin 
     release(); assert.equal((await pending).status, 200);
     for (const path of ['/', '/explore.js', '/explore.css', '/p75-evidence.json']) assert.equal((await fetch(url + path)).status, 200);
     const html = await (await fetch(url)).text();
-    assert.match(html, /row-level security/); assert.match(html, /not an end-to-end deadline/);
+    assert.doesNotMatch(html, /data-explore-page="(?:governance|refinement)"/);
     assert.match(html, /<title>Golden Interview<\/title>/);
     assert.match(html, /data-page="explore"/);
     assert.doesNotMatch(html, /Readable plan for the selected sales query/);
     const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
     assert.equal(new Set(ids).size, ids.length);
-    for (const page of ['forecast','refinement','query','governance','precision','flow']) {
+    for (const page of ['query','forecast','precision','flow']) {
       assert.equal((html.match(new RegExp(`data-explore-page="${page}"`, 'g')) ?? []).length, 1);
       assert.equal((html.match(new RegExp(`id="explore-${page}-page"`, 'g')) ?? []).length, 1);
     }

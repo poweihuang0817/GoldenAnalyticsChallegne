@@ -28,10 +28,10 @@ document.querySelectorAll('[data-stage]').forEach(button => button.addEventListe
 }));
 $('backend').addEventListener('change', () => { if (loaded) run(); });
 $('run').addEventListener('click', run);
-function busy(value) { document.querySelectorAll('#explore-run, #explore-reject, #explore-page [data-stage], #explore-backend').forEach(el => el.disabled = value); }
+function busy(value) { document.querySelectorAll('#explore-run, #explore-page [data-stage], #explore-backend').forEach(el => el.disabled = value); }
 function text(id, value) { $(id).textContent = value ?? ''; }
 function clearResults() {
-  for (const id of ['summary','accuracy','chart','values','count-sql','count-parameters','sales-sql','sales-parameters','rejection']) $(id).replaceChildren();
+  for (const id of ['summary','accuracy','chart','values','count-sql','count-parameters','sales-sql','sales-parameters']) $(id).replaceChildren();
 }
 async function run() {
   busy(true); clearResults(); text('query-selection', 'Compiling the selected filter stage…'); text('status', 'Querying the selected backend…');
@@ -43,7 +43,6 @@ async function run() {
     text('status', `Executed ${data.stage} on ${data.backend}. ${data.customers} matching customers; ${data.dailyRows} daily sales rows.`);
     text('summary', data.reason ?? `Training period: ${data.history[0].month} through ${data.history.at(-1).month}. Forecast is relative to this historical snapshot.`);
     text('accuracy', data.backtest ? `Rolling one-month backtest: mean absolute error ${data.backtest.mae} across ${data.backtest.periods} months. Each prediction uses only the preceding three months. This is evaluation of a simple baseline, not an accuracy guarantee.` : 'Not enough history for a rolling backtest.');
-    text('code', data.code);
     text('count-sql', data.countSQL); text('count-parameters', JSON.stringify(data.countParameters, null, 2));
     text('sales-sql', data.salesSQL); text('sales-parameters', JSON.stringify(data.salesParameters, null, 2));
     const rows = [...data.history.map(r => ({ ...r, kind: 'History' })), ...data.predictions.map(r => ({ ...r, kind: 'Forecast' }))];
@@ -52,14 +51,6 @@ async function run() {
   } catch (error) { text('status', error.message); }
   finally { busy(false); }
 }
-$('reject').addEventListener('click', async () => {
-  busy(true);
-  try {
-    const response = await fetch('/explore/query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stage, backend: $('backend').value, action: 'compile', sql: 'SELECT 1' }) });
-    const data = await response.json(); text('rejection', `HTTP ${response.status}: ${data.error ?? 'Unexpected acceptance'}`);
-  } catch (error) { text('rejection', error.message); }
-  finally { busy(false); }
-});
 function chart(history, predictions) {
   if (!history.length) return;
   const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
