@@ -425,3 +425,5 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - User requested a standalone Substrait slide. Added the London-count logical outline, its position between the typed API and compiler, and Golden's remaining validation/lowering responsibilities. Included speaker notes and visually reviewed the exported slide.
 
 - User clarified that the Substrait slide needs TypeScript-specific code. Added a separate code-focused slide grounded in src/api.ts and src/client.ts, including query.toSubstrait(), await client.compile(query), and await client.execute(query). Clarified that plan export is optional and JSON, with omitted setup/resource cleanup in speaker notes.
+
+- User requested implementation details beyond compile calling toSubstrait. Traced RuntimeTable relation construction, function anchors, profile/codec validation, structured-cloned JSON worker transport and Golden lowering. Added an internals slide with shortened source excerpts and detailed speaker notes; verified worker code and rendered the slide.
