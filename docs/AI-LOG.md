@@ -413,3 +413,5 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 - User requested an English PowerPoint explaining potential improvements over the downloaded Claude dashboard, then requested float clarification, API readability and the actual P75 SQL excerpt.
 - Created an editable 11-slide deck with speaker notes. Distinguished demonstrated behavior from proposed semantic/filter orchestration and retained SQL-quality limitations.
 - Used installed PowerPoint because the prescribed artifact runtime loader/packages were unavailable. Rendered and visually reviewed all slides. No application code or candidate README changes.
+
+- User requested a remake centered on diagrams and SQL-generation opportunities. Added a separate nine-slide editable diagram edition with filter branching, operation ordering, capabilities, proposed named projections, independent verification, precision choices and a validation roadmap. Retained the Claude P75 reference excerpt and distinguished implemented behavior from proposals in speaker notes. Rendered and visually reviewed every slide.
