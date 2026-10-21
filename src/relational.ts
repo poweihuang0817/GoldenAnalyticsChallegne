@@ -45,6 +45,14 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
   };
   const float = (value: RawBuilder<unknown>) => castAs(value, 'float');
   const decimal = (value: RawBuilder<unknown>) => castAs(value, 'decimal');
+  // Signed integers fit decimal(38,10) exactly. Arithmetic results still need
+  // the full guard; only this conversion can omit rounding and range checking.
+  const decimalOperand = (value: Value) => {
+    if (!bigquery || !['i32', 'i64'].includes(value.kind)) return decimal(value.expr);
+    const result = sql`cast(${value.expr} as bignumeric)`;
+    sqlTypes.set(result, 'decimal');
+    return result;
+  };
   const functions = new Map<number, string>();
   const uris = new Map<number, string>();
   for (const uri of plan.extensionUris ?? []) {
@@ -153,14 +161,21 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
         const exact = args.some(arg => arg.kind === 'decimal');
         if (exact && args.some(arg => arg.kind === 'fp64')) throw invalid('Cannot mix decimal and fp64 arithmetic');
         const cast = exact ? decimal : float;
-        const left = cast(a.expr), right = cast(b.expr);
+        const left = exact ? decimalOperand(a) : cast(a.expr), right = exact ? decimalOperand(b) : cast(b.expr);
         const result = name === 'multiply' ? sql`(${left} * ${right})` : name === 'subtract' ? sql`(${left} - ${right})`
           : exact && duckdb ? duckdbDecimalDivide(left, right) : sql`(${left} / nullif(${right}, 0))`;
         value = { expr: cast(result), kind: exact ? 'decimal' : 'fp64', nullable: name === 'divide' || nullable }; break;
       }
       case 'coalesce':
         if (a.kind !== b.kind && !(a.kind === 'decimal' && b.kind === 'i32')) throw invalid('coalesce requires matching types (or decimal and integer fallback)');
-        value = { expr: a.kind === 'decimal' ? decimal(sql`coalesce(${a.expr}, ${b.expr})`) : sql`coalesce(${a.expr}, ${b.expr})`, kind: a.kind, nullable: a.nullable && b.nullable }; break;
+        if (bigquery && a.kind === 'decimal' && sqlTypes.get(a.expr) === 'decimal'
+            && (b.kind === 'i32' || sqlTypes.get(b.expr) === 'decimal')) {
+          // Selecting an already checked alternative cannot create a new
+          // out-of-range value. Keep COALESCE's original short-circuit behavior.
+          const result = sql`coalesce(${a.expr}, ${b.kind === 'i32' ? decimalOperand(b) : b.expr})`;
+          sqlTypes.set(result, 'decimal');
+          value = { expr: result, kind: 'decimal', nullable: a.nullable && b.nullable };
+        } else value = { expr: a.kind === 'decimal' ? decimal(sql`coalesce(${a.expr}, ${b.expr})`) : sql`coalesce(${a.expr}, ${b.expr})`, kind: a.kind, nullable: a.nullable && b.nullable }; break;
       default: throw invalid(`Unsupported scalar function: ${name}`);
     }
     return declared(fn.outputType, { ...value, computed: true });

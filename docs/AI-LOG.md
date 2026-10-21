@@ -442,3 +442,15 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
   input. Other three backends' SQL snapshots are unchanged. P75 SQL shrank from
   10,521 to 9,639 characters; repeated decimal guard expansion still dominates.
   Decimal expression deduplication is separate work, not a claimed performance win.
+- User requested shorter BigQuery SQL and independent verification of LLM dashboard
+  queries. A SQL-size regression failed first. Tried singleton scalar bindings;
+  live tests exposed CASE evaluation differences and uncached jobs showed large
+  slot-cost increases. Discarded that compiler experiment rather than shipping it.
+- Kept conservative integer-conversion and checked-COALESCE simplifications, with
+  reviewed snapshots. Freight SQL is 7,366 characters (was 10,476); native P75 is
+  6,885 (was 9,639). Two uncached runs retained scanned bytes with comparable slot
+  costs; no general speedup claim. Full nested-expression deduplication remains open.
+- Added a hand-calculated freight fanout oracle and a deliberately wrong executable
+  SQL contrast, plus CASE/COALESCE and intermediate-overflow cloud regressions.
+  Final local suite: 92 passed; code/docs type checks passed; seven live BigQuery
+  test groups passed. No candidate README or other agent worktree was changed.

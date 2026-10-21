@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { CompiledQuery } from 'kysely';
 import { connect } from '../src/backend.js';
 import { createClient } from '../src/client.js';
-import { createSource } from '../src/api.js';
+import { createSource, caseWhen, integer } from '../src/api.js';
 import { compilePlanSync } from '../src/compiler.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { queryExamples, recentOrdersPerCustomer } from '../src/queries.js';
@@ -12,6 +12,39 @@ import { createDemoServer } from '../src/playground/server.js';
 
 const enabled = Boolean(process.env.BIGQUERY_PROJECT_ID && process.env.BIGQUERY_DATASET);
 const examples = [...queryExamples, { name: 'window', query: recentOrdersPerCustomer() }];
+
+test('BigQuery freight oracle catches join fanout rather than rewarding executable SQL', { skip: !enabled }, async () => {
+  const db = connect('bigquery');
+  const data = `with customers as (select 'A' customer_id),
+    orders as (select 1 order_id, 'A' customer_id, bignumeric '10' freight),
+    order_details as (select 1 order_id, bignumeric '100' unit_price, 1 quantity, bignumeric '0' discount from unnest([1,2,3])) `;
+  try {
+    const compiled = compilePlanSync(db, queryExamples[5].query.toSubstrait(), challengeCatalog);
+    const actual = await db.executeQuery(CompiledQuery.raw(data + compiled.sql, [...compiled.parameters]));
+    assert.deepEqual(actual.rows, [{ customer_id: 'A', freight_ratio: '0.0333333333' }]);
+    const faulty = await db.executeQuery(CompiledQuery.raw(data + "select format('%.10f',sum(o.freight)/sum(d.unit_price*d.quantity*(1-d.discount))) ratio from orders o join order_details d using(order_id)"));
+    assert.deepEqual(faulty.rows, [{ ratio: '0.1000000000' }]);
+  } finally { await db.destroy(); }
+});
+
+test('BigQuery decimal binding preserves CASE laziness and intermediate overflow', { skip: !enabled }, async () => {
+  const db = connect('bigquery');
+  const catalog = { amounts: [{ name: 'id', type: 'i32', nullable: false }, { name: 'v', type: 'decimal', nullable: true }] } as const;
+  const t = createSource(catalog).table('amounts');
+  const data = "with amounts as (select 1 id, bignumeric '9999999999999999999999999999' v) ";
+  const unsafe = t.columns.v.mul(integer(2)).div(integer(2));
+  const run = async (query: ReturnType<typeof t.select>) => {
+    const compiled = compilePlanSync(db, query.toSubstrait(), catalog);
+    return db.executeQuery(CompiledQuery.raw(data + compiled.sql, [...compiled.parameters]));
+  };
+  try {
+    assert.deepEqual((await run(t.select({ v: caseWhen(t.columns.id.eq(integer(1)), t.columns.v, unsafe) }))).rows,
+      [{ v: '9999999999999999999999999999.0000000000' }]);
+    assert.deepEqual((await run(t.select({ v: t.columns.v.coalesce(unsafe) }))).rows,
+      [{ v: '9999999999999999999999999999.0000000000' }]);
+    await assert.rejects(run(t.select({ v: unsafe })), /overflow/i);
+  } finally { await db.destroy(); }
+});
 
 test('BigQuery live Playground: all eight fixed examples execute through HTTP', { skip: !enabled }, async () => {
   const server = createDemoServer();

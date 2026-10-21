@@ -4,7 +4,7 @@ import { BigQuery } from '@google-cloud/bigquery';
 import { CompiledQuery, sql } from 'kysely';
 import { connect } from '../src/backend.js';
 import { createClient } from '../src/client.js';
-import { createSource } from '../src/api.js';
+import { createSource, integer } from '../src/api.js';
 import { compilePlanSync } from '../src/compiler.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { queryExamples, recentOrdersPerCustomer, cityQuery } from '../src/queries.js';
@@ -15,6 +15,20 @@ import { BigQueryConnection, BigQueryDriver, bigQueryParameters, normalizeBigQue
 
 const config = resolveBigQueryOptions({ projectId: 'golden-test-project', dataset: 'northwind', location: 'US' }, {});
 const examples = [...queryExamples, { name: 'window', query: recentOrdersPerCustomer() }];
+
+test('BigQuery removes only proven redundant integer and COALESCE decimal guards', async () => {
+  const catalog = { amounts: [{ name: 'v', type: 'decimal', nullable: true }] } as const;
+  const amounts = createSource(catalog).table('amounts');
+  const db = connect('bigquery');
+  try {
+    const fallback = compilePlanSync(db, amounts.select({ v: amounts.columns.v.coalesce(integer(0)) }).toSubstrait(), catalog);
+    assert.equal((fallback.sql.match(/Golden decimal/g) ?? []).length, 1, 'retain source guard, omit redundant COALESCE guard');
+    assert.deepEqual(fallback.parameters, [0]);
+    const multiplied = compilePlanSync(db, amounts.select({ v: amounts.columns.v.mul(integer(7)) }).toSubstrait(), catalog);
+    assert.equal((multiplied.sql.match(/Golden decimal/g) ?? []).length, 3, 'retain result and repeated source guards, omit safe integer guard');
+    assert.doesNotMatch(multiplied.sql, /unnest/i, 'do not reintroduce the slower scalar-binding experiment');
+  } finally { await db.destroy(); }
+});
 
 test('BigQuery compiles all sample families and window without credentials; worker matches sync', async () => {
   const db = connect('bigquery');
@@ -36,6 +50,7 @@ test('BigQuery compiles all sample families and window without credentials; work
     assert.match(freight.sql, /Golden decimal\(38,10\) overflow/);
     assert.match(freight.sql, /format\('%.10f'/);
     assert.match(freight.sql, /nullif\(/);
+    assert.ok(freight.sql.length < 8000, `freight SQL expanded to ${freight.sql.length} characters`);
     const percentile = compilePlanSync(db, queryExamples[6].query.toSubstrait(), challengeCatalog);
     assert.match(percentile.sql, /percentile_cont\(/i);
     assert.doesNotMatch(percentile.sql, /row_number\(|floor\(|ceil\(/i);
