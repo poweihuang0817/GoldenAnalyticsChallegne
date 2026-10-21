@@ -6,7 +6,9 @@ function reset() {
   el('title').textContent = item.title;
   el('description').textContent = item.description;
   el('code').textContent = item.code;
-  el('backend-note').textContent = el('backend').value === 'duckdb'
+  el('backend-note').textContent = el('backend').value === 'bigquery'
+    ? 'BigQuery: remote Google Cloud dataset configured on the server. Run uses your local Google credentials and may incur query charges; the default billing cap is 1 GiB per query. Compile only makes no cloud request.'
+    : el('backend').value === 'duckdb'
     ? 'DuckDB extension: a separately seeded local Northwind snapshot. Run npm run seed:duckdb first. This is not federation.'
     : 'PostgreSQL and MySQL execute queries remotely in the supplied database server.';
   el('results').replaceChildren();
@@ -47,7 +49,7 @@ async function submit(action) {
     el('sql-raw').textContent = result.sql;
     el('bound-parameters').textContent = result.parameters.length
       ? result.parameters.map((value, index) => {
-        const label = el('backend').value === 'mysql' ? `? (parameter ${index + 1})` : `$${index + 1}`;
+        const label = ['mysql', 'bigquery'].includes(el('backend').value) ? `? (parameter ${index + 1})` : `$${index + 1}`;
         return `${label} = ${JSON.stringify(value)}`;
       }).join('\n')
       : 'No bound parameters.';

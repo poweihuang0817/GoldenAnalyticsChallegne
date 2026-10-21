@@ -23,7 +23,13 @@ $env:BIGQUERY_MAXIMUM_BYTES_BILLED = '1073741824'
 npm ci
 npm run demo:bigquery
 npm run test:bigquery
+npm run demo:ui
 ```
+
+In the UI, choose **Live driver -> BigQuery · Google Cloud**. Compile only does not
+contact Google; Run uses ADC and the server's BIGQUERY_* environment settings.
+All eight examples are available. Set `$env:GOLDEN_DEMO_PORT = '4318'` before
+starting the server if port 4317 is already used by another worktree.
 
 The account needs permission to create query jobs in the project and read the
 dataset (typically BigQuery Job User and dataset-scoped BigQuery Data Viewer).
@@ -86,7 +92,7 @@ running execution, not compilation, credential discovery or acquisition. They ar
 not hard network deadlines; cancellation can fail and is reported explicitly.
 
 The SDK retrieves all result pages into memory. Streaming, transactions, migrations,
-metadata discovery, automatic schema adaptation, and Playground integration are
+metadata discovery and automatic schema adaptation are
 not implemented. This change does not claim full BigQuery or Substrait support.
 
 ## Verification
@@ -108,6 +114,8 @@ Authenticated with local ADC against `northwind-demo-512222.northwind` in `US`.
 Confirmed 830 orders, 91 customers, 9 employees and 2,155 order details. All three
 live test groups passed: eight fixture examples, decimal precision/NULL/rounding/
 overflow cases, and eight public-client dataset queries compared with native SQL.
+The additional live Playground test exercises all eight queries through HTTP,
+checking result counts, SQL formatting, the 100-row display cap and London bindings.
 No dataset tables were written. This does not establish general dialect coverage
 or performance advantages.
 

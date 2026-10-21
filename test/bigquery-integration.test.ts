@@ -7,9 +7,33 @@ import { createSource } from '../src/api.js';
 import { compilePlanSync } from '../src/compiler.js';
 import { challengeCatalog } from '../src/challenge.js';
 import { queryExamples, recentOrdersPerCustomer } from '../src/queries.js';
+import { once } from 'node:events';
+import { createDemoServer } from '../src/playground/server.js';
 
 const enabled = Boolean(process.env.BIGQUERY_PROJECT_ID && process.env.BIGQUERY_DATASET);
 const examples = [...queryExamples, { name: 'window', query: recentOrdersPerCustomer() }];
+
+test('BigQuery live Playground: all eight fixed examples execute through HTTP', { skip: !enabled }, async () => {
+  const server = createDemoServer();
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const address = server.address(); if (!address || typeof address === 'string') throw new Error('address');
+  try {
+    const expectedCounts = [5, 1, 1, 1, 9, 91, 21, 263];
+    for (const [i, query] of ['recent', 'city', 'city-mexico', 'units', 'shipping', 'freight', 'percentile', 'window'].entries()) {
+      const response: Response = await fetch(`http://127.0.0.1:${address.port}/query`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, backend: 'bigquery', action: 'run' }) });
+      assert.equal(response.status, 200, query);
+      const result = await response.json() as { rowCount: number; rows: unknown[]; sqlPreview: { formatted: boolean }; parameters: unknown[] };
+      assert.equal(result.rowCount, expectedCounts[i], query);
+      assert.equal(result.sqlPreview.formatted, true, query);
+      assert.equal(result.rows.length, Math.min(100, result.rowCount));
+      if (query === 'city') {
+        assert.deepEqual(result.rows, [{ customer_count: '6' }]);
+        assert.deepEqual(result.parameters, ['london']);
+      }
+    }
+  } finally { server.close(); server.closeAllConnections(); await once(server, 'close'); }
+});
 // Read-only CTEs shadow the dataset tables. Nothing is created, inserted or deleted.
 const fixture = `with
 customers as (select 'A' customer_id, 'London' city, 'X' country union all select 'B','New York','Y' union all select 'C','London','Z'),

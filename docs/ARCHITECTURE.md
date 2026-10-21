@@ -5,8 +5,8 @@ Status: ACCEPTED on September 26, 2026: a constrained Substrait profile compiled
 Post-submission extension (October 20): [BigQuery](BIGQUERY.md) adds a remote
 GoogleSQL dialect and official Node SDK job adapter under the same relational
 compiler. The six challenge families and window extension have live cloud tests.
-The submission diagram and Playground below still show the original three backends;
-BigQuery is currently exposed through the public client and CLI driver only.
+The Playground and diagram also include BigQuery, alongside the public client and
+CLI driver. The original submitted version remains recorded in Git history.
 
 ![Substrait validation, Kysely compilation, and remote database execution](../src/playground/architecture.svg)
 

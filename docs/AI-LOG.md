@@ -429,3 +429,7 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
   had one timing-sensitive DuckDB cancellation failure (abort arrived before query
   acquisition); isolated rerun and all 98 integration cases serialized passed,
   as did the three-backend conformance test. The timing test was not weakened.
+- User then requested BigQuery in the UI. Extended the same open PR/worktree with
+  backend selection, positional binding labels, four-backend diagram, setup errors,
+  60-second running-query budgets and a configurable loopback demo port. Added
+  offline UI behavior tests and an opt-in live HTTP test for all eight examples.

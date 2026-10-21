@@ -41,7 +41,11 @@ test('demo serves actual examples and validates every request before execution',
     assert.equal((await post(valid)).status, 200); assert.equal(calls, 9);
     assert.equal((await post({ ...valid, backend: 'duckdb' })).status, 200);
     assert.equal(calls, 10);
+    assert.equal((await post({ ...valid, backend: 'bigquery' })).status, 200);
+    assert.equal(calls, 11);
     const html = await home.text();
+    assert.match(html, /value="bigquery"/);
+    assert.match(html, /One API\. Four databases\./);
     assert.match(html, /data-page="architecture" aria-pressed="true"/);
     assert.ok(html.indexOf('data-page="architecture"') < html.indexOf('data-page="driver"'));
     assert.ok(html.indexOf('data-page="driver"') < html.indexOf('data-page="api"'));
@@ -69,6 +73,49 @@ test('demo bounds concurrent execution and hides internal errors', async () => {
     const first = post(); await ready; assert.equal((await post()).status, 429); release();
     const result = await first; assert.equal(result.status, 500); assert.doesNotMatch(await result.text(), /password|secret|stack/);
   } finally { release(); server.close(); server.closeAllConnections(); await once(server, 'close'); }
+});
+
+test('BigQuery UI errors give setup guidance without exposing credentials', async () => {
+  const server = createDemoServer(async () => { throw new Error('refresh_token=secret path=C:/private/adc.json'); });
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const address = server.address(); if (!address || typeof address === 'string') throw new Error('address');
+  try {
+    const response = await fetch(`http://127.0.0.1:${address.port}/query`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'city', backend: 'bigquery', action: 'run' }) });
+    assert.equal(response.status, 500);
+    const body = await response.text();
+    assert.match(body, /BIGQUERY_PROJECT_ID/);
+    assert.match(body, /application-default login/);
+    assert.doesNotMatch(body, /secret|refresh_token|private|adc.json/);
+  } finally { server.close(); server.closeAllConnections(); await once(server, 'close'); }
+});
+
+test('BigQuery browser behavior labels positional bindings and explains cloud execution', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { runInNewContext } = await import('node:vm');
+  const elements = new Map<string, any>();
+  const element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, { value: '', textContent: '', disabled: false, selectedOptions: [{ textContent: 'BigQuery' }],
+      replaceChildren() {}, append() {} });
+    return elements.get(id);
+  };
+  element('backend').value = 'bigquery'; element('example').value = 'city';
+  const requests: any[] = [];
+  runInNewContext(readFileSync(new URL('../src/playground/app.js', import.meta.url), 'utf8'), {
+    document: { getElementById: element, querySelectorAll: () => [], createElement: () => ({ textContent: '', value: '' }) },
+    fetch: async (url: string, options?: { body: string }) => {
+      if (url === '/examples') return { ok: true, json: async () => [{ id: 'city', code: 'cityQuery()', title: 'City', description: '' }, { id: 'units', code: 'averageUnitsQuery()' }] };
+      requests.push(JSON.parse(options!.body));
+      return { ok: true, json: async () => ({ sql: 'select ?', sqlPreview: { text: 'select ?', formatted: true },
+        parameters: ['london'], parameterCount: 1, loweringTrace: [], planOutline: 'Read', plan: {}, elapsedMs: 1 }) };
+    },
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(element('backend-note').textContent, /1 GiB per query/);
+  await element('compile').onclick();
+  assert.deepEqual(requests, [{ query: 'city', backend: 'bigquery', action: 'compile' }]);
+  assert.equal(element('bound-parameters').textContent, '? (parameter 1) = "london"');
+  assert.match(element('status').textContent, /No query executed/);
 });
 
 
@@ -163,7 +210,7 @@ test('plan outline uses actual operators, function anchors and both join inputs 
 });
 
 test('all fixed walkthrough queries have formatted previews on each backend',async()=>{
-  for(const backend of ['postgres','mysql','duckdb'] as const)for(const query of ['recent','city','city-mexico','units','shipping','freight','percentile','window']) {
+  for(const backend of ['postgres','mysql','duckdb','bigquery'] as const)for(const query of ['recent','city','city-mexico','units','shipping','freight','percentile','window']) {
     const preview=await executeExample({backend,query,action:'compile'},{duckdbPath:':memory:'});
     assert.equal(preview.sqlPreview.formatted,true,`${backend}/${query}`);
     assert.match(preview.sqlPreview.text,/\n/);
@@ -174,13 +221,13 @@ test('all fixed walkthrough queries have formatted previews on each backend',asy
 });
 
 test('fixed demo returns ordered bindings separately from SQL on every backend', async () => {
-  for (const backend of ['postgres', 'mysql', 'duckdb'] as const) {
+  for (const backend of ['postgres', 'mysql', 'duckdb', 'bigquery'] as const) {
     const result = await executeExample({ query: 'city', backend, action: 'compile' }, { duckdbPath: ':memory:' });
     assert.deepEqual(result.parameters, ['london']);
     assert.equal(result.parameterCount, 1);
     assert.ok(!result.sql.includes('london'));
     assert.ok(!JSON.stringify(result.loweringTrace).includes('london'));
-    assert.ok(result.sql.includes(backend === 'mysql' ? '?' : '$1'));
+    assert.ok(result.sql.includes(['mysql', 'bigquery'].includes(backend) ? '?' : '$1'));
   }
 });
 
