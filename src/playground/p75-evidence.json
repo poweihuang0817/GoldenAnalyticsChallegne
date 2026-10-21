@@ -1,0 +1,24 @@
+{
+  "capturedAt": "2026-10-21T16:40:32.830Z",
+  "query": "with ov as (\n select order_id, sum(unit_price * quantity * (1 - discount)) as value\n from `northwind-demo-512222.northwind.order_details` group by order_id\n), o as (\n select c.country, coalesce(ov.value, 0) as value\n from `northwind-demo-512222.northwind.orders` o\n join `northwind-demo-512222.northwind.customers` c using(customer_id)\n left join ov using(order_id)\n where o.order_date between date '1900-01-01' and date '2999-12-31'\n), p as (\n select country, percentile_cont(value, 0.75) over(partition by country) as f,\n percentile_cont(value, numeric '0.75') over(partition by country) as d from o\n)\nselect distinct country, typeof(f) float_type, typeof(d) decimal_type,\nformat('%.17g',f) float_raw, cast(d as string) decimal_raw,\nformat('%.2f',round(f,2)) float_display, cast(round(d,2) as string) decimal_display\nfrom p where country in ('USA','Switzerland') order by country",
+  "rows": [
+    {
+      "country": "Switzerland",
+      "float_type": "FLOAT64",
+      "decimal_type": "NUMERIC",
+      "float_raw": "2258.1749999999995",
+      "decimal_raw": "2258.175",
+      "float_display": "2258.17",
+      "decimal_display": "2258.18"
+    },
+    {
+      "country": "USA",
+      "float_type": "FLOAT64",
+      "decimal_type": "NUMERIC",
+      "float_raw": "2477.575",
+      "decimal_raw": "2477.575",
+      "float_display": "2477.57",
+      "decimal_display": "2477.58"
+    }
+  ]
+}
