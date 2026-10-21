@@ -3,16 +3,21 @@ import { createPool, createConnection } from 'mysql2';
 import pg from 'pg';
 import type { Database } from './compiler.js';
 import { DuckDBDialect } from './duckdb.js';
+import { BigQueryDialect } from './bigquery/dialect.js';
+import type { BigQueryOptions } from './bigquery/driver.js';
 
-/** Supported execution targets; DuckDB uses an independently seeded local snapshot. */
-export type Backend = 'postgres' | 'mysql' | 'duckdb';
+/** Remote SQL targets plus an independently seeded local DuckDB snapshot. */
+export type Backend = 'postgres' | 'mysql' | 'duckdb' | 'bigquery';
+export interface ConnectionOptions { duckdbPath?: string; bigquery?: BigQueryOptions }
 /**
  * Create a Kysely handle configured for the selected backend.
- * @param backend - PostgreSQL, MySQL or DuckDB.
- * @param options - Optional DuckDB path; otherwise DUCKDB_PATH or northwind.duckdb is used.
- * @remarks PG/MySQL read environment URLs or local sample defaults. Always await destroy in finally.
+ * @param backend - PostgreSQL, MySQL, DuckDB or BigQuery.
+ * @param options - Optional DuckDB path or BigQuery project/dataset settings.
+ * @remarks PG/MySQL use URL settings; BigQuery uses ADC and BIGQUERY_* settings.
+ * DuckDB defaults to DUCKDB_PATH or northwind.duckdb. Always await destroy in finally.
  */
-export function connect(backend: Backend, options: { duckdbPath?: string } = {}): Kysely<Database> {
+export function connect(backend: Backend, options: ConnectionOptions = {}): Kysely<Database> {
+  if (backend === 'bigquery') return new Kysely({ dialect: new BigQueryDialect(options.bigquery) });
   if (backend === 'duckdb') return new Kysely({ dialect: new DuckDBDialect(options.duckdbPath ?? process.env.DUCKDB_PATH ?? 'northwind.duckdb') });
   if (backend === 'postgres') return new Kysely({ dialect: new PostgresDialect({
     pool: new pg.Pool({

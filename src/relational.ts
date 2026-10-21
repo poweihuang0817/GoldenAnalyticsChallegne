@@ -28,13 +28,18 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
   const unsupported = (message: string) => new CompileQueryError(message, { code: 'UNSUPPORTED_CAPABILITY', stage: 'compile', backend });
   const mysql = db.getExecutor().adapter instanceof MysqlAdapter;
   const duckdb = db.getExecutor().adapter instanceof DuckDBAdapter;
+  const bigquery = backend === 'bigquery';
   // Only explicit SQL casts establish physical type provenance. Logical kinds
   // alone do not justify removing a conversion (notably decimal precision).
   const sqlTypes = new WeakMap<RawBuilder<unknown>, 'float' | 'decimal'>();
   const castAs = (value: RawBuilder<unknown>, target: 'float' | 'decimal') => {
     if (sqlTypes.get(value) === target) return value;
-    const result = target === 'decimal' ? sql`cast(${value} as decimal(38, 10))`
-      : mysql ? sql`cast(${value} as double)` : sql`cast(${value} as double precision)`;
+    // GoogleSQL cannot CAST to parameterized DECIMAL(38,10). BIGNUMERIC
+    // retains exact digits; explicitly round and reject values outside our domain.
+    const rounded = bigquery && target === 'decimal' ? sql`round(cast(${value} as bignumeric), 10)` : undefined;
+    const result = rounded ? sql`if(abs(${rounded}) >= bignumeric '10000000000000000000000000000', error('Golden decimal(38,10) overflow'), ${rounded})`
+      : target === 'decimal' ? sql`cast(${value} as decimal(38, 10))`
+      : bigquery ? sql`cast(${value} as float64)` : mysql ? sql`cast(${value} as double)` : sql`cast(${value} as double precision)`;
     sqlTypes.set(result, target);
     return result;
   };
@@ -103,9 +108,9 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
       const [kind, value] = Object.entries(expr.literal)[0];
       const parameter = sql.val(value);
       const typed = kind === 'fp64' ? float(parameter)
-        : kind === 'string' ? (mysql ? sql`cast(${parameter} as char)` : sql`cast(${parameter} as text)`)
-        : kind === 'boolean' ? (mysql ? sql`cast(${parameter} as unsigned)` : sql`cast(${parameter} as boolean)`)
-        : (mysql ? sql`cast(${parameter} as signed)` : sql`cast(${parameter} as integer)`);
+        : kind === 'string' ? (bigquery ? sql`cast(${parameter} as string)` : mysql ? sql`cast(${parameter} as char)` : sql`cast(${parameter} as text)`)
+        : kind === 'boolean' ? (bigquery ? sql`cast(${parameter} as bool)` : mysql ? sql`cast(${parameter} as unsigned)` : sql`cast(${parameter} as boolean)`)
+        : (bigquery ? sql`cast(${parameter} as int64)` : mysql ? sql`cast(${parameter} as signed)` : sql`cast(${parameter} as integer)`);
       return { expr: typed, kind: (kind === 'boolean' ? 'bool' : kind) as Kind, nullable: false, computed: true };
     }
     if ('ifThen' in expr) {
@@ -268,6 +273,7 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
       if (!functions.has(fn.functionReference)) throw invalid(`Unresolved function reference: ${fn.functionReference}`);
       if (functions.get(fn.functionReference) !== 'row_number') throw unsupported('Only row_number window functions are supported');
       const partitions = rel.window.partitionExpressions.map(e => expression(e, input));
+      if (bigquery && partitions.some(p => p.kind === 'fp64')) throw unsupported('BigQuery window partition keys cannot be FLOAT64');
       const sorts = rel.window.sorts.map(sort => {
         expression(sort.expr, input);
         return { index: sort.expr.selection.directReference.structField.field, direction: sort.direction };
@@ -319,6 +325,7 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
       return { measure, name, args: measure.arguments.map(arg => expression(arg.value, input)) };
     });
     if (measures.some(m => m.name === 'percentile_cont')) {
+      if (bigquery && groups.some(g => g.kind === 'fp64')) throw unsupported('BigQuery percentile partition keys cannot be FLOAT64');
       if (measures.length !== 1) throw unsupported('Percentile must be the sole measure in its aggregate');
       const { measure, args } = measures[0];
       if (args.length !== 2 || !('literal' in measure.arguments[1].value) || !('fp64' in measure.arguments[1].value.literal)) throw invalid('Percentile requires value and literal fp64 fraction');
@@ -335,7 +342,7 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
       const value = cast(args[0].expr);
       const selectedGroups = groups.length ? sql`${select(groups)}, ` : sql``;
       const windowCount = sql`count(${value}) over (${partition})`;
-      const rankPosition = sql`(1 + ${cast(sql.val(p))} * (${windowCount} - 1))`;
+      const rankPosition = sql`(1 + ${cast(sql.val(bigquery && exact ? String(p) : p))} * (${windowCount} - 1))`;
       const ranked = sql`select ${selectedGroups}${value} as v, row_number() over (${partition} order by case when ${value} is null then 1 else 0 end, ${value}) as rn, ${windowCount} as n, ${rankPosition} as pos from ${childFrom()}`;
       const r = alias(), v = sql.ref(`${r}.v`), n = sql.ref(`${r}.n`), rn = sql.ref(`${r}.rn`);
       const position = sql.ref(`${r}.pos`);
@@ -371,7 +378,7 @@ export function compileAnalytics(db: Kysely<Database>, plan: SupportedPlanJson, 
   const root = plan.relations[0].root, relation = visit(root.input), name = alias();
   if (root.names.length !== relation.fields.length || new Set(root.names).size !== root.names.length) throw invalid('Invalid root names');
   const output = (relation.block?.values ?? fields(relation, name)).map((value, i) => {
-    const expr = value.kind === 'fp64' ? float(value.expr) : value.kind === 'decimal' ? decimal(value.expr) : value.kind === 'i64' ? (mysql ? sql`cast(${value.expr} as char)` : sql`cast(${value.expr} as text)`) : value.expr;
+    const expr = value.kind === 'fp64' ? float(value.expr) : value.kind === 'decimal' ? (bigquery ? sql`format('%.10f', ${decimal(value.expr)})` : decimal(value.expr)) : value.kind === 'i64' ? (bigquery ? sql`cast(${value.expr} as string)` : mysql ? sql`cast(${value.expr} as char)` : sql`cast(${value.expr} as text)`) : value.expr;
     return sql`${expr} as ${sql.id(root.names[i])}`;
   });
   return sql<Record<string, unknown>>`select ${sql.join(output)}${relation.block ? clauses(relation.block) : sql` from ${from(relation, name)}`}${ordering(relation, name, relation.block?.values)}${relation.block ? fetchClause(relation.block) : sql``}`.compile(db);

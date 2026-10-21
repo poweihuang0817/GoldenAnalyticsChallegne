@@ -407,3 +407,25 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 
 - User requested a clear async naming contract. Renamed the low-level compiler to compilePlanSync, retaining await client.compile as the public worker-backed API. Updated source, tests, instrumentation scripts and current documentation references; historical log entries remain historical.
 - Fixed the missing await in the candidate README example as a narrow user-authorized API correction. Playground still explicitly uses compilePlanSync for trace output; moving that route to the worker requires trace transport and remains separate work.
+
+## October 20: BigQuery backend after submission
+
+- User requested a BigQuery backend after comparing exported Claude dashboard SQL
+  with Golden, then identified `northwind-demo-512222` as the live test project.
+- Work isolated in `feat/bigquery-backend`; the dashboard worktree and submitted
+  implementation remain untouched. Retained Table/Expr -> Substrait -> Golden/Kysely.
+- Added official Node SDK job execution, parameter binding, billing cap, cancellation,
+  a GoogleSQL dialect, decimal mapping, offline tests and opt-in read-only live tests.
+- User requested help installing gcloud and configuring local ADC. Credentials must
+  stay outside source control; browser Console access is not local SDK authentication.
+- Live verification must be recorded separately from offline checks. No claim of
+  full dialect support, lower token costs or superior runtime performance is made.
+- Live ADC access confirmed the US Northwind dataset. Three cloud test groups passed:
+  hand-calculated CTE fixtures, decimal edge cases, and all eight public-client
+  dataset queries against independently authored native SQL. No dataset writes.
+- Self-review added failing regression tests before fixing large fp64 parameter
+  binding and explicit rejection of FLOAT64 partition keys.
+- 89 offline tests and code/docs type checks passed. Existing integration initially
+  had one timing-sensitive DuckDB cancellation failure (abort arrived before query
+  acquisition); isolated rerun and all 98 integration cases serialized passed,
+  as did the three-backend conformance test. The timing test was not weakened.

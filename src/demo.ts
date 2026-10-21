@@ -1,7 +1,7 @@
 import { createClient } from './client.js';
 import { challengeCatalog } from './challenge.js';
 import { queryExamples, recentOrdersPerCustomer } from './queries.js';
-const backends = process.argv.includes('--duckdb') ? ['duckdb'] as const : ['postgres', 'mysql'] as const;
+const backends = process.argv.includes('--bigquery') ? ['bigquery'] as const : process.argv.includes('--duckdb') ? ['duckdb'] as const : ['postgres', 'mysql'] as const;
 for (const backend of backends) {
   const client = createClient(backend, challengeCatalog);
   try {

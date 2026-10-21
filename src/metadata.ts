@@ -49,6 +49,7 @@ interface ColumnRow {
 }
 /** Read scoped physical metadata. Unsupported types remain visible; no catalog coercion occurs here. */
 export async function discoverMetadata(backend: Backend, options: MetadataOptions): Promise<DiscoveredMetadata> {
+  if (backend === 'bigquery') throw new MetadataError('UNSUPPORTED_TYPE', backend, 'BigQuery metadata discovery is not implemented; provide an explicit catalog');
   scope(backend, options);
   const db = connect(backend, options);
   try {

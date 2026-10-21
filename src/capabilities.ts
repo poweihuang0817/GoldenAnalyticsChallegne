@@ -2,6 +2,7 @@ import { MysqlAdapter, PostgresAdapter, type Kysely } from 'kysely';
 import type { Backend } from './backend.js';
 import type { Database } from './compiler.js';
 import { DuckDBAdapter } from './duckdb.js';
+import { BigQueryAdapter } from './bigquery/dialect.js';
 import { CompileQueryError } from './errors.js';
 
 export type Capability = 'exactDecimalAverage' | 'continuousPercentile' | 'rowNumber' | 'exactDecimalDivision';
@@ -35,6 +36,7 @@ export function requireCapability(backend: Backend, capability: Capability): Fea
 /** Unknown third-party adapters are not mislabeled PostgreSQL. */
 export function compilerBackend(db: Kysely<Database>): Backend | undefined {
   const adapter = db.getExecutor().adapter;
+  if (adapter instanceof BigQueryAdapter) return 'bigquery';
   if (adapter instanceof DuckDBAdapter) return 'duckdb';
   if (adapter instanceof MysqlAdapter) return 'mysql';
   if (adapter instanceof PostgresAdapter) return 'postgres';
