@@ -407,3 +407,9 @@ User requested parallel work on capability, metadata, timeout/cancellation and s
 
 - User requested a clear async naming contract. Renamed the low-level compiler to compilePlanSync, retaining await client.compile as the public worker-backed API. Updated source, tests, instrumentation scripts and current documentation references; historical log entries remain historical.
 - Fixed the missing await in the candidate README example as a narrow user-authorized API correction. Playground still explicitly uses compilePlanSync for trace output; moving that route to the worker requires trace transport and remains separate work.
+
+## List column design proposal (October 21, 2026)
+
+- User asked for a design plan for multi-valued columns: use PostgreSQL's native array type if it exists, otherwise a delimited string such as "A,B,C", with a CSV example and item-level filter and count. User asked to consider performance and size, and to work in a separate worktree. A six-step outline from a separate Codex session was provided as input.
+- Wrote docs/LIST-TYPE-PLAN.md as a proposal only. It keeps one logical list<T> type with explicit split for delimited text, defers row expansion (unnest) because Substrait v0.63.0 has no unnest relation, and routes CSV through the existing DuckDB backend.
+- Evidence: probed PostgreSQL 17.10 and DuckDB edge cases locally. string_to_array('') returns an empty array while DuckDB string_split('') returns [''], and only @> (not = ANY) used a GIN index in EXPLAIN. No code changed.
